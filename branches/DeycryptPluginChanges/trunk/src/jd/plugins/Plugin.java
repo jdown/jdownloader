@@ -66,6 +66,17 @@ import jd.utils.JDUtilities;
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin {
+	
+	public static enum Type{NONE, HOSTER, DECRYPT, REDIRECT, OPTIONAL}
+	protected Type type;
+	
+	
+	/**
+	 * @return the plugin type
+	 */
+	public Type getType(){
+		return type;
+	}
  
 
     protected static final String END_OF_LINK     = "[^\"]*";
@@ -310,6 +321,7 @@ public abstract class Plugin {
         else {
             properties = new Property();
         }
+        type = Plugin.Type.NONE;
     
     }
 
@@ -748,7 +760,7 @@ public abstract class Plugin {
      */
     public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-        long timer = System.currentTimeMillis();
+        //long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());

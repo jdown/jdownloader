@@ -245,15 +245,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-               
-                //logger.info("rvc event" + links);
-           
-                if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
-                    Vector links = (Vector) event.getParameter();
-                                       uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
-                   
-                }
-                
+            	Object parameter = event.getParameter();
+            	
+            	if( null != parameter && parameter instanceof ContentTransport ){
+            		ContentTransport transporter = (ContentTransport) parameter;
+            		if(!transporter.isEmpty()){
+            			uiInterface.addContentToGrabber(transporter);
+            		}
+            	}
+
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 // Interaction interaction = (Interaction) event.getParameter();

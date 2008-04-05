@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-package jd.plugins.decrypt;
+package jd.plugins.redirect;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,9 +29,12 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForRedirect;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.plugins.domain.JDFile;
+import jd.plugins.domain.JDFileContainer;
 import jd.utils.JDLocale;
 
 import org.mozilla.javascript.Context;
@@ -41,7 +44,7 @@ import org.mozilla.javascript.Scriptable;
 // xlice.net/file/e46b767e51b8dbdf3afb6d3ea3852c4e/
 // xlice.net/file/ff139aafdf5c299c33b218b9750b3d17/%5BSanex%5D%20-
 
-public class XliceNet extends PluginForDecrypt {
+public class XliceNet extends PluginForRedirect {
 
     final static String           HOST                = "xlice.net";
 
@@ -117,30 +120,30 @@ public class XliceNet extends PluginForDecrypt {
     }
 
     private boolean getUseConfig(String link) {
-        if (link == null) {
-            return false;
-        }
-
-        link = link.toLowerCase();
-        for (String hoster : USEARRAY) {
-            if (link.matches(".*" + hoster.toLowerCase() + ".*")) {
-                return getProperties().getBooleanProperty(hoster, true);
-            }
-        }
-
-        return false;
+    	return true;
+//        if (link == null) {
+//            return false;
+//        }
+//
+//        link = link.toLowerCase();
+//        for (String hoster : USEARRAY) {
+//            if (link.matches(".*" + hoster.toLowerCase() + ".*")) {
+//                return getProperties().getBooleanProperty(hoster, true);
+//            }
+//        }
+//
+//        return false;
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public PluginStep doStep(PluginStep step, URL url) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        	JDFileContainer jdFileContainer = new JDFileContainer();
             Context cx = null;
             try {
 
                 Scriptable scope = null;
 
-                URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url, null, null, true);
 
                 // just to fetch the link count
@@ -167,7 +170,10 @@ public class XliceNet extends PluginForDecrypt {
                     if( null == fileName){
                     	logger.warning("filename could not be determined - fix patternFileName (see next INFO log line");
                     	logger.info("rowCandidate: "+ rowCandiate);
+                    	fileName = generateJDFileName(url);
                     }
+                    
+                    JDFile jdFile = new JDFile(fileName);
 
                     URL mirrorUrl = new URL("http://" + (getHost() + link));
                     RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null, true);
@@ -233,14 +239,14 @@ public class XliceNet extends PluginForDecrypt {
                         	downloadLink.setName(fileName);
                         }
 
-                        decryptedLinks.add(downloadLink);
+                        jdFile.addMirror(downloadLink);
                     }
+                    
+                    //add the fil
+                    jdFileContainer.addFile(jdFile);
+                    
                     progress.increase(1);
                 }
-
-                logger.info(decryptedLinks.size() + " downloads decrypted");
-
-                step.setParameter(decryptedLinks);
             }
             catch (MissingResourceException e) {
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -257,6 +263,7 @@ public class XliceNet extends PluginForDecrypt {
                     Context.exit();
                 }
             }
+            step.setParameter(jdFileContainer);
         }
         return null;
     }

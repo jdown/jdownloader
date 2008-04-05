@@ -17,9 +17,13 @@
 
 package jd.controlling;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -28,6 +32,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForRedirect;
+import jd.plugins.domain.JDFile;
+import jd.plugins.domain.JDFileContainer;
+import jd.plugins.domain.Project;
 import jd.utils.JDUtilities;
 
 /**
@@ -48,8 +56,6 @@ public class DistributeData extends ControlMulticaster {
      */
     private String                   data;
 
-    private Vector<DownloadLink>     linkData;
-
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
@@ -59,18 +65,11 @@ public class DistributeData extends ControlMulticaster {
     public DistributeData(String data) {
         super("JD-DistributeData");
         this.data = data;
-        try {
-            // this.data = URLDecoder.decode(this.data, "UTF-8");
-        }
-        catch (Exception e) {
-            logger.warning("text not url decodeable");
-        }
     }
 
     public void run() {
-        Vector<DownloadLink> links = findLinks();
-        Collections.sort(links);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+        ContentTransport transporter = findLinks();
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, transporter));
     }
 
     /**
@@ -79,82 +78,69 @@ public class DistributeData extends ControlMulticaster {
      * 
      * @return link-Vector
      */
-    public Vector<DownloadLink> findLinks() {
-
-        Vector<DownloadLink> links = new Vector<DownloadLink>();
-        if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
+    public ContentTransport findLinks(){
         Vector<String> foundpassword = Plugin.findPasswords(data);
-
-
-        // Zuerst wird data durch die Such Plugins geschickt.
-       // decryptedLinks.addAll(handleSearchPlugins());
-
         reformDataString();
 
+        //first search for projects
+        Vector<Project> projects = handleDecryptPlugins();
+        Vector<JDFileContainer> containers = handleRedirectPlugins();
+        Vector<JDFile> files = handleHosterPlugins( );
+        
+        
+        //
+        Vector<JDFileContainer> tmp = new Vector<JDFileContainer>(projects.size() + containers.size());
+        tmp.addAll(projects);
+        tmp.addAll(containers);
 
-        // es werden die entschlüsselten Links (soweit überhaupt
-        // vorhanden)
-        // an die HostPlugins geschickt, damit diese einen Downloadlink
-        // erstellen können
-
-        // Edit Coa:
-        // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
-
-        Iterator<DownloadLink> iterator = handleDecryptPlugins().iterator();
-       
-        while (iterator.hasNext()) {
-            DownloadLink decrypted = iterator.next();
-         
-            Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-            while (iteratorHost.hasNext()) {
-
-                try {
-    				PluginForHost pHost = (PluginForHost) iteratorHost.next();
-    				if (pHost.canHandle(decrypted.getDownloadURL())) {
-                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL());
-                      
-                        for (int c = 0; c < dLinks.size(); c++) {
-
-                            dLinks.get(c).addSourcePluginPasswords(foundpassword);
-                            dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
-                            dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
-
-                        }
-
-                        links.addAll(dLinks);
-                    }
-                }
-                catch (Exception e) {
-                    logger.severe("Decrypter/Search Fehler: " + e.getMessage());
-                }
-				
-			}
+        
+        for( JDFileContainer container : tmp){
+        	deepRedirect(container);
+        	attachHostPlugin(container);
         }
-        // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
-        // Plugins der Hoster geschickt
-        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-        while (iteratorHost.hasNext()) {
-			PluginForHost pHost = (PluginForHost) iteratorHost.next();
-            if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
-                if (foundpassword.size()>0) {
-                	Iterator<DownloadLink> iter = dl.iterator();
-                	while (iter.hasNext()) {
-						((DownloadLink) iter.next()).addSourcePluginPasswords(foundpassword);
-					}
-                }
-                links.addAll(dl);
-                data = pHost.cutMatches(data);
-            }
-		}
+        
+        ContentTransport transporter = new ContentTransport(projects, containers, files);
+        transporter.setPasswords(foundpassword);
 
-        return links;
+        return transporter;
+    }
+    
+    
+    /**
+     * Attaches the host plugin to the downloadlink. If no Host plugin can be found
+     * for a mirror, the mirror will be dropped
+     * @param container
+     */
+    private void attachHostPlugin(JDFileContainer container ){
+    	Vector<PluginForHost> pluginsHost = JDUtilities.getPluginsForHost();
+    	for( JDFile jdFile : container.getFiles()){
+    		for( int i=jdFile.mirrorCount()-1; i>=0; --i){
+    			DownloadLink link = jdFile.getMirror(i);
+    			boolean attachSuccessfull = false;
+    			for(PluginForHost pluginHost : pluginsHost){
+    				if( pluginHost.canHandle(link.getDownloadURL())){
+    					pluginHost.attachHostPlugin(link);
+    					attachSuccessfull = true;
+    					break;
+    				}
+    			}
+    			if( !attachSuccessfull ){
+    				logger.info("unable to find host plugin for: "+link.getDownloadURL());
+    				jdFile.removeMirror(i);
+    			}
+    		}
+    	}
+
     }
 
-    private Vector<DownloadLink> handleDecryptPlugins() {
+    /**
+     * @return
+     */
+    private Vector<Project> handleDecryptPlugins() {
+        Vector<Project> createdProjects = new Vector<Project>();
+    	
+        if ( JDUtilities.getPluginsForDecrypt() == null) return createdProjects;
         
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        if ( JDUtilities.getPluginsForDecrypt() == null) return decryptedLinks;
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
 			PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
@@ -167,7 +153,7 @@ public class DistributeData extends ControlMulticaster {
                     Vector<String> decryptableLinks = pDecrypt.getDecryptableLinks(data);
                     data = pDecrypt.cutMatches(data);
 
-                    decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));
+                    createdProjects.addAll(pDecrypt.decryptLinks(decryptableLinks));
 
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
                 }
@@ -177,78 +163,159 @@ public class DistributeData extends ControlMulticaster {
                 }
             }
 		}
-        int i = 1;
-        while (deepDecrypt(decryptedLinks)) {
-            i++;
-            logger.info("Deepdecrypt depths: " + i);
-        }
-        return decryptedLinks;
+
+        return createdProjects;
+    }
+    
+    private Vector<JDFileContainer>  handleRedirectPlugins(){
+    	Vector<JDFileContainer> createdContainer = new Vector<JDFileContainer>();
+    	
+    	if( JDUtilities.getPluginsForRedirect() == null ) return createdContainer;
+    	
+    	for( PluginForRedirect pluginRedirect : JDUtilities.getPluginsForRedirect()){
+    		if( pluginRedirect.canHandle(data)){
+    			
+    			try {
+					pluginRedirect = pluginRedirect.getClass().newInstance();
+				} catch (Exception e) {
+					logger.severe("unable to greate a new Instance of redirectPlugin: "+ pluginRedirect.getHost());
+					continue;
+				}
+				
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_REDIRECT_ACTIVE, pluginRedirect));
+                Vector<String> redirectableLinks = pluginRedirect.getDecryptableLinks(data);
+                data = pluginRedirect.cutMatches(data);
+                
+                for(String link: redirectableLinks){
+					try {
+	                	URL url;
+						url = new URL(link);
+						createdContainer.add( pluginRedirect.redirect(url) );
+					} catch (MalformedURLException e) {
+						logger.severe("unable to create url out of redirectPlugin supported Pattern: "+pluginRedirect.getHost()+"\n"+link);
+					}
+                }
+
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_REDIRECT_INACTIVE, pluginRedirect));
+    		}
+    	}
+    	
+    	
+    	return createdContainer;
     }
 
+
     /**
-     * Sucht in dem übergebenen vector nach weiteren decryptbaren Links und
-     * decrypted diese
-     * 
-     * @param decryptedLinks
+     * Parses all links from data, that can be directly downloaded from a hoster
+     * and returns them in a JDFile format
      * @return
      */
-    private boolean deepDecrypt(Vector<DownloadLink> decryptedLinks) {
-        if (decryptedLinks.size() == 0) return false;
-        boolean hasDecryptedLinks = false;
-        
-        for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
-            DownloadLink link = decryptedLinks.get(i);
-            String url = link.getDownloadURL();
-
-            if (url != null) {
-                url = Plugin.getHttpLinkList(url);
-
-                try {
-                    url = URLDecoder.decode(url, "UTF-8");
+    private Vector<JDFile> handleHosterPlugins( ){
+    	Vector<JDFile> createdFiles = new Vector<JDFile>();
+    	
+        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+			PluginForHost pHost = (PluginForHost) iteratorHost.next();
+            if (pHost.canHandle(data)) {
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
+                for( DownloadLink link : dl){
+                	JDFile jdFile = new JDFile(link.getName());
+                	jdFile.addMirror(link);
+                	createdFiles.add(jdFile);
                 }
-                catch (Exception e) {
-                    logger.warning("text not url decodeable");
-                }
+                data = pHost.cutMatches(data);
             }
+		}
+    	return createdFiles;
+    }
+    
+    private JDFileContainer deepRedirect( JDFile jdFile ){
+    	Vector <PluginForRedirect> redirectPlugins = JDUtilities.getPluginsForRedirect();
+    	JDFileContainer result = new JDFileContainer();
+    	
+    	boolean redirected = false;
+    	
+    	do{
+    		//reset the exit condition
+    		redirected= false;
+        	for( PluginForRedirect redirectPlugin : redirectPlugins){
+        		int mirrorCount = jdFile.mirrorCount();
+        		for( int i= mirrorCount -1; i>=0 ; --i){
+        			DownloadLink mirror = jdFile.getMirror(i);
+        			String urlString = mirror.getDownloadURL();
+        			URL url = null;
+        			
+        			try {
+						url = new URL(urlString);
+					} catch (MalformedURLException e) {
+						//this mirror can not be handled, remove it
+						logger.severe("maleformed url: "+ urlString);
+						jdFile.removeMirror(i);
+						continue;
+					}
+        			
+        			if( redirectPlugin.canHandle(urlString)){
+        				JDFileContainer tmpContainer = redirectPlugin.redirect( url );
+        				if( null == tmpContainer || tmpContainer.isEmpty()){
+        					logger.warning("redirect Plugin returned invalid JDFileContainer - mirror dropped: "+urlString);
+        					jdFile.removeMirror(i);
+        					continue;
+        				}
+        				
+        				
+        				Collection<JDFile> files = tmpContainer.getFiles();
+        				Iterator<JDFile> iterator = files.iterator();
+        				
+        				logger.info("RedirectPlugin returned "+ files.size() + " files");
+        				//redirect JD
+        				if( 1 == tmpContainer.size() ){
+        					
+        					//TODO signed: check if the redirect plugin gave back a file name we can use
+        					JDFile redirectedFile = iterator.next();
+        					jdFile.replaceMirror(i, redirectedFile.getMirrors());
+        					redirected = true;
+        				}else{
+        					//the redirect retrieved multiple files
+        					deepRedirect(tmpContainer);
+        					result.addFiles(tmpContainer.getFiles());
+        					jdFile.removeMirror(i);
+        				}
+        			}
+        		}
+        	}
+        	
+        	
+    	}while( redirected );
 
-            boolean canDecrypt = false;
-            Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
-            while (iteratorDecrypt.hasNext()) {
-				PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
-                if (pDecrypt.canHandle(url)) {
-                    try {
-                        pDecrypt = pDecrypt.getClass().newInstance();
-
-                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
-
-                        Vector<String> decryptableLinks = pDecrypt.getDecryptableLinks(url);
-                        url = pDecrypt.cutMatches(url);
-                        Vector<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
-                       
-
-                        // Reicht die passwörter weiter
-                        for (int t = 0; t < links.size(); t++) {
-                            links.get(t).addSourcePluginPasswords(link.getSourcePluginPasswords());
-                        }
-                        decryptedLinks.addAll(links);
-
-                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
-                        canDecrypt = true;
-                        break;
-                    }
-                    catch (Exception e) {
-
-                        e.printStackTrace();
-                    }
-                }
-			}
-            if (canDecrypt) {
-                decryptedLinks.remove(i);
-                hasDecryptedLinks = true;
-            }
-
-        }
-        return hasDecryptedLinks;
+    	//logger.info("deepRedirect returns:\n"+ result);
+    	return result; 
+    }
+    
+    /**
+     * 
+     * @param jdFileContainer
+     * @return the provided argument jdFileContainer is just returned
+     */
+    private JDFileContainer deepRedirect( JDFileContainer jdFileContainer){
+    	for( JDFile jdFile : jdFileContainer.getFiles()){
+    		JDFileContainer redirectedJDFileContainer = deepRedirect(jdFile);
+    		
+    		if( 0 == jdFile.mirrorCount() && (null == redirectedJDFileContainer || redirectedJDFileContainer.isEmpty())){
+    			logger.severe("Redirect for file \""+jdFile.getName()+"\" failed");
+    			jdFileContainer.removeFile(jdFile);
+    			continue;
+    		}
+    		
+    		if( 1 <  redirectedJDFileContainer.size()){
+    			if( jdFile.mirrorCount()>=0){
+    				jdFileContainer.addFiles(redirectedJDFileContainer);
+    			}else{
+    				jdFileContainer.replaceFile(jdFile, redirectedJDFileContainer);
+    			}
+    		}
+    	}
+    	
+    	return jdFileContainer;
     }
 
     /**
@@ -265,14 +332,5 @@ public class DistributeData extends ControlMulticaster {
                 logger.warning("text not url decodeable");
             }
         }
-    }
-
-
-    public Vector<DownloadLink> getLinkData() {
-        return linkData;
-    }
-
-    public void setLinkData(Vector<DownloadLink> linkData) {
-        this.linkData = linkData;
     }
 }

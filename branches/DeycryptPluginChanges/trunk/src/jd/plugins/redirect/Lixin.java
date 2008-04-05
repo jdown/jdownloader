@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.redirect;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,28 +24,31 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForRedirect;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.domain.JDFile;
+import jd.plugins.domain.JDFileContainer;
 import jd.utils.JDUtilities;
 
-public class Lixin extends PluginForDecrypt {
+public class Lixin extends PluginForRedirect {
 
     static private final String host             = "lix.in";
 
     private String              version          = "1.0.0.0";
     //lix.in/cc1d28
     static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternCaptcha = Pattern.compile("<img\\s+src=\"(.*?)\"");
+    static private final Pattern patternCaptcha = Pattern.compile("<img\\s+src=\"(.*?captcha.*?)\"");
     static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternCaptchaWrong = Pattern.compile("<title>Lix.in - Linkprotection</title>");
     
 
     public Lixin() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        steps.add(new PluginStep(PluginStep.STEP_REDIRECT, null));
         currentStep = steps.firstElement();
     }
 
@@ -79,11 +82,11 @@ public class Lixin extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    @Override
+    public PluginStep doStep(PluginStep step, URL url) {
+    	if(step.getStep() == PluginStep.STEP_REDIRECT) {
+            JDFileContainer jdFileContainer = new JDFileContainer();
     		try {
-    			URL url = new URL(parameter);
     			progress.setRange(1);
     			
     			RequestInfo reqInfo = getRequest(url);
@@ -134,15 +137,19 @@ public class Lixin extends PluginForDecrypt {
                 }
                 
                 String link = matcher.group(1);
-        		decryptedLinks.add(this.createDownloadlink((link)));
-        		progress.increase(1);
+                
+                //on lix.in you can not determine the filename with the information provided
+                //in the link or the content of the page, therefore just use the url.toString();
+                JDFile jdFile = new JDFile( generateJDFileName(url) );
+                jdFile.addMirror(this.createDownloadlink((link)));
+                jdFileContainer.addFile( jdFile);
 
-    			// Decrypten abschliessen
-    			step.setParameter(decryptedLinks);
+        		progress.increase(1);
     		}
     		catch(IOException e) {
     			 e.printStackTrace();
     		}
+    		step.setParameter(jdFileContainer);
     	}
     	
     	return null;

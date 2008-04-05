@@ -105,18 +105,20 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         addGUIConfigEntry(routerScript);
 
         add(panel);
-        if (routerip == null || routerip.trim().length() == 0) {
-            new Thread() {
-                public void run() {
-                    ip.setData(JDLocale.L("gui.config.liveaHeader.featchIP","Suche nach RouterIP..."));
-                    GetRouterInfo rinfo = new GetRouterInfo(null);
-                   if(ip!=null) ip.setData(rinfo.getAdress());
-                  
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, rinfo.getAdress());
-                    JDUtilities.saveConfig();
-                }
-            }.start();
-        }
+        
+      //TODO signed: I do not like it, if a program starts network interaction without me explicit command or grant
+//        if (routerip == null || routerip.trim().length() == 0) {
+//            new Thread() {
+//                public void run() {
+//                    ip.setData(JDLocale.L("gui.config.liveaHeader.featchIP","Suche nach RouterIP..."));
+//                    GetRouterInfo rinfo = new GetRouterInfo(null);
+//                   if(ip!=null) ip.setData(rinfo.getAdress());
+//                  
+//                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, rinfo.getAdress());
+//                    JDUtilities.saveConfig();
+//                }
+//            }.start();
+//        }
 
 
     }

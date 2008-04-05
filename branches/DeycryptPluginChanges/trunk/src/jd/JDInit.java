@@ -51,6 +51,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForRedirect;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
@@ -273,6 +274,7 @@ public class JDInit {
         return uiInterface;
     }
 
+    
     @SuppressWarnings("unchecked")
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
@@ -292,6 +294,26 @@ public class JDInit {
             return plugins;
         }
     }
+    
+    @SuppressWarnings("unchecked")
+    public Vector<PluginForRedirect> loadPluginForRedirect(){
+        Vector<PluginForRedirect> plugins = new Vector<PluginForRedirect>();
+        try {
+            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+            logger.finer("Load Plugins for Redirect");
+            Iterator iterator = Service.providers(PluginForRedirect.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                PluginForRedirect p = (PluginForRedirect) iterator.next();
+                logger.info("Load " + p);
+                plugins.add(p);
+            }
+            return plugins;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return plugins;
+        }
+    }
 
     @SuppressWarnings("unchecked")
     public Vector<PluginForHost> loadPluginForHost() {
@@ -299,7 +321,7 @@ public class JDInit {
         try {
             JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
             Iterator iterator;
-            logger.finer("Load PLugins");
+            logger.finer("Load PLugins for Host");
             iterator = Service.providers(PluginForHost.class, jdClassLoader);
             while (iterator.hasNext()) {
                 PluginForHost next = (PluginForHost) iterator.next();
@@ -330,7 +352,7 @@ public class JDInit {
         try {
             JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
             Iterator iterator;
-            logger.finer("Load PLugins");
+            logger.finer("Load Plugins for Container");
             iterator = Service.providers(PluginForContainer.class, jdClassLoader);
             while (iterator.hasNext()) {
                 PluginForContainer p = (PluginForContainer) iterator.next();
@@ -390,6 +412,7 @@ public class JDInit {
         logger.info("Lade Plugins");
         JDController controller = JDUtilities.getController();
         JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
+        JDUtilities.setPluginForRedirectList(this.loadPluginForRedirect());
         JDUtilities.setPluginForHostList(this.loadPluginForHost());
         JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
         try {
@@ -405,6 +428,10 @@ public class JDInit {
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
             iteratorDecrypt.next().addPluginListener(controller);
+        }
+        Iterator<PluginForRedirect> iteratorRedirect = JDUtilities.getPluginsForRedirect().iterator();
+        while( iteratorRedirect.hasNext()){
+        	iteratorRedirect.next().addPluginListener(controller);
         }
         Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
         while (iteratorContainer.hasNext()) {

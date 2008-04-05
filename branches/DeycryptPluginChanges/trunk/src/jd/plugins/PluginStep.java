@@ -45,6 +45,12 @@ public class PluginStep {
      * Ein Link soll entschlüsselt werden
      */
     public final static int STEP_DECRYPT          = 4;
+    
+    /**
+     * Ein Link soll redirected werden
+     */
+    
+    public final static int STEP_REDIRECT		= 10;
 
     /**
      * Eine Seite soll geladen werden. Zum auswerten von Parametern etc
@@ -166,6 +172,9 @@ public class PluginStep {
             case STEP_SEARCH:
                 buffer.append("Search ");
                 break;
+            case STEP_REDIRECT:
+            	buffer.append("Redirect ");
+            	break;
             case STEP_LOGIN:
                 buffer.append("Login ");
                 break;            

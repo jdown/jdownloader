@@ -37,6 +37,11 @@ import jd.utils.JDUtilities;
 public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     // public abstract URLConnection getURLConnection();
+    
+    public PluginForHost(){
+    	super();
+    	type = Plugin.Type.HOSTER;
+    }
 
    
     private int maxConnections=50;
@@ -115,10 +120,13 @@ public abstract class PluginForHost extends Plugin {
             for (int i = 0; i < hits.size(); i++) {
                 String file = hits.get(i);
             
-                while (file.charAt(0) == '"')
-                    file = file.substring(1);
-                while (file.charAt(file.length() - 1) == '"')
+                while (file.charAt(0) == '"'){
+                	file = file.substring(1);
+                }
+                    
+                while (file.charAt(file.length() - 1) == '"'){
                     file = file.substring(0, file.length() - 1);
+                }
 
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
@@ -137,6 +145,21 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         return links;
+    }
+    
+    
+    public void attachHostPlugin( DownloadLink link){
+		try {
+			PluginForHost plg = this.getClass().newInstance();
+	    	plg.addPluginListener(JDUtilities.getController());
+	    	link.setLoadedPlugin(plg);
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     /**

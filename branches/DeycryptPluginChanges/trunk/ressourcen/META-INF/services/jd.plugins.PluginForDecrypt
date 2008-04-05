@@ -11,7 +11,6 @@ jd.plugins.decrypt.FilehostIt
 jd.plugins.decrypt.LinkProtectOrg
 jd.plugins.decrypt.LinkSafeWs
 jd.plugins.decrypt.Linkshield
-jd.plugins.decrypt.Lixin
 jd.plugins.decrypt.MirrorItDe
 jd.plugins.decrypt.oXygenWarez
 jd.plugins.decrypt.PicourlDe
@@ -32,7 +31,6 @@ jd.plugins.decrypt.Stealth
 jd.plugins.decrypt.Tinyurl
 jd.plugins.decrypt.UpPicoasisNet
 jd.plugins.decrypt.Xirror
-jd.plugins.decrypt.XliceNet
 jd.plugins.decrypt.YoumirrorBiz
 jd.plugins.decrypt.RapidshareComFolder
 jd.plugins.decrypt.Filer

@@ -51,6 +51,9 @@ public class ControlEvent extends AWTEvent{
      * Ein Entschlüsselungs Plugin ist nicht mehr aktiv
      */
     public final static int CONTROL_PLUGIN_DECRYPT_ACTIVE    = 5;
+    
+    public final static int CONTROL_PLUGIN_REDIRECT_ACTIVE   = 26;
+    public final static int CONTROL_PLUGIN_REDIRECT_INACTIVE = 25;
     /**
      * Ein Anbieter Plugin zum Downloaden ist aktiv
      */

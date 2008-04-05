@@ -42,6 +42,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.sound.midi.ControllerEventListener;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -67,6 +68,7 @@ import javax.swing.event.ChangeListener;
 import jd.JDFileFilter;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.ContentTransport;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
@@ -85,6 +87,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForRedirect;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
@@ -907,6 +910,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 logger.info("decrypt-inactive");
                 setPluginActive((PluginForDecrypt) event.getParameter(), false);
                 break;
+                
+            case ControlEvent.CONTROL_PLUGIN_REDIRECT_ACTIVE:
+            	logger.info("redirect-active");
+            	setPluginActive((PluginForRedirect)event.getParameter(), true);
+            	break;
+            case ControlEvent.CONTROL_PLUGIN_REDIRECT_INACTIVE:
+            	logger.info("redirect-inactive");
+            	setPluginActive((PluginForRedirect)event.getParameter(), false);
+            	break;
             case ControlEvent.CONTROL_ON_PROGRESS:
 
                 handleProgressController((ProgressController) event.getSource(), event.getParameter());
@@ -1030,11 +1042,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void setPluginActive(Plugin plugin, boolean isActive) {
-        if (plugin instanceof PluginForDecrypt) {
+    	if( plugin instanceof PluginForHost){
+    		statusBar.setPluginForHostActive(isActive);
+    	}else if(plugin instanceof PluginForRedirect){
+    		statusBar.setPluginForRedirectActive(isActive);
+    	}else if (plugin instanceof PluginForDecrypt) {
             statusBar.setPluginForDecryptActive(isActive);
-        }
-        else {
-            statusBar.setPluginForHostActive(isActive);
+        }else{
+        	logger.severe("unkown plugin type passed to setPluginActive()");
         }
     }
 
@@ -1094,6 +1109,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private JLabel            lblPluginHostActive;
 
         private JLabel            lblPluginDecryptActive;
+        
+        private JLabel			  lblPluginRedirectActive;
 
         private ImageIcon         imgActive;
 
@@ -1120,6 +1137,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
              lblPluginHostActive = new JLabel(imgInactive);
             lblPluginDecryptActive = new JLabel(imgInactive);
             lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
+            
+            lblPluginRedirectActive = new JLabel( imgInactive );
+            lblPluginRedirectActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_redirect", "redirect"));
+            
             lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
             JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -1127,6 +1148,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             
             JDUtilities.addToGridBag(this, lblPluginHostActive, 3, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
             JDUtilities.addToGridBag(this, lblPluginDecryptActive, 4, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(this, lblPluginRedirectActive, 4, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);;
         }
 
         public void setText(String text) {
@@ -1169,6 +1191,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          */
         public void setPluginForDecryptActive(boolean active) {
             setPluginActive(lblPluginDecryptActive, active);
+        }
+        
+        public void setPluginForRedirectActive(boolean active){
+        	setPluginActive(lblPluginRedirectActive, active);
         }
 
         /**
@@ -1266,6 +1292,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         dragNDrop.setText("Grabbed: " + linkList.length + " (+" + ((Vector) links).size() + ")");
     }
+    
+	@Override
+	public synchronized void addContentToGrabber(ContentTransport transporter) {
+        logger.info("pass data to grabber via ContentTransport");
+        System.out.println(transporter);
+        logger.info("Now some GUI Changes are needed for the grabber and the main window - wait for response");
+        
+	}
+    
 
     public String showUserInputDialog(String string) {
         logger.info("userinputdialog");
@@ -1374,7 +1409,4 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         
         
     }
-
-
-
 }

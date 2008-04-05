@@ -92,8 +92,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
@@ -101,6 +99,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForRedirect;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.update.WebUpdater;
@@ -155,6 +154,7 @@ public class JDUtilities {
     private static HashMap<String, PluginOptional>   pluginsOptional     = null;
 
     private static Vector<PluginForDecrypt>          pluginsForDecrypt;
+    private static Vector<PluginForRedirect>		 pluginsForRedirect;
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
@@ -1036,6 +1036,11 @@ public class JDUtilities {
      */
     public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
         return pluginsForDecrypt;
+    }
+    
+    //TODO signed:
+    public static Vector<PluginForRedirect> getPluginsForRedirect(){
+    	return pluginsForRedirect;
     }
 
     /**
@@ -2189,6 +2194,10 @@ public class JDUtilities {
     public static void setPluginForDecryptList(Vector<PluginForDecrypt> loadPlugins) {
         pluginsForDecrypt = loadPlugins;
 
+    }
+    
+    public static void setPluginForRedirectList(Vector<PluginForRedirect> loadPlugins){
+    	pluginsForRedirect = loadPlugins;
     }
 
     public static void setPluginForHostList(Vector<PluginForHost> loadPlugins) {

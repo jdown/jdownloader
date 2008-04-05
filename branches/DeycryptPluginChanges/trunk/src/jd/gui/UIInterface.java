@@ -20,6 +20,7 @@ package jd.gui;
 import java.io.File;
 import java.util.Vector;
 
+import jd.controlling.ContentTransport;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
@@ -104,6 +105,8 @@ public interface UIInterface {
      * @param links
      */
     public void addLinksToGrabber(Vector<DownloadLink> links);
+    public void addContentToGrabber( ContentTransport transporter);
+    
     /**
      * Zeigt einen Textarea dialog an
      * @param string

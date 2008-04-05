@@ -21,6 +21,11 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 public abstract class PluginOptional extends Plugin{
+	
+	public PluginOptional(){
+		super();
+		this.type = Plugin.Type.OPTIONAL;
+	}
 
     @Override
     public boolean doBotCheck(File file) { return false; }
