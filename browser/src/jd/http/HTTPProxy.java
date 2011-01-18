@@ -21,106 +21,108 @@ import org.appwork.utils.logging.Log;
 
 public class HTTPProxy {
 
-    public static enum STATUS {
-        OK,
-        OFFLINE,
-        INVALIDAUTH
-    }
+	public static enum STATUS {
+		OK, OFFLINE, INVALIDAUTH
+	}
 
-    public static enum TYPE {
-        NONE,
-        DIRECT,
-        SOCKS5,
-        HTTP
-    }
+	public static enum TYPE {
+		NONE, DIRECT, SOCKS5, HTTP
+	}
 
-    public static final HTTPProxy NONE = new HTTPProxy(TYPE.NONE);
+	public static final HTTPProxy NONE = new HTTPProxy(TYPE.NONE);
 
-    private static String[] getInfo(final String host, final String port) {
-        final String[] info = new String[2];
-        if (host == null) { return info; }
-        final String tmphost = host.replaceFirst("http://", "").replaceFirst("https://", "");
-        String tmpport = new Regex(host, ".*?:(\\d+)").getMatch(0);
-        if (tmpport != null) {
-            info[1] = "" + tmpport;
-        } else {
-            if (port != null) {
-                tmpport = new Regex(port, "(\\d+)").getMatch(0);
-            }
-            if (tmpport != null) {
-                info[1] = "" + tmpport;
-            } else {
-                Log.L.severe("No proxyport defined, using default 8080");
-                info[1] = "8080";
-            }
-        }
-        info[0] = new Regex(tmphost, "(.*?)(:|/|$)").getMatch(0);
-        return info;
-    }
+	private static String[] getInfo(final String host, final String port) {
+		final String[] info = new String[2];
+		if (host == null) {
+			return info;
+		}
+		final String tmphost = host.replaceFirst("http://", "").replaceFirst(
+				"https://", "");
+		String tmpport = new Regex(host, ".*?:(\\d+)").getMatch(0);
+		if (tmpport != null) {
+			info[1] = "" + tmpport;
+		} else {
+			if (port != null) {
+				tmpport = new Regex(port, "(\\d+)").getMatch(0);
+			}
+			if (tmpport != null) {
+				info[1] = "" + tmpport;
+			} else {
+				Log.L.severe("No proxyport defined, using default 8080");
+				info[1] = "8080";
+			}
+		}
+		info[0] = new Regex(tmphost, "(.*?)(:|/|$)").getMatch(0);
+		return info;
+	}
 
-    private String user   = null;
-    private String pass   = null;
-    private int    port   = 80;
-    private String host   = null;
-    private TYPE   type   = TYPE.DIRECT;
+	private String user = null;
+	private String pass = null;
+	private int port = 80;
+	private String host = null;
+	private TYPE type = TYPE.DIRECT;
 
-    private STATUS status = STATUS.OK;
+	private STATUS status = STATUS.OK;
 
-    private HTTPProxy(final TYPE type) {
-        this.type = type;
-    }
+	private HTTPProxy(final TYPE type) {
+		this.type = type;
+	}
 
-    public HTTPProxy(final TYPE type, final String host, final int port) {
-        this.port = port;
-        this.type = type;
-        this.host = HTTPProxy.getInfo(host, "" + port)[0];
-    }
+	public HTTPProxy(final TYPE type, final String host, final int port) {
+		this.port = port;
+		this.type = type;
+		this.host = HTTPProxy.getInfo(host, "" + port)[0];
+	}
 
-    public String getHost() {
-        return host;
-    }
+	public String getHost() {
+		return host;
+	}
 
-    public String getPass() {
-        return pass;
-    }
+	public String getPass() {
+		return pass;
+	}
 
-    public int getPort() {
-        return port;
-    }
+	public int getPort() {
+		return port;
+	}
 
-    /**
-     * @return the status
-     */
-    public STATUS getStatus() {
-        return status;
-    }
+	public void setPort(int port) {
+		this.port = port;
+	}
 
-    public TYPE getType() {
-        return type;
-    }
+	/**
+	 * @return the status
+	 */
+	public STATUS getStatus() {
+		return status;
+	}
 
-    public String getUser() {
-        return user;
-    }
+	public TYPE getType() {
+		return type;
+	}
 
-    public void setPass(final String pass) {
-        this.pass = pass;
-    }
+	public String getUser() {
+		return user;
+	}
 
-    /**
-     * @param status
-     *            the status to set
-     */
-    public void setStatus(final STATUS status) {
-        this.status = status;
-    }
+	public void setPass(final String pass) {
+		this.pass = pass;
+	}
 
-    public void setUser(final String user) {
-        this.user = user;
-    }
+	/**
+	 * @param status
+	 *            the status to set
+	 */
+	public void setStatus(final STATUS status) {
+		this.status = status;
+	}
 
-    @Override
-    public String toString() {
-        return "HTTPProxy: " + type.name() + " " + host;
-    }
+	public void setUser(final String user) {
+		this.user = user;
+	}
+
+	@Override
+	public String toString() {
+		return "HTTPProxy: " + type.name() + " " + host;
+	}
 }
