@@ -12,14 +12,14 @@ package jd.parser;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.RegularExpression;
+import org.appwork.utils.AwReg;
 
 /**
  * @author thomas
  * 
  */
 
-public class Regex extends RegularExpression {
+public class Regex extends AwReg {
 
     private Matcher matcher;
 
