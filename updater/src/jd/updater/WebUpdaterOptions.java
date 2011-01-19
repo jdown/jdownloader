@@ -1,51 +1,73 @@
 package jd.updater;
 
+import java.io.File;
+
 public class WebUpdaterOptions {
+    private ClassLoader pluginClassloader = null;
+    private boolean     restart           = true;
 
-    private boolean restart = true;
-    private boolean guiless = false;
+    private boolean     guiless           = false;
 
-    public boolean isRestart() {
-        return restart;
+    private boolean     disableOsfilter   = false;
+    private boolean     restore           = false;
+
+    private String      branch;
+
+    private File        workingDir;
+
+    public String getBranch() {
+        return branch;
     }
 
-    public void setRestart(boolean restart) {
-        this.restart = restart;
+    public ClassLoader getPluginClassloader() {
+        return pluginClassloader;
     }
 
-    public boolean isGuiless() {
-        return guiless;
-    }
-
-    public void setGuiless(boolean guiless) {
-        this.guiless = guiless;
+    public File getWorkingDir() {
+        return workingDir;
     }
 
     public boolean isDisableOsfilter() {
         return disableOsfilter;
     }
 
-    public void setDisableOsfilter(boolean disableOsfilter) {
-        this.disableOsfilter = disableOsfilter;
+    public boolean isGuiless() {
+        return guiless;
+    }
+
+    public boolean isRestart() {
+        return restart;
     }
 
     public boolean isRestore() {
         return restore;
     }
 
-    public void setRestore(boolean restore) {
+    public void setBranch(final String branch) {
+        this.branch = branch;
+    }
+
+    public void setDisableOsfilter(final boolean disableOsfilter) {
+        this.disableOsfilter = disableOsfilter;
+    }
+
+    public void setGuiless(final boolean guiless) {
+        this.guiless = guiless;
+    }
+
+    public void setPluginClassloader(final ClassLoader pluginClassloader) {
+        this.pluginClassloader = pluginClassloader;
+    }
+
+    public void setRestart(final boolean restart) {
+        this.restart = restart;
+    }
+
+    public void setRestore(final boolean restore) {
         this.restore = restore;
     }
 
-    private boolean disableOsfilter = false;
-    private boolean restore         = false;
-    private String  branch;
-
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
-        this.branch = branch;
+    public void setWorkingDir(final File workingDir) {
+        this.workingDir = workingDir;
     }
 }

@@ -27,63 +27,59 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.dialog.Dialog;
 
-public class UpdaterGui implements DefaultEventListener<UpdaterEvent>, ActionListener {
-    private static final UpdaterGui INSTANCE = new UpdaterGui();
+public class UpdaterGui implements UpdaterListener, ActionListener {
 
-    public static UpdaterGui getInstance() {
-        return UpdaterGui.INSTANCE;
-    }
+    private final JFrame            frame;
+    private final Storage           storage;
+    private UpdaterGuiPanel         panel;
+    private JButton                 btnDetails;
+    private JScrollPane             scrollPane;
+    private JTextPane               logField;
+    private final UpdaterController updateController;
 
-    private JFrame          frame;
-    private Storage         storage;
-    private UpdaterGuiPanel panel;
-    private JButton         btnDetails;
-    private JScrollPane     scrollPane;
-    private JTextPane       logField;
-
-    private UpdaterGui() {
+    public UpdaterGui(final UpdaterController updateController) {
+        this.updateController = updateController;
         setLaf();
         storage = JSonStorage.getPlainStorage("WebUpdaterGUI");
-        this.frame = new JFrame("JDownloader Updater");
-        Dialog.getInstance().setParentOwner(this.frame);
-        UpdaterController.getInstance().getEventSender().addListener(this);
-        this.frame.addWindowListener(new WindowListener() {
+        frame = new JFrame("JDownloader Updater");
+        Dialog.getInstance().setParentOwner(frame);
+        updateController.getEventSender().addListener(this);
+        frame.addWindowListener(new WindowListener() {
 
-            public void windowActivated(WindowEvent arg0) {
+            public void windowActivated(final WindowEvent arg0) {
             }
 
-            public void windowClosed(WindowEvent arg0) {
+            public void windowClosed(final WindowEvent arg0) {
             }
 
-            public void windowClosing(WindowEvent arg0) {
-                UpdaterController.getInstance().requestExit();
+            public void windowClosing(final WindowEvent arg0) {
+                updateController.requestExit();
             }
 
-            public void windowDeactivated(WindowEvent arg0) {
+            public void windowDeactivated(final WindowEvent arg0) {
             }
 
-            public void windowDeiconified(WindowEvent arg0) {
+            public void windowDeiconified(final WindowEvent arg0) {
             }
 
-            public void windowIconified(WindowEvent arg0) {
+            public void windowIconified(final WindowEvent arg0) {
             }
 
-            public void windowOpened(WindowEvent arg0) {
+            public void windowOpened(final WindowEvent arg0) {
             }
 
         });
-        this.frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // set appicon
         final ArrayList<Image> list = new ArrayList<Image>();
 
         try {
             list.add(ImageProvider.getBufferedImage("icon", true));
 
-            this.frame.setIconImages(list);
-        } catch (IOException e) {
+            frame.setIconImages(list);
+        } catch (final IOException e) {
             e.printStackTrace();
         }
 
@@ -91,20 +87,43 @@ public class UpdaterGui implements DefaultEventListener<UpdaterEvent>, ActionLis
 
         final Dimension dim = new Dimension(storage.get("DIMENSION_WIDTH", 300), storage.get("DIMENSION_HEIGHT", 60));
         // restore size
-        this.frame.setSize(dim);
+        frame.setSize(dim);
         // this.frame.setPreferredSize(dim);
 
-        this.frame.setMinimumSize(new Dimension(100, 60));
-        this.layoutGUI();
+        frame.setMinimumSize(new Dimension(100, 60));
+        layoutGUI();
         // restore location. use center of screen as default.
         final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        final int x = screenSize.width / 2 - this.frame.getSize().width / 2;
-        final int y = screenSize.height / 2 - this.frame.getSize().height / 2;
+        final int x = screenSize.width / 2 - frame.getSize().width / 2;
+        final int y = screenSize.height / 2 - frame.getSize().height / 2;
 
-        this.frame.setLocation(storage.get("LOCATION_X", x), storage.get("LOCATION_Y", y));
+        frame.setLocation(storage.get("LOCATION_X", x), storage.get("LOCATION_Y", y));
 
-        this.frame.pack();
-        this.frame.setVisible(true);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == btnDetails) {
+            btnDetails.setVisible(false);
+            scrollPane.setVisible(true);
+            frame.pack();
+
+        }
+    }
+
+    public void dispose() {
+        if (frame.getExtendedState() == Frame.NORMAL && frame.isShowing()) {
+
+            storage.put("LOCATION_X", frame.getLocationOnScreen().x);
+            storage.put("LOCATION_Y", frame.getLocationOnScreen().y);
+            storage.put("DIMENSION_WIDTH", frame.getSize().width);
+            storage.put("DIMENSION_HEIGHT", frame.getSize().height);
+
+        }
+
+        frame.setVisible(false);
+        frame.dispose();
     }
 
     private void layoutGUI() {
@@ -130,46 +149,43 @@ public class UpdaterGui implements DefaultEventListener<UpdaterEvent>, ActionLis
 
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnDetails) {
-            btnDetails.setVisible(false);
-            scrollPane.setVisible(true);
-            frame.pack();
-
-        }
-    }
-
-    private void setLaf() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-
-        }
-    }
-
-    public void start() {
-    }
-
-    public void dispose() {
-        if (this.frame.getExtendedState() == Frame.NORMAL && this.frame.isShowing()) {
-
-            storage.put("LOCATION_X", this.frame.getLocationOnScreen().x);
-            storage.put("LOCATION_Y", this.frame.getLocationOnScreen().y);
-            storage.put("DIMENSION_WIDTH", this.frame.getSize().width);
-            storage.put("DIMENSION_HEIGHT", this.frame.getSize().height);
-
-        }
-
-        this.frame.setVisible(false);
-        this.frame.dispose();
-    }
-
-    public void onEvent(UpdaterEvent event) {
+    @Override
+    public void onUpdaterEvent(final UpdaterEvent event) {
         switch (event.getType()) {
 
         case EXIT_REQUEST:
             dispose();
             break;
         }
+
+    }
+
+    @Override
+    public void onUpdaterModuleEnd(final UpdaterEvent event) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onUpdaterModuleProgress(final UpdaterEvent event, final int parameter) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onUpdaterModuleStart(final UpdaterEvent event) {
+        // TODO Auto-generated method stub
+
+    }
+
+    private void setLaf() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (final Exception e) {
+
+        }
+    }
+
+    public void start() {
     }
 }
