@@ -241,6 +241,11 @@ public class Browser {
         return Browser.TIMEOUT_CONNECT;
     }
 
+    public static Logger getGlobalLogger() {
+        // TODO Auto-generated method stub
+        return Browser.LOGGER;
+    }
+
     public static int getGlobalReadTimeout() {
         return Browser.TIMEOUT_READ;
     }
@@ -376,6 +381,7 @@ public class Browser {
     }
 
     private String                   acceptLanguage      = "de, en-gb;q=0.9, en;q=0.8";
+
     /*
      * -1 means use default Timeouts
      * 
@@ -384,12 +390,11 @@ public class Browser {
     private int                      connectTimeout      = -1;
 
     private HashMap<String, Cookies> cookies             = new HashMap<String, Cookies>();
-
     private boolean                  cookiesExclusive    = true;
+
     private URL                      currentURL          = null;
 
     private String                   customCharset       = null;
-
     private boolean                  debug               = false;
     private boolean                  doRedirects         = false;
     private RequestHeader            headers;
@@ -400,6 +405,7 @@ public class Browser {
     private int                      redirectLoopCounter = 0;
     private Request                  request;
     private HashMap<String, Integer> requestIntervalLimitMap;
+
     private HashMap<String, Long>    requestTimeMap;
 
     private boolean                  verbose             = false;
