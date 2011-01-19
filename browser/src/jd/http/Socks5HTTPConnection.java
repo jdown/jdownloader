@@ -11,7 +11,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.appwork.utils.Regex;
+import jd.parser.Regex;
 
 public class Socks5HTTPConnection extends HTTPConnection {
 

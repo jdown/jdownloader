@@ -26,9 +26,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.requests.RequestVariable;
+import jd.parser.Regex;
 import jd.utils.EditDistance;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
 public class Form {

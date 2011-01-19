@@ -27,8 +27,8 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
 public class HTMLParser {

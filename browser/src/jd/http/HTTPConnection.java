@@ -36,9 +36,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
-
-import org.appwork.utils.Regex;
-
+import jd.parser.Regex;
 import sun.net.www.MessageHeader;
 import sun.net.www.http.ChunkedInputStream;
 

@@ -20,8 +20,7 @@ import java.io.File;
 import java.util.HashMap;
 
 import jd.nutils.encoding.Encoding;
-
-import org.appwork.utils.Regex;
+import jd.parser.Regex;
 
 public class InputField extends HashMap<String, String> {
 

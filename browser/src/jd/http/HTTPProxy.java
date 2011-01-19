@@ -16,7 +16,8 @@
 
 package jd.http;
 
-import org.appwork.utils.Regex;
+import jd.parser.Regex;
+
 import org.appwork.utils.logging.Log;
 
 public class HTTPProxy {

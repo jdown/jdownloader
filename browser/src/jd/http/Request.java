@@ -38,9 +38,9 @@ import javax.imageio.ImageIO;
 
 import jd.http.URLConnectionAdapter.METHOD;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
 public abstract class Request {

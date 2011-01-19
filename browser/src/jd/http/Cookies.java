@@ -21,7 +21,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
-import org.appwork.utils.Regex;
+import jd.parser.Regex;
 
 public class Cookies {
 
