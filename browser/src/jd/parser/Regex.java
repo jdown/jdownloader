@@ -14,12 +14,8 @@ import java.util.regex.Pattern;
 
 /**
  * @author thomas
- * 
  */
-
 public class Regex extends org.appwork.utils.Regex {
-
-    private Matcher matcher;
 
     public Regex(final Matcher matcher) {
         super(matcher);
