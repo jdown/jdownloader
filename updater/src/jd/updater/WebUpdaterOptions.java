@@ -3,16 +3,16 @@ package jd.updater;
 import java.io.File;
 
 public class WebUpdaterOptions {
-    private ClassLoader pluginClassloader = null;
-    private boolean     restart           = true;
+    private ClassLoader pluginClassloader  = null;
+    private boolean     restart            = true;
 
-    private boolean     guiless           = false;
+    private boolean     guiless            = false;
 
-    private boolean     disableOsfilter   = false;
-    private boolean     restore           = false;
+    private boolean     disableOsfilter    = false;
+    private boolean     restore            = false;
 
     private String      branch;
-
+    private boolean     ignoreSlotWaittime = false;
     private File        workingDir;
 
     public String getBranch() {
@@ -35,6 +35,10 @@ public class WebUpdaterOptions {
         return guiless;
     }
 
+    public boolean isIgnoreSlotWaittime() {
+        return ignoreSlotWaittime;
+    }
+
     public boolean isRestart() {
         return restart;
     }
@@ -53,6 +57,10 @@ public class WebUpdaterOptions {
 
     public void setGuiless(final boolean guiless) {
         this.guiless = guiless;
+    }
+
+    public void setIgnoreSlotWaittime(final boolean ignoreSlotWaittime) {
+        this.ignoreSlotWaittime = ignoreSlotWaittime;
     }
 
     public void setPluginClassloader(final ClassLoader pluginClassloader) {

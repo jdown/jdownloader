@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 
@@ -58,26 +57,16 @@ public class FileUpdate {
 
     public boolean exists() {
 
-        return getLocalFile().exists() || getLocalTmpFile().exists();
+        return getLocalFile().exists() || getUpdateFilepath().exists();
 
     }
 
     public File getLocalFile() {
-        return updaterController.getOptions().getWorkingDir() != null ? new File(updaterController.getOptions().getWorkingDir(), getRelURL()) : Application.getRessource(getRelURL());
+        return updaterController.getOptions().getWorkingDir() != null ? new File(updaterController.getOptions().getWorkingDir(), getRelURL()) : updaterController.getResource(getRelURL());
     }
 
     private String getLocalHash() {
-        return Hash.getMD5(getLocalTmpFile().exists() ? getLocalTmpFile() : getLocalFile());
-    }
-
-    /**
-     * Returns the local tmp file this is workingdir/update/
-     * 
-     * @return
-     */
-    public File getLocalTmpFile() {
-
-        return new File((updaterController.getOptions().getWorkingDir() != null ? new File(updaterController.getOptions().getWorkingDir(), "update") : Application.getRessource("update")) + getRelURL());
+        return Hash.getMD5(getUpdateFilepath().exists() ? getUpdateFilepath() : getLocalFile());
     }
 
     public String getRelURL() {
@@ -86,6 +75,16 @@ public class FileUpdate {
 
     public String getRemoteHash() {
         return hash;
+    }
+
+    /**
+     * Returns the local tmp file this is workingdir/update/
+     * 
+     * @return
+     */
+    public File getUpdateFilepath() {
+
+        return new File((updaterController.getOptions().getWorkingDir() != null ? new File(updaterController.getOptions().getWorkingDir(), "update") : updaterController.getResource("update")) + "/" + updaterController.getBranch() + getRelURL());
     }
 
     /**
@@ -152,7 +151,7 @@ public class FileUpdate {
             }
             // check if we already have correct extracted files in updatedir
 
-            extractFile = new File(getLocalTmpFile() + ".md5");
+            extractFile = new File(getUpdateFilepath() + ".md5");
             try {
                 if (extractFile.exists()) {
                     final String hashOfOrgExtractFile = IO.readFileToString(extractFile);
@@ -168,12 +167,12 @@ public class FileUpdate {
             }
             // check if correct extract file is in updatedir
 
-            final String localTmpHash = Hash.getMD5(getLocalTmpFile());
+            final String localTmpHash = Hash.getMD5(getUpdateFilepath());
             if (getRemoteHash().equals(localTmpHash)) {
                 // extract file is in updatedir. probably has not been extracted
                 // yet.
                 // delete md5 hash;
-                new File(getLocalTmpFile() + ".md5").delete();
+                new File(getUpdateFilepath() + ".md5").delete();
                 return false;
             }
             return true;
@@ -190,13 +189,13 @@ public class FileUpdate {
         }
     }
 
-    private String mergeUrl(final String server, final String file) {
+    public String mergeUrl(final String server, final String file) {
         final String ret = server.endsWith("/") || file.charAt(0) == '/' ? server + file : server + "/" + file;
         return ret.replaceAll("//", "/").replaceAll("http:/", "http://");
     }
 
     public boolean needsRestart() {
-        final String hash = Hash.getMD5(getLocalTmpFile());
+        final String hash = Hash.getMD5(getUpdateFilepath());
         return hash == null ? false : hash.equalsIgnoreCase(hash);
     }
 
@@ -227,108 +226,101 @@ public class FileUpdate {
 
         long startTime, endTime;
 
-        for (int retry = 0; retry < 3; retry++) {
-            if (availableServers == null || availableServers.isEmpty()) { throw new UpdateException("Could not update file: " + this); }
-            reset(availableServers);
-            while (hasServer()) {
-                String url = getURL();
+        // for (int retry = 0; retry < 3; retry++) {
+        if (availableServers == null || availableServers.isEmpty()) { throw new UpdateException("Could not update file: " + this); }
+        reset(availableServers);
+        while (hasServer()) {
+            if (Thread.currentThread().isInterrupted()) { throw new InterruptedException(); }
+            String url = getURL();
 
-                File tmpFile;
-                if (updaterController.getOptions().getWorkingDir() != null) {
-                    tmpFile = new File(updaterController.getOptions().getWorkingDir(), getRelURL() + ".tmp");
+            final File tmpFile = new File(getUpdateFilepath().getAbsolutePath() + ".download");
+            // delete tmp file
+            tmpFile.delete();
+            final File updatetmp = getUpdateFilepath();
+            if (updatetmp.exists() && Hash.getMD5(updatetmp).equals(hash)) {
+                // nothing
+                return;
+            } else {
+                // remove local tmp file, since it does either not exist or
+                // is invalid
+                getUpdateFilepath().delete();
+                if (getUpdateFilepath().exists()) { throw new UpdateException("Could not delete Updatefile: " + getUpdateFilepath()); }
+                if (url.contains("?")) {
+                    url += "&r=" + System.currentTimeMillis();
                 } else {
-                    tmpFile = Application.getRessource(getRelURL() + ".tmp");
+                    url += "?r=" + System.currentTimeMillis();
                 }
-                // delete tmp file
-                tmpFile.delete();
-                final File updatetmp = getLocalTmpFile();
-                if (updatetmp.exists() && Hash.getMD5(updatetmp).equals(hash)) {
-                    // nothing
-                    return;
-                } else {
-                    // remove local tmp file, since it does either not exist or
-                    // is invalid
-                    getLocalTmpFile().delete();
 
-                    if (url.contains("?")) {
-                        url += "&r=" + System.currentTimeMillis();
-                    } else {
-                        url += "?r=" + System.currentTimeMillis();
-                    }
-
-                    startTime = System.currentTimeMillis();
-                    URLConnectionAdapter con = null;
-                    int response = -1;
+                startTime = System.currentTimeMillis();
+                URLConnectionAdapter con = null;
+                int response = -1;
+                try {
+                    // Open connection
+                    System.out.println("Download " + url);
+                    con = updaterController.getBr().openGetConnection(url);
+                    endTime = System.currentTimeMillis();
+                    response = con.getResponseCode();
+                    currentServer.setRequestTime(endTime - startTime);
+                } catch (final Exception e) {
+                    // Failed connection.retry next server
+                    currentServer.setRequestTime(100000l);
                     try {
-                        // Open connection
-                        con = updaterController.getBr().openGetConnection(url);
-                        endTime = System.currentTimeMillis();
-                        response = con.getResponseCode();
-                        currentServer.setRequestTime(endTime - startTime);
-                    } catch (final Exception e) {
-                        // Failed connection.retry next server
-                        currentServer.setRequestTime(100000l);
-                        try {
-                            con.disconnect();
-                        } catch (final Exception e1) {
-                        }
-                        updaterController.errorWait();
-                        continue;
+                        con.disconnect();
+                    } catch (final Exception e1) {
                     }
-                    // connection estabilished
-                    if (response != 200) {
-                        // responscode has errors. Try next server
-                        currentServer.setRequestTime(500000l);
-                        try {
-                            con.disconnect();
-                        } catch (final Exception e) {
-                        }
-                        updaterController.errorWait();
-                        continue;
-
-                    }
-                    // connection is ok. download now to *.,tmp file
-                    try {
-                        Browser.download(tmpFile, con);
-                    } catch (final Exception e) {
-                        // DOwnload failed. try next server
-                        currentServer.setRequestTime(100000l);
-                        try {
-                            con.disconnect();
-                        } catch (final Exception e1) {
-                        }
-                        updaterController.errorWait();
-                        continue;
-                    }
-                    // Download is ok. b
+                    updaterController.errorWait(e);
+                    continue;
+                }
+                // connection estabilished
+                if (response != 200) {
+                    // responscode has errors. Try next server
+                    currentServer.setRequestTime(500000l);
                     try {
                         con.disconnect();
                     } catch (final Exception e) {
                     }
+                    updaterController.errorWait(new Exception("Responsecode: " + response));
+                    continue;
+
                 }
-
-                final String downloadedHash = Hash.getMD5(tmpFile);
-                if (downloadedHash != null && downloadedHash.equalsIgnoreCase(hash)) {
-
-                    // move to update folder
-                    getLocalTmpFile().delete();
-
-                    getLocalTmpFile().getParentFile().mkdirs();
-                    if (!tmpFile.renameTo(getLocalTmpFile())) { throw new UpdateException("Could not rename " + tmpFile + " to " + getLocalTmpFile()); }
-
-                } else {
-                    tmpFile.delete();
-                    updaterController.errorWait();
+                // connection is ok. download now to *.,tmp file
+                try {
+                    Browser.download(tmpFile, con);
+                } catch (final Exception e) {
+                    // DOwnload failed. try next server
+                    currentServer.setRequestTime(100000l);
+                    try {
+                        con.disconnect();
+                    } catch (final Exception e1) {
+                    }
+                    updaterController.errorWait(e);
                     continue;
                 }
+                // Download is ok. b
+                try {
+                    con.disconnect();
+                } catch (final Exception e) {
+                }
             }
-            try {
-                Thread.sleep(250);
-            } catch (final InterruptedException e) {
+
+            final String downloadedHash = Hash.getMD5(tmpFile);
+            if (downloadedHash != null && downloadedHash.equalsIgnoreCase(hash)) {
+
+                // move to update folder
+                getUpdateFilepath().delete();
+
+                getUpdateFilepath().getParentFile().mkdirs();
+                if (!tmpFile.renameTo(getUpdateFilepath())) { throw new UpdateException("Could not rename " + tmpFile + " to " + getUpdateFilepath()); }
+                return;
+            } else {
+                tmpFile.delete();
+                updaterController.errorWait(new Exception("Hash Mismatch " + url));
                 continue;
             }
         }
+        throw new UpdateException("Update failed on all available servers");
 
     }
 
+    // }
 }

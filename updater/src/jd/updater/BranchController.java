@@ -51,7 +51,7 @@ public class BranchController {
         if (stableBranches.size() == 0) {
             update();
         }
-        return stableBranches.get(stableBranches.size() - 1);
+        return stableBranches.get(0);
     }
 
     private String getStaticBranch() {
@@ -107,7 +107,7 @@ public class BranchController {
                 }
             } catch (final Exception e) {
                 e.printStackTrace();
-                updaterController.errorWait();
+                updaterController.errorWait(e);
             }
             Log.L.warning("No branches found on " + serv);
         }
