@@ -1,5 +1,6 @@
 package jd.updater;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Frame;
@@ -10,7 +11,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
+import java.io.StringReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -21,6 +25,8 @@ import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
 
 import jd.updater.panel.UpdaterGuiPanel;
 import net.miginfocom.swing.MigLayout;
@@ -30,6 +36,7 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -48,15 +55,17 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
     private JLabel                  branchLabel;
     private JLabel                  lblDetailsLabel;
     private int                     currentStepSize = 2;
+    private final SimpleDateFormat  logDateFormat;
+    private final SimpleDateFormat  logTimeFormat;
 
     public UpdaterGui(final UpdaterController updateController) {
         this.updateController = updateController;
-        setLaf();
-        storage = JSonStorage.getPlainStorage("WebUpdaterGUI");
-        frame = new JFrame("JDownloader Updater");
-        Dialog.getInstance().setParentOwner(frame);
+        this.setLaf();
+        this.storage = JSonStorage.getPlainStorage("WebUpdaterGUI");
+        this.frame = new JFrame("JDownloader Updater");
+        Dialog.getInstance().setParentOwner(this.frame);
 
-        frame.addWindowListener(new WindowListener() {
+        this.frame.addWindowListener(new WindowListener() {
 
             public void windowActivated(final WindowEvent arg0) {
             }
@@ -81,27 +90,28 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
             }
 
         });
-        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        this.frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // set appicon
         final ArrayList<Image> list = new ArrayList<Image>();
 
         try {
             list.add(ImageProvider.getBufferedImage("icon", true));
 
-            frame.setIconImages(list);
+            this.frame.setIconImages(list);
         } catch (final IOException e) {
             e.printStackTrace();
         }
-
+        this.logDateFormat = new SimpleDateFormat("dd.MM.yy");
+        this.logTimeFormat = new SimpleDateFormat("HH:mm:ss");
         // Set Application dimensions and locations
 
-        final Dimension dim = new Dimension(storage.get("DIMENSION_WIDTH", 300), storage.get("DIMENSION_HEIGHT", 60));
+        final Dimension dim = new Dimension(this.storage.get("DIMENSION_WIDTH", 300), this.storage.get("DIMENSION_HEIGHT", 60));
         // restore size
-        frame.setSize(dim);
+        this.frame.setSize(dim);
         // this.frame.setPreferredSize(dim);
 
-        frame.setMinimumSize(new Dimension(100, 60));
-        layoutGUI();
+        this.frame.setMinimumSize(new Dimension(100, 60));
+        this.layoutGUI();
 
         if (updateController != null) {
 
@@ -112,71 +122,88 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
         }
         // restore location. use center of screen as default.
         final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        final int x = screenSize.width / 2 - frame.getSize().width / 2;
-        final int y = screenSize.height / 2 - frame.getSize().height / 2;
+        final int x = screenSize.width / 2 - this.frame.getSize().width / 2;
+        final int y = screenSize.height / 2 - this.frame.getSize().height / 2;
 
-        frame.setLocation(storage.get("LOCATION_X", x), storage.get("LOCATION_Y", y));
+        this.frame.setLocation(this.storage.get("LOCATION_X", x), this.storage.get("LOCATION_Y", y));
 
-        frame.setVisible(true);
+        this.frame.setVisible(true);
 
-        frame.pack();
+        this.frame.pack();
+        this.log("Started Webupdater " + this.logDateFormat.format(new Date()));
 
     }
 
     public void actionPerformed(final ActionEvent e) {
-        if (e.getSource() == btnDetails) {
-            btnDetails.setVisible(false);
-            scrollPane.setVisible(true);
-            lblDetailsLabel.setVisible(true);
-            frame.pack();
+        if (e.getSource() == this.btnDetails) {
+            this.btnDetails.setVisible(false);
+            this.scrollPane.setVisible(true);
+            this.lblDetailsLabel.setVisible(true);
+            this.frame.pack();
 
         }
     }
 
     public void dispose() {
-        if (frame.getExtendedState() == Frame.NORMAL && frame.isShowing()) {
+        if (this.frame.getExtendedState() == Frame.NORMAL && this.frame.isShowing()) {
 
-            storage.put("LOCATION_X", frame.getLocationOnScreen().x);
-            storage.put("LOCATION_Y", frame.getLocationOnScreen().y);
-            storage.put("DIMENSION_WIDTH", frame.getSize().width);
-            storage.put("DIMENSION_HEIGHT", frame.getSize().height);
+            this.storage.put("LOCATION_X", this.frame.getLocationOnScreen().x);
+            this.storage.put("LOCATION_Y", this.frame.getLocationOnScreen().y);
+            this.storage.put("DIMENSION_WIDTH", this.frame.getSize().width);
+            this.storage.put("DIMENSION_HEIGHT", this.frame.getSize().height);
 
         }
 
-        frame.setVisible(false);
-        frame.dispose();
+        this.frame.setVisible(false);
+        this.frame.dispose();
     }
 
     private void layoutGUI() {
-        frame.setLayout(new MigLayout("ins 0,wrap 1", "[]", " [][]"));
-        panel = new UpdaterGuiPanel();
-        progressLogo = new ProgressLogo();
-        branchLabel = new JLabel();
-        lblDetailsLabel = new JLabel("Update Details:");
-        lblDetailsLabel.setVisible(false);
-        SwingUtils.boldJLabel(lblDetailsLabel);
-        branchLabel.setForeground(panel.getBackground().darker());
+        this.frame.setLayout(new MigLayout("ins 0,wrap 1", "[]", " [][]"));
+        this.panel = new UpdaterGuiPanel();
+        this.progressLogo = new ProgressLogo();
+        this.branchLabel = new JLabel();
+        this.lblDetailsLabel = new JLabel("Update Details:");
+        this.lblDetailsLabel.setVisible(false);
+        SwingUtils.boldJLabel(this.lblDetailsLabel);
+        this.branchLabel.setForeground(this.panel.getBackground().darker());
 
-        frame.getContentPane().add(progressLogo, "split 2,gapright 10,gaptop 5,gapleft 5");
-        frame.add(panel, "growx,pushx,gapright 5, gaptop 5");
+        this.frame.getContentPane().add(this.progressLogo, "split 2,gapright 10,gaptop 5,gapleft 5");
+        this.frame.add(this.panel, "growx,pushx,gapright 5, gaptop 5");
 
-        btnDetails = new JButton("Details");
-        SwingUtils.boldJButton(btnDetails);
-        btnDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnDetails.setFocusable(false);
-        btnDetails.setContentAreaFilled(false);
-        btnDetails.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, panel.getBackground().darker()));
-        btnDetails.addActionListener(this);
-        logField = new JTextPane();
-        logField.setEditable(true);
-        logField.setAutoscrolls(true);
-        scrollPane = new JScrollPane(logField);
-        scrollPane.setVisible(false);
-        frame.add(btnDetails, "hidemode 3,shrinky,alignx right,aligny top,gapright 5");
-        frame.add(lblDetailsLabel, "hidemode 3,gaptop 5,gapleft 5");
-        frame.add(scrollPane, "hidemode 3,height 100:300:n,pushx,growx,pushy,growy,gapleft 5,gapright 5");
-        frame.add(new JSeparator(), "pushx,growx,gaptop 5");
-        frame.add(branchLabel, "alignx right,gapbottom 5,gapright 5");
+        this.btnDetails = new JButton("Details");
+        SwingUtils.boldJButton(this.btnDetails);
+        this.btnDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        this.btnDetails.setFocusable(false);
+        this.btnDetails.setContentAreaFilled(false);
+        this.btnDetails.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, this.panel.getBackground().darker()));
+        this.btnDetails.addActionListener(this);
+        this.logField = new JTextPane();
+        this.logField.setEditable(true);
+        this.logField.setAutoscrolls(true);
+        this.scrollPane = new JScrollPane(this.logField);
+        this.scrollPane.setVisible(false);
+        this.logField.setEditable(true);
+        this.logField.setAutoscrolls(true);
+        this.frame.add(this.btnDetails, "hidemode 3,shrinky,alignx right,aligny top,gapright 5");
+        this.frame.add(this.lblDetailsLabel, "hidemode 3,gaptop 5,gapleft 5");
+        this.frame.add(this.scrollPane, "hidemode 3,height 100:300:n,pushx,growx,pushy,growy,gapleft 5,gapright 5");
+        this.frame.add(new JSeparator(), "pushx,growx,gaptop 5");
+        this.frame.add(this.branchLabel, "alignx right,gapbottom 5,gapright 5");
+
+    }
+
+    private void log(final String msg) {
+        final Document doc = this.logField.getDocument();
+
+        final EditorKit editorkit = this.logField.getEditorKit();
+
+        final StringReader r = new StringReader(this.logTimeFormat.format(new Date()) + " - " + msg + "\r\n");
+        try {
+            editorkit.read(r, doc, 0);
+        } catch (final Exception e1) {
+            e1.printStackTrace();
+        }
 
     }
 
@@ -186,39 +213,39 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
     }
 
     public void onInterrupt() {
-        dispose();
+        this.dispose();
 
     }
 
     @Override
     public void onStateChange(final StateEvent event) {
         final UpdaterState state = (UpdaterState) event.getNewState();
-        currentStepSize = state.getChildren().size() == 0 ? 1 : ((UpdaterState) state.getChildren().get(0)).getPercent() - state.getPercent();
+        this.currentStepSize = state.getChildren().size() == 0 ? 1 : ((UpdaterState) state.getChildren().get(0)).getPercent() - state.getPercent();
         if (event.getNewState() == UpdaterController.DONE) {
-            setModuleProgress("Update Successfull", state.getPercent());
+            this.setModuleProgress("Update Successfull", state.getPercent());
         } else if (event.getNewState() == UpdaterController.DOWNLOADING) {
-            setModuleProgress("Downloading Updates", state.getPercent());
+            this.setModuleProgress("Downloading Updates", state.getPercent());
         } else if (event.getNewState() == UpdaterController.DOWNLOADING_BRANCHLIST) {
-            setModuleProgress("Download Version Information", state.getPercent());
+            this.setModuleProgress("Download Version Information", state.getPercent());
 
         } else if (event.getNewState() == UpdaterController.DOWNLOADING_HASHLIST) {
-            setModuleProgress("Download Filelist", state.getPercent());
+            this.setModuleProgress("Download Filelist", state.getPercent());
 
         } else if (event.getNewState() == UpdaterController.DOWNLOADING_REPOLIST) {
-            setModuleProgress("Update Serverlist", state.getPercent());
+            this.setModuleProgress("Update Serverlist", state.getPercent());
         } else if (event.getNewState() == UpdaterController.EXTRACTING) {
-            setModuleProgress("Expanding Updates", state.getPercent());
+            this.setModuleProgress("Expanding Updates", state.getPercent());
         } else if (event.getNewState() == UpdaterController.FILTERING) {
-            setModuleProgress("Prepare Update", state.getPercent());
+            this.setModuleProgress("Prepare Update", state.getPercent());
         } else if (event.getNewState() == UpdaterController.INSTALLING) {
-            setModuleProgress("Installing Updates", state.getPercent());
+            this.setModuleProgress("Installing Updates", state.getPercent());
         } else if (event.getNewState() == UpdaterController.REVERTING) {
-            setModuleProgress("Update failed", state.getPercent());
+            this.setModuleProgress("Update failed", state.getPercent());
         } else if (event.getNewState() == UpdaterController.SLOT_WAITING) {
-            setModuleProgress("Please wait. Next Updateslot will be yours", state.getPercent());
+            this.setModuleProgress("Please wait. Next Updateslot will be yours", state.getPercent());
 
         } else if (event.getNewState() == UpdaterController.WAITING_FOR_UNLOCK) {
-            setModuleProgress("Wait for JDownloader", state.getPercent());
+            this.setModuleProgress("Wait for JDownloader", state.getPercent());
         }
     }
 
@@ -234,14 +261,16 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
 
         switch (event.getType()) {
         case WAIT_PENALTY:
+            this.log("Error occured. please wait " + TimeFormatter.formatSeconds((Integer) event.getParameter(0) / 1000, 0) + " seconds.");
             ((Throwable) event.getParameter(1)).printStackTrace();
             break;
         case BRANCH_UPDATED:
-            updateBranchLabel(updateController.getBranch());
+            this.log("JDownloader Edition: " + this.updateController.getBranch());
+            this.updateBranchLabel(this.updateController.getBranch());
 
             break;
         case EXIT_REQUEST:
-            dispose();
+            this.dispose();
             break;
         }
 
@@ -252,12 +281,15 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
         System.out.println("Finished: " + event.getType());
         switch (event.getType()) {
         case END_FILELIST_UPDATE:
-            System.out.println("Files in List: " + (updateController.getNonClassFiles().size() + updateController.getClassFiles().size()));
+            System.out.println("Files in List: " + (this.updateController.getNonClassFiles().size() + this.updateController.getClassFiles().size()));
             break;
         case END_FILTERING:
-            System.out.println(updateController.getFilteredClassFiles() + " - " + updateController.getFilteredNonClassFiles());
+            this.log(this.updateController.getFilteredClassFiles().size() + this.updateController.getFilteredNonClassFiles().size() + " Updates found");
+            System.out.println(this.updateController.getFilteredClassFiles() + " - " + this.updateController.getFilteredNonClassFiles());
             break;
         }
+
+        this.panel.getSubBar().setString("");
 
     }
 
@@ -268,11 +300,12 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
 
             @Override
             protected void runInEDT() {
-                progressLogo.setProgress(percent / 100.0f);
-                panel.getSubBar().setValue(percent);
 
-                final int dynamicPercent = (int) (((UpdaterState) updateController.getStateMachine().getState()).getPercent() + currentStepSize * percent / 100.0f);
-                panel.setModuleProgress(null, dynamicPercent);
+                UpdaterGui.this.panel.getSubBar().setValue(percent);
+
+                final int dynamicPercent = (int) (((UpdaterState) UpdaterGui.this.updateController.getStateMachine().getState()).getPercent() + UpdaterGui.this.currentStepSize * percent / 100.0f);
+                UpdaterGui.this.progressLogo.setProgress(dynamicPercent / 100.0f);
+                UpdaterGui.this.panel.setModuleProgress(null, dynamicPercent);
 
             }
         };
@@ -284,12 +317,23 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
         System.out.println("Started: " + event.getType());
         switch (event.getType()) {
         case START_DOWNLOAD_FILE:
-            panel.getSubBar().setString(((FileUpdate) event.getParameter()).getRelURL());
+            this.panel.getSubBar().setString(((FileUpdate) event.getParameter()).getRelURL());
+            this.log("Download " + ((FileUpdate) event.getParameter()).getRelURL());
             break;
 
         case START_EXTRACT_FILE:
-            panel.getSubBar().setString(((FileUpdate) event.getParameter()).getRelURL());
+            this.log("Extract " + ((FileUpdate) event.getParameter()).getRelURL());
+            this.panel.getSubBar().setString(((FileUpdate) event.getParameter()).getRelURL());
             break;
+        case START_INSTALL_FILE:
+            this.log("Install " + ((FileUpdate) event.getParameter()).getRelURL());
+            this.panel.getSubBar().setString(((FileUpdate) event.getParameter()).getRelURL());
+            break;
+        case START_REVERT:
+            this.panel.getSubBar().setForeground(Color.RED);
+            this.panel.getBar().setForeground(Color.RED);
+            break;
+
         }
 
     }
@@ -307,8 +351,11 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
 
             @Override
             protected void runInEDT() {
-
-                panel.setModuleProgress(status, percent);
+                if (status != null) {
+                    UpdaterGui.this.log(status);
+                }
+                UpdaterGui.this.progressLogo.setProgress(percent / 100.0f);
+                UpdaterGui.this.panel.setModuleProgress(status, percent);
 
             }
         };
@@ -320,8 +367,8 @@ public class UpdaterGui implements UpdaterListener, ActionListener, StateEventLi
 
             @Override
             protected void runInEDT() {
-                branchLabel.setText("JDownloader " + branch + "-Edition");
-                frame.pack();
+                UpdaterGui.this.branchLabel.setText("JDownloader " + branch + "-Edition");
+                UpdaterGui.this.frame.pack();
             }
         };
     }
