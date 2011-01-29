@@ -102,7 +102,7 @@ public abstract class Request {
         if (con.getInputStream() != null) {
             if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
                 is = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
-            } else if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("deflate") && Application.getJavaVersion() >= 1.6) {
+            } else if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("deflate") && Application.getJavaVersion() >= 16000000) {
                 is = new BufferedInputStream(new java.util.zip.DeflaterInputStream(con.getInputStream()));
             } else {
                 is = new BufferedInputStream(con.getInputStream());
