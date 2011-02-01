@@ -40,7 +40,7 @@ public class UpdaterGuiPanel extends JPanel {
     private void layoutPanel() {
         // init components
         label = new JLabel("Please wait. Installing Updates!");
-        SwingUtils.boldJLabel(label);
+        SwingUtils.toBold(label);
 
         bar = new JProgressBar(0, 100);
         subBar = new JProgressBar(0, 100);
