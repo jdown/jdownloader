@@ -42,371 +42,429 @@ import sun.net.www.http.ChunkedInputStream;
 
 public class HTTPConnection implements URLConnectionAdapter {
 
-    protected LinkedHashMap<String, String>  requestProperties    = null;
-    protected long[]                         ranges;
+	protected LinkedHashMap<String, String> requestProperties = null;
+	protected long[] ranges;
 
-    protected Request                        request;
+	protected Request request;
 
-    protected String                         customcharset        = null;
+	protected String customcharset = null;
 
-    protected Socket                         httpSocket           = null;
-    protected URL                            httpURL              = null;
-    protected HTTPProxy                      proxy                = null;
-    protected String                         httpPath             = null;
+	protected Socket httpSocket = null;
+	protected URL httpURL = null;
+	protected HTTPProxy proxy = null;
+	protected String httpPath = null;
 
-    protected METHOD                         httpMethod           = METHOD.GET;
-    protected LowerCaseHashMap<List<String>> headers              = null;
-    protected int                            httpResponseCode     = -1;
-    protected String                         httpResponseMessage  = "";
-    protected int                            readTimeout          = 30000;
-    protected int                            connectTimeout       = 30000;
-    protected long                           requestTime          = -1;
-    protected InputStream                    inputStream          = null;
-    protected boolean                        inputStreamConnected = false;
-    protected String                         httpHeader           = null;
-    protected byte[]                         preReadBytes         = null;
-    protected boolean                        outputClosed         = false;
+	protected METHOD httpMethod = METHOD.GET;
+	protected LowerCaseHashMap<List<String>> headers = null;
+	protected int httpResponseCode = -1;
+	protected String httpResponseMessage = "";
+	protected int readTimeout = 30000;
+	protected int connectTimeout = 30000;
+	protected long requestTime = -1;
+	protected InputStream inputStream = null;
+	protected boolean inputStreamConnected = false;
+	protected String httpHeader = null;
+	protected byte[] preReadBytes = null;
+	protected boolean outputClosed = false;
 
-    public HTTPConnection(final URL url) {
-        this(url, null);
-    }
+	public HTTPConnection(final URL url) {
+		this(url, null);
+	}
 
-    public HTTPConnection(final URL url, final HTTPProxy p) {
-        httpURL = url;
-        proxy = p;
-        requestProperties = new LinkedHashMap<String, String>();
-        headers = new LowerCaseHashMap<List<String>>();
-    }
+	public HTTPConnection(final URL url, final HTTPProxy p) {
+		httpURL = url;
+		proxy = p;
+		requestProperties = new LinkedHashMap<String, String>();
+		headers = new LowerCaseHashMap<List<String>>();
+	}
 
-    public void connect() throws IOException {
-        if (isConnected()) { return;/* oder fehler */
-        }
-        if (httpURL.getProtocol().startsWith("https")) {
-            final SocketFactory socketFactory = SSLSocketFactory.getDefault();
-            httpSocket = socketFactory.createSocket();
-        } else {
-            httpSocket = createSocket();
-        }
-        httpSocket.setSoTimeout(readTimeout);
-        httpResponseCode = -1;
-        /* host auflösen nur wenn kein proxy, ansonsten über proxy */
-        InetAddress host = null;
-        try {
-            host = InetAddress.getByName(httpURL.getHost());
-        } catch (final UnknownHostException e) {
-            System.out.println("Unknown Host:" + httpURL);
-            throw e;
-        }
-        int port = httpURL.getPort();
-        if (port == -1) {
-            port = httpURL.getDefaultPort();
-        }
-        final long startTime = System.currentTimeMillis();
-        if (proxy != null && !proxy.getType().equals(HTTPProxy.TYPE.DIRECT)) {
-            throw new RuntimeException("Invalid Direct Proxy");
-        } else {
-            httpSocket.connect(new InetSocketAddress(host, port), connectTimeout);
-        }
-        requestTime = System.currentTimeMillis() - startTime;
-        httpPath = new Regex(httpURL.toString(), "https?://.*?(/.+)").getMatch(0);
-        if (httpPath == null) {
-            httpPath = "/";
-        }
-        /* now send Request */
-        final StringBuilder sb = new StringBuilder();
-        sb.append(httpMethod.name()).append(' ').append(httpPath).append(" HTTP/1.1\r\n");
-        for (final String key : requestProperties.keySet()) {
-            if (requestProperties.get(key) == null) {
-                continue;
-            }
-            sb.append(key).append(": ").append(requestProperties.get(key)).append("\r\n");
-        }
-        sb.append("\r\n");
-        httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
-        httpSocket.getOutputStream().flush();
-        if (httpMethod != METHOD.POST) {
-            outputClosed = true;
-            connectInputStream();
-        }
-    }
+	public void connect() throws IOException {
+		if (isConnected()) {
+			return;/* oder fehler */
+		}
+		if (httpURL.getProtocol().startsWith("https")) {
+			final SocketFactory socketFactory = SSLSocketFactory.getDefault();
+			httpSocket = socketFactory.createSocket();
+		} else {
+			httpSocket = createSocket();
+		}
+		httpSocket.setSoTimeout(readTimeout);
+		httpResponseCode = -1;
+		/* host auflösen nur wenn kein proxy, ansonsten über proxy */
+		InetAddress host = null;
+		try {
+			host = InetAddress.getByName(httpURL.getHost());
+		} catch (final UnknownHostException e) {
+			System.out.println("Unknown Host:" + httpURL);
+			throw e;
+		}
+		int port = httpURL.getPort();
+		if (port == -1) {
+			port = httpURL.getDefaultPort();
+		}
+		final long startTime = System.currentTimeMillis();
+		if (proxy != null && !proxy.getType().equals(HTTPProxy.TYPE.DIRECT)) {
+			throw new RuntimeException("Invalid Direct Proxy");
+		} else {
+			httpSocket.connect(new InetSocketAddress(host, port),
+					connectTimeout);
+		}
+		requestTime = System.currentTimeMillis() - startTime;
+		httpPath = new Regex(httpURL.toString(), "https?://.*?(/.+)")
+				.getMatch(0);
+		if (httpPath == null) {
+			httpPath = "/";
+		}
+		/* now send Request */
+		final StringBuilder sb = new StringBuilder();
+		sb.append(httpMethod.name()).append(' ').append(httpPath)
+				.append(" HTTP/1.1\r\n");
+		for (final String key : requestProperties.keySet()) {
+			if (requestProperties.get(key) == null) {
+				continue;
+			}
+			sb.append(key).append(": ").append(requestProperties.get(key))
+					.append("\r\n");
+		}
+		sb.append("\r\n");
+		httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
+		httpSocket.getOutputStream().flush();
+		if (httpMethod != METHOD.POST) {
+			outputClosed = true;
+			connectInputStream();
+		}
+	}
 
-    protected synchronized void connectInputStream() throws IOException {
-        if (inputStreamConnected) { return; }
-        inputStreamConnected = true;
-        /* first read http header */
-        ByteBuffer header = HTTPConnectionUtils.readheader(httpSocket.getInputStream(), true);
-        byte[] bytes = new byte[header.limit()];
-        header.get(bytes);
-        httpHeader = new String(bytes, "ISO-8859-1").trim();
-        /* parse response code/message */
-        if (httpHeader.startsWith("HTTP")) {
-            final String code = new Regex(httpHeader, "HTTP.*? (\\d+)").getMatch(0);
-            if (code != null) {
-                httpResponseCode = Integer.parseInt(code);
-            }
-            httpResponseMessage = new Regex(httpHeader, "HTTP.*? \\d+ (.+)").getMatch(0);
-            if (httpResponseMessage == null) {
-                httpResponseMessage = "";
-            }
-        } else {
-            preReadBytes = bytes;
-            httpHeader = "unknown HTTP response";
-            httpResponseCode = 200;
-            httpResponseMessage = "unknown HTTP response";
-            inputStream = httpSocket.getInputStream();
-            return;
-        }
-        /* read rest of http headers */
-        header = HTTPConnectionUtils.readheader(httpSocket.getInputStream(), false);
-        bytes = new byte[header.limit()];
-        header.get(bytes);
-        String temp = new String(bytes, "UTF-8");
-        /* split header into single strings, use RN or N(buggy fucking non rfc) */
-        String[] headerStrings = temp.split("(\r\n)|(\n)");
-        temp = null;
-        for (final String line : headerStrings) {
-            String key = null;
-            String value = null;
-            if (line.indexOf(": ") > 0) {
-                key = line.substring(0, line.indexOf(": "));
-                value = line.substring(line.indexOf(": ") + 2);
-            } else {
-                key = null;
-                value = line;
-            }
-            List<String> list = headers.get(key);
-            if (list == null) {
-                list = new ArrayList<String>();
-                headers.put(key, list);
-            }
-            list.add(value);
-        }
-        headerStrings = null;
-        final List<String> chunked = headers.get("Transfer-Encoding");
-        if (chunked != null && chunked.size() > 0 && "chunked".equalsIgnoreCase(chunked.get(0))) {
-            /* TODO: write own chunkedinputstream */
-            inputStream = new ChunkedInputStream(httpSocket.getInputStream(), new MyHttpClient(), new MessageHeader());
-        } else {
-            inputStream = httpSocket.getInputStream();
-        }
-    }
+	protected synchronized void connectInputStream() throws IOException {
+		if (inputStreamConnected) {
+			return;
+		}
+		inputStreamConnected = true;
+		/* first read http header */
+		ByteBuffer header = HTTPConnectionUtils.readheader(
+				httpSocket.getInputStream(), true);
+		byte[] bytes = new byte[header.limit()];
+		header.get(bytes);
+		httpHeader = new String(bytes, "ISO-8859-1").trim();
+		/* parse response code/message */
+		if (httpHeader.startsWith("HTTP")) {
+			final String code = new Regex(httpHeader, "HTTP.*? (\\d+)")
+					.getMatch(0);
+			if (code != null) {
+				httpResponseCode = Integer.parseInt(code);
+			}
+			httpResponseMessage = new Regex(httpHeader, "HTTP.*? \\d+ (.+)")
+					.getMatch(0);
+			if (httpResponseMessage == null) {
+				httpResponseMessage = "";
+			}
+		} else {
+			preReadBytes = bytes;
+			httpHeader = "unknown HTTP response";
+			httpResponseCode = 200;
+			httpResponseMessage = "unknown HTTP response";
+			inputStream = httpSocket.getInputStream();
+			return;
+		}
+		/* read rest of http headers */
+		header = HTTPConnectionUtils.readheader(httpSocket.getInputStream(),
+				false);
+		bytes = new byte[header.limit()];
+		header.get(bytes);
+		String temp = new String(bytes, "UTF-8");
+		/* split header into single strings, use RN or N(buggy fucking non rfc) */
+		String[] headerStrings = temp.split("(\r\n)|(\n)");
+		temp = null;
+		for (final String line : headerStrings) {
+			String key = null;
+			String value = null;
+			int index = 0;
+			if ((index = line.indexOf(": ")) > 0) {
+				key = line.substring(0, index);
+				value = line.substring(index + 2);
+			} else if ((index = line.indexOf(":")) > 0) {
+				/* buggy servers that don't have :space ARG*/
+				key = line.substring(0, index);
+				value = line.substring(index + 1);
+			} else {
+				key = null;
+				value = line;
+			}
+			List<String> list = headers.get(key);
+			if (list == null) {
+				list = new ArrayList<String>();
+				headers.put(key, list);
+			}
+			list.add(value);
+		}
+		headerStrings = null;
+		final List<String> chunked = headers.get("Transfer-Encoding");
+		if (chunked != null && chunked.size() > 0
+				&& "chunked".equalsIgnoreCase(chunked.get(0))) {
+			/* TODO: write own chunkedinputstream */
+			inputStream = new ChunkedInputStream(httpSocket.getInputStream(),
+					new MyHttpClient(), new MessageHeader());
+		} else {
+			inputStream = httpSocket.getInputStream();
+		}
+	}
 
-    public Socket createSocket() throws IOException {
-        return new Socket();
-    }
+	public Socket createSocket() throws IOException {
+		return new Socket();
+	}
 
-    public void disconnect() {
-        if (isConnected()) {
-            try {
-                httpSocket.close();
-            } catch (final Throwable e) {
-                e.printStackTrace();
-            }
-        }
-    }
+	public void disconnect() {
+		if (isConnected()) {
+			try {
+				httpSocket.close();
+			} catch (final Throwable e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-    public String getCharset() {
-        int i;
-        if (customcharset != null) { return customcharset; }
-        return getContentType() != null && (i = getContentType().toLowerCase().indexOf("charset=")) > 0 ? getContentType().substring(i + 8).trim() : null;
-    }
+	public String getCharset() {
+		int i;
+		if (customcharset != null) {
+			return customcharset;
+		}
+		return getContentType() != null
+				&& (i = getContentType().toLowerCase().indexOf("charset=")) > 0 ? getContentType()
+				.substring(i + 8).trim() : null;
+	}
 
-    public int getContentLength() {
-        return (int) getLongContentLength();
-    }
+	public int getContentLength() {
+		return (int) getLongContentLength();
+	}
 
-    public String getContentType() {
-        final String type = getHeaderField("Content-Type");
-        if (type == null) { return "unknown"; }
-        return type;
-    }
+	public String getContentType() {
+		final String type = getHeaderField("Content-Type");
+		if (type == null) {
+			return "unknown";
+		}
+		return type;
+	}
 
-    public String getHeaderField(final String string) {
-        final List<String> ret = headers.get(string);
-        if (ret == null || ret.size() == 0) { return null; }
-        return ret.get(0);
-    }
+	public String getHeaderField(final String string) {
+		final List<String> ret = headers.get(string);
+		if (ret == null || ret.size() == 0) {
+			return null;
+		}
+		return ret.get(0);
+	}
 
-    public Map<String, List<String>> getHeaderFields() {
-        return headers;
-    }
+	public List<String> getHeaderFields(final String string) {
+		final List<String> ret = headers.get(string);
+		if (ret == null || ret.size() == 0) {
+			return null;
+		}
+		return ret;
+	}
 
-    public InputStream getInputStream() throws IOException {
-        connect();
-        connectInputStream();
-        if (getResponseCode() >= 200 && getResponseCode() <= 400 || getResponseCode() == 404) {
-            return inputStream;
-        } else {
-            throw new IOException(getResponseCode() + " " + getResponseMessage());
-        }
-    }
+	public Map<String, List<String>> getHeaderFields() {
+		return headers;
+	}
 
-    public long getLongContentLength() {
-        final String length = getHeaderField("Content-Length");
-        if (length == null) { return -1; }
-        return Long.parseLong(length);
-    }
+	public InputStream getInputStream() throws IOException {
+		connect();
+		connectInputStream();
+		final int code = getResponseCode();
+		if (code >= 200 && code <= 400 || code == 404 || code == 403) {
+			return inputStream;
+		} else {
+			throw new IOException(getResponseCode() + " "
+					+ getResponseMessage());
+		}
+	}
 
-    public OutputStream getOutputStream() throws IOException {
-        connect();
-        if (outputClosed) { throw new IOException("OutputStream no longer available"); }
-        return httpSocket.getOutputStream();
-    }
+	public long getLongContentLength() {
+		final String length = getHeaderField("Content-Length");
+		if (length == null) {
+			return -1;
+		}
+		return Long.parseLong(length);
+	}
 
-    public long[] getRange() {
-        String range;
-        if (ranges != null) { return ranges; }
-        if ((range = getHeaderField("Content-Range")) == null) { return null; }
-        // bytes 174239-735270911/735270912
-        final String[] ranges = new Regex(range, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
-        if (ranges == null) {
-            System.err.print(this + "");
-            return null;
-        }
-        this.ranges = new long[] { Long.parseLong(ranges[0]), Long.parseLong(ranges[1]), Long.parseLong(ranges[2]) };
-        return this.ranges;
-    }
+	public OutputStream getOutputStream() throws IOException {
+		connect();
+		if (outputClosed) {
+			throw new IOException("OutputStream no longer available");
+		}
+		return httpSocket.getOutputStream();
+	}
 
-    public Request getRequest() {
-        return request;
-    }
+	public long[] getRange() {
+		String range;
+		if (ranges != null) {
+			return ranges;
+		}
+		if ((range = getHeaderField("Content-Range")) == null) {
+			return null;
+		}
+		// bytes 174239-735270911/735270912
+		final String[] ranges = new Regex(range,
+				".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
+		if (ranges == null) {
+			System.err.print(this + "");
+			return null;
+		}
+		this.ranges = new long[] { Long.parseLong(ranges[0]),
+				Long.parseLong(ranges[1]), Long.parseLong(ranges[2]) };
+		return this.ranges;
+	}
 
-    public METHOD getRequestMethod() {
-        return httpMethod;
-    }
+	public Request getRequest() {
+		return request;
+	}
 
-    public Map<String, String> getRequestProperties() {
-        return requestProperties;
-    }
+	public METHOD getRequestMethod() {
+		return httpMethod;
+	}
 
-    public String getRequestProperty(final String string) {
-        return requestProperties.get(string);
-    }
+	public Map<String, String> getRequestProperties() {
+		return requestProperties;
+	}
 
-    public long getRequestTime() {
-        return requestTime;
-    }
+	public String getRequestProperty(final String string) {
+		return requestProperties.get(string);
+	}
 
-    public int getResponseCode() {
-        return httpResponseCode;
-    }
+	public long getRequestTime() {
+		return requestTime;
+	}
 
-    public String getResponseMessage() {
-        return httpResponseMessage;
-    }
+	public int getResponseCode() {
+		return httpResponseCode;
+	}
 
-    public URL getURL() {
-        return httpURL;
-    }
+	public String getResponseMessage() {
+		return httpResponseMessage;
+	}
 
-    public boolean isConnected() {
-        if (httpSocket != null && httpSocket.isConnected()) { return true; }
-        return false;
-    }
+	public URL getURL() {
+		return httpURL;
+	}
 
-    public boolean isContentDisposition() {
-        return getHeaderField("Content-Disposition") != null;
-    }
+	public boolean isConnected() {
+		if (httpSocket != null && httpSocket.isConnected()) {
+			return true;
+		}
+		return false;
+	}
 
-    public boolean isOK() {
-        if (getResponseCode() > -2 && getResponseCode() < 400) { return true; }
-        return false;
-    }
+	public boolean isContentDisposition() {
+		return getHeaderField("Content-Disposition") != null;
+	}
 
-    public void postDataSend() throws IOException {
-        if (!isConnected()) { return; }
-        /* disable outputStream now */
-        outputClosed = true;
-        connectInputStream();
-    }
+	public boolean isOK() {
+		if (getResponseCode() > -2 && getResponseCode() < 400) {
+			return true;
+		}
+		return false;
+	}
 
-    public byte[] preReadBytes() {
-        final byte[] ret = preReadBytes;
-        preReadBytes = null;
-        return ret;
-    }
+	public void postDataSend() throws IOException {
+		if (!isConnected()) {
+			return;
+		}
+		/* disable outputStream now */
+		outputClosed = true;
+		connectInputStream();
+	}
 
-    public void setCharset(final String Charset) {
-        customcharset = Charset;
-    }
+	public byte[] preReadBytes() {
+		final byte[] ret = preReadBytes;
+		preReadBytes = null;
+		return ret;
+	}
 
-    public void setConnectTimeout(final int connectTimeout) {
-        this.connectTimeout = connectTimeout;
-    }
+	public void setCharset(final String Charset) {
+		customcharset = Charset;
+	}
 
-    public void setReadTimeout(final int readTimeout) {
-        this.readTimeout = readTimeout;
-    }
+	public void setConnectTimeout(final int connectTimeout) {
+		this.connectTimeout = connectTimeout;
+	}
 
-    public void setRequest(final Request request) {
-        this.request = request;
+	public void setReadTimeout(final int readTimeout) {
+		this.readTimeout = readTimeout;
+	}
 
-    }
+	public void setRequest(final Request request) {
+		this.request = request;
 
-    public void setRequestMethod(final METHOD method) {
-        httpMethod = method;
-    }
+	}
 
-    public void setRequestProperty(final String key, final String value) {
-        requestProperties.put(key, value);
-    }
+	public void setRequestMethod(final METHOD method) {
+		httpMethod = method;
+	}
 
-    @Override
-    public String toString() {
+	public void setRequestProperty(final String key, final String value) {
+		requestProperties.put(key, value);
+	}
 
-        final StringBuilder sb = new StringBuilder();
-        sb.append("-->").append(getURL()).append("\r\n");
+	@Override
+	public String toString() {
 
-        sb.append("----------------Request------------------\r\n");
+		final StringBuilder sb = new StringBuilder();
+		sb.append("-->").append(getURL()).append("\r\n");
 
-        sb.append(httpMethod.toString()).append(' ').append(getURL().getPath()).append((getURL().getQuery() != null ? "?" + getURL().getQuery() : "")).append(" HTTP/1.1\r\n");
+		sb.append("----------------Request------------------\r\n");
 
-        for (final String key : getRequestProperties().keySet()) {
-            final String v = getRequestProperties().get(key);
-            if (v == null) {
-                continue;
-            }
-            sb.append(key);
-            sb.append(new char[] { ':', ' ' });
-            sb.append(v);
-            sb.append(new char[] { '\r', '\n' });
-        }
-        sb.append(new char[] { '\r', '\n' });
+		sb.append(httpMethod.toString())
+				.append(' ')
+				.append(getURL().getPath())
+				.append((getURL().getQuery() != null ? "?"
+						+ getURL().getQuery() : "")).append(" HTTP/1.1\r\n");
 
-        if (getRequest() != null) {
-            if (getRequest() instanceof PostRequest) {
-                if (((PostRequest) getRequest()).getPostDataString() != null) {
-                    sb.append(((PostRequest) getRequest()).getPostDataString());
-                }
+		for (final String key : getRequestProperties().keySet()) {
+			final String v = getRequestProperties().get(key);
+			if (v == null) {
+				continue;
+			}
+			sb.append(key);
+			sb.append(new char[] { ':', ' ' });
+			sb.append(v);
+			sb.append(new char[] { '\r', '\n' });
+		}
+		sb.append(new char[] { '\r', '\n' });
 
-            } else if (getRequest() instanceof PostFormDataRequest) {
-                if (((PostFormDataRequest) getRequest()).getPostDataString() != null) {
-                    sb.append(((PostFormDataRequest) getRequest()).getPostDataString());
-                }
-                sb.append(new char[] { '\r', '\n' });
-            }
+		if (getRequest() != null) {
+			if (getRequest() instanceof PostRequest) {
+				if (((PostRequest) getRequest()).getPostDataString() != null) {
+					sb.append(((PostRequest) getRequest()).getPostDataString());
+				}
 
-        }
+			} else if (getRequest() instanceof PostFormDataRequest) {
+				if (((PostFormDataRequest) getRequest()).getPostDataString() != null) {
+					sb.append(((PostFormDataRequest) getRequest())
+							.getPostDataString());
+				}
+				sb.append(new char[] { '\r', '\n' });
+			}
 
-        sb.append("----------------Response------------------\r\n");
-        sb.append(httpHeader).append("\r\n");
-        for (final Entry<String, List<String>> next : getHeaderFields().entrySet()) {
-            // Achtung cookie reihenfolge ist wichtig!!!
-            for (int i = next.getValue().size() - 1; i >= 0; i--) {
-                if (next.getKey() == null) {
-                    sb.append(next.getValue().get(i));
-                    sb.append(new char[] { '\r', '\n' });
-                } else {
-                    sb.append(next.getKey());
-                    sb.append(new char[] { ':', ' ' });
-                    sb.append(next.getValue().get(i));
-                    sb.append(new char[] { '\r', '\n' });
-                }
-            }
-        }
-        sb.append(new char[] { '\r', '\n' });
+		}
 
-        return sb.toString();
+		sb.append("----------------Response------------------\r\n");
+		sb.append(httpHeader).append("\r\n");
+		for (final Entry<String, List<String>> next : getHeaderFields()
+				.entrySet()) {
+			// Achtung cookie reihenfolge ist wichtig!!!
+			for (int i = next.getValue().size() - 1; i >= 0; i--) {
+				if (next.getKey() == null) {
+					sb.append(next.getValue().get(i));
+					sb.append(new char[] { '\r', '\n' });
+				} else {
+					sb.append(next.getKey());
+					sb.append(new char[] { ':', ' ' });
+					sb.append(next.getValue().get(i));
+					sb.append(new char[] { '\r', '\n' });
+				}
+			}
+		}
+		sb.append(new char[] { '\r', '\n' });
 
-    }
+		return sb.toString();
+
+	}
 }

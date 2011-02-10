@@ -195,8 +195,8 @@ public abstract class Request {
     }
 
     private void collectCookiesFromConnection() {
-        final List<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
-        final String date = httpConnection.getHeaderField("Date");
+        final List<String> cookieHeaders = httpConnection.getHeaderFields("Set-Cookie");        
+        final String date = httpConnection.getHeaderField("Date");        
         if (cookieHeaders == null) { return; }
         if (cookies == null) {
             cookies = new Cookies();
@@ -205,7 +205,7 @@ public abstract class Request {
         final String host = Browser.getHost(httpConnection.getURL());
 
         for (int i = 0; i < cookieHeaders.size(); i++) {
-            final String header = cookieHeaders.get(i);
+            final String header = cookieHeaders.get(i);            
             cookies.add(Cookies.parseCookies(header, host, date));
         }
     }

@@ -25,74 +25,77 @@ import java.util.Map;
 
 public interface URLConnectionAdapter {
 
-    public static enum METHOD {
-        GET, POST, HEAD
-    }
+	public static enum METHOD {
+		GET, POST, HEAD
+	}
 
-    Map<String, List<String>> getHeaderFields();
+	/*WARNING: this returns a Case-Sensitive map*/
+	Map<String, List<String>> getHeaderFields();
 
-    String getHeaderField(String string);
+	String getHeaderField(String string);
 
-    URL getURL();
+	List<String> getHeaderFields(String string);
 
-    int getContentLength();
+	URL getURL();
 
-    long getLongContentLength();
+	int getContentLength();
 
-    void setReadTimeout(int readTimeout);
+	long getLongContentLength();
 
-    void setConnectTimeout(int connectTimeout);
+	void setReadTimeout(int readTimeout);
 
-    void setRequestProperty(String key, String string);
+	void setConnectTimeout(int connectTimeout);
 
-    InputStream getInputStream() throws IOException;
+	void setRequestProperty(String key, String string);
 
-    void setRequestMethod(METHOD method);
+	InputStream getInputStream() throws IOException;
 
-    METHOD getRequestMethod();
+	void setRequestMethod(METHOD method);
 
-    void connect() throws IOException;
+	METHOD getRequestMethod();
 
-    OutputStream getOutputStream() throws IOException;
+	void connect() throws IOException;
 
-    Map<String, String> getRequestProperties();
+	OutputStream getOutputStream() throws IOException;
 
-    boolean isOK();
+	Map<String, String> getRequestProperties();
 
-    long[] getRange();
+	boolean isOK();
 
-    String getResponseMessage();
+	long[] getRange();
 
-    int getResponseCode();
+	String getResponseMessage();
 
-    void disconnect();
+	int getResponseCode();
 
-    String getContentType();
+	void disconnect();
 
-    boolean isConnected();
+	String getContentType();
 
-    String getRequestProperty(String string);
+	boolean isConnected();
 
-    boolean isContentDisposition();
+	String getRequestProperty(String string);
 
-    void setRequest(Request request);
+	boolean isContentDisposition();
 
-    public Request getRequest();
+	void setRequest(Request request);
 
-    public String getCharset();
+	public Request getRequest();
 
-    public void setCharset(String charset);
+	public String getCharset();
 
-    public long getRequestTime();
+	public void setCharset(String charset);
 
-    /**
-     * returns bytearray that belongs to content, WARNING will get null after
-     * first call
-     * 
-     * @return
-     */
-    public byte[] preReadBytes();
+	public long getRequestTime();
 
-    /* needs to get called after postData is send */
-    public void postDataSend() throws IOException;
+	/**
+	 * returns bytearray that belongs to content, WARNING will get null after
+	 * first call
+	 * 
+	 * @return
+	 */
+	public byte[] preReadBytes();
+
+	/* needs to get called after postData is send */
+	public void postDataSend() throws IOException;
 }

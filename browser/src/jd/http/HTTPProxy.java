@@ -124,6 +124,63 @@ public class HTTPProxy {
 
 	@Override
 	public String toString() {
-		return "HTTPProxy: " + type.name() + " " + host;
+		if (type == TYPE.NONE)
+			return "NONE";
+		if (type == TYPE.DIRECT)
+			return "DIRECT";
+		if (type == TYPE.HTTP)
+			return "HTTP:" + host;
+		if (type == TYPE.SOCKS5)
+			return "SOCKS5:" + host;
+		return "UNKNOWN";
+	}
+
+	/**
+	 * this proxy is DIRECT = using a local bound IP
+	 * 
+	 * @return
+	 */
+	public boolean isDirect() {
+		return type == TYPE.DIRECT;
+	}
+
+	/**
+	 * this proxy is REMOTE = using http,socks proxy
+	 * 
+	 * @return
+	 */
+	public boolean isRemote() {
+		return !isDirect() && !isNone();
+	}
+
+	public boolean isLocal() {
+		return isDirect() || isNone();
+	}
+
+	/**
+	 * this proxy is NONE = uses default gateway
+	 * 
+	 * @return
+	 */
+	public boolean isNone() {
+		return type == TYPE.NONE;
+	}
+
+	public boolean sameProxy(HTTPProxy proxy) {
+		if (proxy == null)
+			return false;
+		if (this == proxy)
+			return true;
+		if (!proxy.getType().equals(type))
+			return false;
+		if (!proxy.getHost().equalsIgnoreCase(host))
+			return false;
+		if (!proxy.getPass().equalsIgnoreCase(pass))
+			return false;
+		if (!proxy.getUser().equalsIgnoreCase(user))
+			return false;
+		if (proxy.getPort() != port)
+			return false;
+		return true;
 	}
 }
