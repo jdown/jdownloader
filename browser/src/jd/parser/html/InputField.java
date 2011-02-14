@@ -134,7 +134,6 @@ public class InputField extends HashMap<String, String> {
 
     @Override
     public String toString() {
-
         return "Field: " + key + "(" + type + ")" + " = " + value + " [" + super.toString() + "]";
     }
 

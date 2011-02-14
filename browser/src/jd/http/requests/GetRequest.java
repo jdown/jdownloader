@@ -26,17 +26,24 @@ import jd.http.URLConnectionAdapter.METHOD;
 
 public class GetRequest extends Request {
 
-    public GetRequest(String url) throws MalformedURLException {
-        super(Browser.correctURL(url));
+	public GetRequest(String url) throws MalformedURLException {
+		super(Browser.correctURL(url));
+		/* forward basicauth from url to headers */
+		String basicAuth = Browser.getBasicAuthfromURL(url);
+		if (basicAuth != null) {
+			getHeaders().put("Authorization", "Basic "+basicAuth);
+		}
 
-    }
+	}
 
-    public long postRequest(URLConnectionAdapter httpConnection) throws IOException {
-        return 0;
-    }
+	public long postRequest(URLConnectionAdapter httpConnection)
+			throws IOException {
+		return 0;
+	}
 
-    public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setRequestMethod(METHOD.GET);
-    }
+	public void preRequest(URLConnectionAdapter httpConnection)
+			throws IOException {
+		httpConnection.setRequestMethod(METHOD.GET);
+	}
 
 }
