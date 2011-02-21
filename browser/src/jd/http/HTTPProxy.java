@@ -16,171 +16,177 @@
 
 package jd.http;
 
+import java.net.InetAddress;
+
 import jd.parser.Regex;
 
 import org.appwork.utils.logging.Log;
 
 public class HTTPProxy {
 
-	public static enum STATUS {
-		OK, OFFLINE, INVALIDAUTH
-	}
+    public static enum STATUS {
+        OK, OFFLINE, INVALIDAUTH
+    }
 
-	public static enum TYPE {
-		NONE, DIRECT, SOCKS5, HTTP
-	}
+    public static enum TYPE {
+        NONE, DIRECT, SOCKS5, HTTP
+    }
 
-	public static final HTTPProxy NONE = new HTTPProxy(TYPE.NONE);
+    public static final HTTPProxy NONE = new HTTPProxy(TYPE.NONE);
 
-	private static String[] getInfo(final String host, final String port) {
-		final String[] info = new String[2];
-		if (host == null) {
-			return info;
-		}
-		final String tmphost = host.replaceFirst("http://", "").replaceFirst(
-				"https://", "");
-		String tmpport = new Regex(host, ".*?:(\\d+)").getMatch(0);
-		if (tmpport != null) {
-			info[1] = "" + tmpport;
-		} else {
-			if (port != null) {
-				tmpport = new Regex(port, "(\\d+)").getMatch(0);
-			}
-			if (tmpport != null) {
-				info[1] = "" + tmpport;
-			} else {
-				Log.L.severe("No proxyport defined, using default 8080");
-				info[1] = "8080";
-			}
-		}
-		info[0] = new Regex(tmphost, "(.*?)(:|/|$)").getMatch(0);
-		return info;
-	}
+    private static String[] getInfo(final String host, final String port) {
+        final String[] info = new String[2];
+        if (host == null) { return info; }
+        final String tmphost = host.replaceFirst("http://", "").replaceFirst("https://", "");
+        String tmpport = new Regex(host, ".*?:(\\d+)").getMatch(0);
+        if (tmpport != null) {
+            info[1] = "" + tmpport;
+        } else {
+            if (port != null) {
+                tmpport = new Regex(port, "(\\d+)").getMatch(0);
+            }
+            if (tmpport != null) {
+                info[1] = "" + tmpport;
+            } else {
+                Log.L.severe("No proxyport defined, using default 8080");
+                info[1] = "8080";
+            }
+        }
+        info[0] = new Regex(tmphost, "(.*?)(:|/|$)").getMatch(0);
+        return info;
+    }
 
-	private String user = null;
-	private String pass = null;
-	private int port = 80;
-	private String host = null;
-	private TYPE type = TYPE.DIRECT;
+    private InetAddress localIP = null;
 
-	private STATUS status = STATUS.OK;
+    private String user = null;
 
-	private HTTPProxy(final TYPE type) {
-		this.type = type;
-	}
+    private String pass = null;
 
-	public HTTPProxy(final TYPE type, final String host, final int port) {
-		this.port = port;
-		this.type = type;
-		this.host = HTTPProxy.getInfo(host, "" + port)[0];
-	}
+    private int port = 80;
+    private String host = null;
+    private TYPE type = TYPE.DIRECT;
+    private STATUS status = STATUS.OK;
 
-	public String getHost() {
-		return host;
-	}
+    private HTTPProxy(final TYPE type) {
+        this.type = type;
+    }
 
-	public String getPass() {
-		return pass;
-	}
+    public HTTPProxy(final TYPE type, final String host, final int port) {
+        this.port = port;
+        this.type = type;
+        this.host = HTTPProxy.getInfo(host, "" + port)[0];
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public String getHost() {
+        return this.host;
+    }
 
-	public void setPort(int port) {
-		this.port = port;
-	}
+    /**
+     * @return the localIP
+     */
+    public InetAddress getLocalIP() {
+        return this.localIP;
+    }
 
-	/**
-	 * @return the status
-	 */
-	public STATUS getStatus() {
-		return status;
-	}
+    public String getPass() {
+        return this.pass;
+    }
 
-	public TYPE getType() {
-		return type;
-	}
+    public int getPort() {
+        return this.port;
+    }
 
-	public String getUser() {
-		return user;
-	}
+    /**
+     * @return the status
+     */
+    public STATUS getStatus() {
+        return this.status;
+    }
 
-	public void setPass(final String pass) {
-		this.pass = pass;
-	}
+    public TYPE getType() {
+        return this.type;
+    }
 
-	/**
-	 * @param status
-	 *            the status to set
-	 */
-	public void setStatus(final STATUS status) {
-		this.status = status;
-	}
+    public String getUser() {
+        return this.user;
+    }
 
-	public void setUser(final String user) {
-		this.user = user;
-	}
+    /**
+     * this proxy is DIRECT = using a local bound IP
+     * 
+     * @return
+     */
+    public boolean isDirect() {
+        return this.type == TYPE.DIRECT;
+    }
 
-	@Override
-	public String toString() {
-		if (type == TYPE.NONE)
-			return "NONE";
-		if (type == TYPE.DIRECT)
-			return "DIRECT";
-		if (type == TYPE.HTTP)
-			return "HTTP:" + host;
-		if (type == TYPE.SOCKS5)
-			return "SOCKS5:" + host;
-		return "UNKNOWN";
-	}
+    public boolean isLocal() {
+        return this.isDirect() || this.isNone();
+    }
 
-	/**
-	 * this proxy is DIRECT = using a local bound IP
-	 * 
-	 * @return
-	 */
-	public boolean isDirect() {
-		return type == TYPE.DIRECT;
-	}
+    /**
+     * this proxy is NONE = uses default gateway
+     * 
+     * @return
+     */
+    public boolean isNone() {
+        return this.type == TYPE.NONE;
+    }
 
-	/**
-	 * this proxy is REMOTE = using http,socks proxy
-	 * 
-	 * @return
-	 */
-	public boolean isRemote() {
-		return !isDirect() && !isNone();
-	}
+    /**
+     * this proxy is REMOTE = using http,socks proxy
+     * 
+     * @return
+     */
+    public boolean isRemote() {
+        return !this.isDirect() && !this.isNone();
+    }
 
-	public boolean isLocal() {
-		return isDirect() || isNone();
-	}
+    public boolean sameProxy(final HTTPProxy proxy) {
+        if (proxy == null) { return false; }
+        if (this == proxy) { return true; }
+        if (!proxy.getType().equals(this.type)) { return false; }
+        if (!proxy.getHost().equalsIgnoreCase(this.host)) { return false; }
+        if (!proxy.getPass().equalsIgnoreCase(this.pass)) { return false; }
+        if (!proxy.getUser().equalsIgnoreCase(this.user)) { return false; }
+        if (proxy.getPort() != this.port) { return false; }
+        return true;
+    }
 
-	/**
-	 * this proxy is NONE = uses default gateway
-	 * 
-	 * @return
-	 */
-	public boolean isNone() {
-		return type == TYPE.NONE;
-	}
+    /**
+     * @param localIP
+     *            the localIP to set
+     */
+    public void setLocalIP(final InetAddress localIP) {
+        this.localIP = localIP;
+    }
 
-	public boolean sameProxy(HTTPProxy proxy) {
-		if (proxy == null)
-			return false;
-		if (this == proxy)
-			return true;
-		if (!proxy.getType().equals(type))
-			return false;
-		if (!proxy.getHost().equalsIgnoreCase(host))
-			return false;
-		if (!proxy.getPass().equalsIgnoreCase(pass))
-			return false;
-		if (!proxy.getUser().equalsIgnoreCase(user))
-			return false;
-		if (proxy.getPort() != port)
-			return false;
-		return true;
-	}
+    public void setPass(final String pass) {
+        this.pass = pass;
+    }
+
+    public void setPort(final int port) {
+        this.port = port;
+    }
+
+    /**
+     * @param status
+     *            the status to set
+     */
+    public void setStatus(final STATUS status) {
+        this.status = status;
+    }
+
+    public void setUser(final String user) {
+        this.user = user;
+    }
+
+    @Override
+    public String toString() {
+        if (this.type == TYPE.NONE) { return "NONE"; }
+        if (this.type == TYPE.DIRECT) { return "DIRECT"; }
+        if (this.type == TYPE.HTTP) { return "HTTP:" + this.host; }
+        if (this.type == TYPE.SOCKS5) { return "SOCKS5:" + this.host; }
+        return "UNKNOWN";
+    }
 }
