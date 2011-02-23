@@ -330,7 +330,7 @@ public abstract class Request {
                 proto = "https://";
             }
             String addPort = "";
-            if (defaultport != -1 && defaultport != port) {
+            if (defaultport > 0 && port > 0 && defaultport != port) {
                 addPort = ":" + port;
             }
             red = proto + this.getHttpConnection().getURL().getHost() + addPort + (red.charAt(0) == '/' ? red : path + "/" + red);

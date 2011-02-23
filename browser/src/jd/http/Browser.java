@@ -890,8 +890,11 @@ public class Browser {
         if (base != null) { return base; }
 
         final URL url = this.request.getHttpConnection().getURL();
-        final int port = url.getPort();
         final String host = url.getHost();
+        String portUse = "";
+        if (url.getDefaultPort() > 0 && url.getPort() > 0 && url.getDefaultPort() != url.getPort()) {
+            portUse = ":" + url.getPort();
+        }
         String proto = "http://";
         if (url.toString().startsWith("https")) {
             proto = "https://";
@@ -901,7 +904,7 @@ public class Browser {
         if ((id = path.lastIndexOf('/')) >= 0) {
             path = path.substring(0, id);
         }
-        return port != 80 && port > 0 ? proto + host + ":" + port + path + "/" : proto + host + path + "/";
+        return proto + host + portUse + path + "/";
     }
 
     public String getBaseURL() {
@@ -1103,11 +1106,11 @@ public class Browser {
                     if (base.startsWith("https")) {
                         proto = "https://";
                     }
-                    if (bUrl.getDefaultPort() != -1 && bUrl.getPort() != bUrl.getDefaultPort()) {
-                        string = proto + new URL(base).getHost() + ":" + bUrl.getPort() + string;
-                    } else {
-                        string = proto + new URL(base).getHost() + string;
+                    String portUse = "";
+                    if (bUrl.getDefaultPort() > 0 && bUrl.getPort() > 0 && bUrl.getDefaultPort() != bUrl.getPort()) {
+                        portUse = ":" + bUrl.getPort();
                     }
+                    string = proto + new URL(base).getHost() + portUse + string;
                 } catch (final MalformedURLException e1) {
                     e1.printStackTrace();
                 }
@@ -1196,7 +1199,7 @@ public class Browser {
             }
         }
     }
-    
+
     /**
      * Opens a new connection based on a Form
      * 
