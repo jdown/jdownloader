@@ -253,6 +253,12 @@ public class Browser {
         return Browser.LOGGER;
     }
 
+    /* do not remove, needed for backward comp. to 09581 stable */
+    @Deprecated
+    public static JDProxy getGlobalProxy() {
+        return null;
+    }
+
     public static int getGlobalReadTimeout() {
         return Browser.TIMEOUT_READ;
     }
@@ -388,17 +394,16 @@ public class Browser {
     }
 
     private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
-
     /*
      * -1 means use default Timeouts
      * 
      * 0 means infinite (DO NOT USE if not needed)
      */
     private int connectTimeout = -1;
+
     private HashMap<String, Cookies> cookies = new HashMap<String, Cookies>();
 
     private boolean cookiesExclusive = true;
-
     private URL currentURL = null;
     private String customCharset = null;
     private boolean debug = false;
@@ -409,6 +414,7 @@ public class Browser {
     private HTTPProxy proxy;
     private int readTimeout = -1;
     private int redirectLoopCounter = 0;
+
     private Request request;
 
     private HashMap<String, Integer> requestIntervalLimitMap;
