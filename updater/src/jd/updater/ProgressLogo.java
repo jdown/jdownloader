@@ -14,14 +14,16 @@ import org.appwork.utils.swing.EDTRunner;
 
 public class ProgressLogo extends JPanel {
 
-    private final ImageIcon icon;
+    private static final long serialVersionUID = 1333624797853682548L;
 
-    private final int       ICONSIZE = 48;
-    private float           progress = 0.0f;
+    private final ImageIcon   icon;
 
-    private final Dimension prefsize;
+    private final int         ICONSIZE = 48;
+    private float             progress = 0.0f;
 
-    private final ImageIcon iconBorder;
+    private final Dimension   prefsize;
+
+    private final ImageIcon   iconBorder;
 
     public ProgressLogo() {
         icon = ImageProvider.getImageIcon("logo", ICONSIZE, ICONSIZE);
