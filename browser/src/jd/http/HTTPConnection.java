@@ -75,7 +75,19 @@ public class HTTPConnection implements URLConnectionAdapter {
         this.httpURL = url;
         this.proxy = p;
         this.requestProperties = new LinkedHashMap<String, String>();
+        this.addHostHeader();
         this.headers = new LowerCaseHashMap<List<String>>();
+    }
+
+    /* this will add Host header at the beginning */
+    protected void addHostHeader() {
+        final int defaultPort = this.httpURL.getDefaultPort();
+        final int usedPort = this.httpURL.getPort();
+        String port = "";
+        if (usedPort != -1 && defaultPort != -1 && usedPort != defaultPort) {
+            port = ":" + usedPort;
+        }
+        this.requestProperties.put("Host", this.httpURL.getHost() + port);
     }
 
     public void connect() throws IOException {

@@ -442,14 +442,6 @@ public abstract class Request {
 
     private void openConnection() throws IOException {
 
-        if (!this.headers.contains("Host")) {
-            if (this.orgURL.getPort() != 80 && this.orgURL.getPort() > 0) {
-                this.headers.setAt(0, "Host", this.orgURL.getHost() + ":" + this.orgURL.getPort());
-            } else {
-                this.headers.setAt(0, "Host", this.orgURL.getHost());
-            }
-        }
-
         this.httpConnection = HTTPConnectionFactory.createHTTPConnection(this.orgURL, this.proxy);
         this.httpConnection.setRequest(this);
         this.httpConnection.setReadTimeout(this.readTimeout);
