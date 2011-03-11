@@ -36,7 +36,7 @@ import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
 
-import jd.http.URLConnectionAdapter.METHOD;
+import jd.http.URLConnectionAdapter.RequestMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
@@ -527,7 +527,7 @@ public abstract class Request {
             // @Override
             @Override
             public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
-                httpConnection.setRequestMethod(METHOD.HEAD);
+                httpConnection.setRequestMethod(RequestMethod.HEAD);
             }
         };
         ret.connectTimeout = this.connectTimeout;

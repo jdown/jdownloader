@@ -123,7 +123,7 @@ public class Socks5HTTPConnection extends HTTPConnection {
         sb.append("\r\n");
         httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
         httpSocket.getOutputStream().flush();
-        if (httpMethod != METHOD.POST) {
+        if (httpMethod != RequestMethod.POST) {
             outputClosed = true;
             connectInputStream();
         }

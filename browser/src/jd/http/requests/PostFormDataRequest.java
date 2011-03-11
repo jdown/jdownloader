@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLConnectionAdapter.METHOD;
+import jd.http.URLConnectionAdapter.RequestMethod;
 
 import org.appwork.utils.net.CountingOutputStream;
 import org.appwork.utils.net.NullOutputStream;
@@ -127,7 +127,7 @@ public class PostFormDataRequest extends Request {
     }
 
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setRequestMethod(METHOD.POST);
+        httpConnection.setRequestMethod(RequestMethod.POST);
         httpConnection.setRequestProperty("Content-Type", encodeType + "; boundary=" + boundary.substring(2));
         httpConnection.setRequestProperty("Content-Length", this.postRequest(null) + "");
     }

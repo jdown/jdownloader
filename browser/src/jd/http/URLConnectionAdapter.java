@@ -25,77 +25,77 @@ import java.util.Map;
 
 public interface URLConnectionAdapter {
 
-	public static enum METHOD {
-		GET, POST, HEAD
-	}
+    public static enum RequestMethod {
+        GET, POST, HEAD
+    }
 
-	/*WARNING: this returns a Case-Sensitive map*/
-	Map<String, List<String>> getHeaderFields();
+    void connect() throws IOException;
 
-	String getHeaderField(String string);
+    void disconnect();
 
-	List<String> getHeaderFields(String string);
+    public String getCharset();
 
-	URL getURL();
+    int getContentLength();
 
-	int getContentLength();
+    String getContentType();
 
-	long getLongContentLength();
+    String getHeaderField(String string);
 
-	void setReadTimeout(int readTimeout);
+    /* WARNING: this returns a Case-Sensitive map */
+    Map<String, List<String>> getHeaderFields();
 
-	void setConnectTimeout(int connectTimeout);
+    List<String> getHeaderFields(String string);
 
-	void setRequestProperty(String key, String string);
+    InputStream getInputStream() throws IOException;
 
-	InputStream getInputStream() throws IOException;
+    long getLongContentLength();
 
-	void setRequestMethod(METHOD method);
+    OutputStream getOutputStream() throws IOException;
 
-	METHOD getRequestMethod();
+    long[] getRange();
 
-	void connect() throws IOException;
+    public Request getRequest();
 
-	OutputStream getOutputStream() throws IOException;
+    RequestMethod getRequestMethod();
 
-	Map<String, String> getRequestProperties();
+    Map<String, String> getRequestProperties();
 
-	boolean isOK();
+    String getRequestProperty(String string);
 
-	long[] getRange();
+    public long getRequestTime();
 
-	String getResponseMessage();
+    int getResponseCode();
 
-	int getResponseCode();
+    String getResponseMessage();
 
-	void disconnect();
+    URL getURL();
 
-	String getContentType();
+    boolean isConnected();
 
-	boolean isConnected();
+    boolean isContentDisposition();
 
-	String getRequestProperty(String string);
+    boolean isOK();
 
-	boolean isContentDisposition();
+    /* needs to get called after postData is send */
+    public void postDataSend() throws IOException;
 
-	void setRequest(Request request);
+    /**
+     * returns bytearray that belongs to content, WARNING will get null after
+     * first call
+     * 
+     * @return
+     */
+    public byte[] preReadBytes();
 
-	public Request getRequest();
+    public void setCharset(String charset);
 
-	public String getCharset();
+    void setConnectTimeout(int connectTimeout);
 
-	public void setCharset(String charset);
+    void setReadTimeout(int readTimeout);
 
-	public long getRequestTime();
+    void setRequest(Request request);
 
-	/**
-	 * returns bytearray that belongs to content, WARNING will get null after
-	 * first call
-	 * 
-	 * @return
-	 */
-	public byte[] preReadBytes();
+    void setRequestMethod(RequestMethod method);
 
-	/* needs to get called after postData is send */
-	public void postDataSend() throws IOException;
+    void setRequestProperty(String key, String string);
 }

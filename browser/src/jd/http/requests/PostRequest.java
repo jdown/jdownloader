@@ -30,7 +30,7 @@ import org.appwork.utils.net.NullOutputStream;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLConnectionAdapter.METHOD;
+import jd.http.URLConnectionAdapter.RequestMethod;
 import jd.parser.html.Form;
 
 public class PostRequest extends Request {
@@ -117,7 +117,7 @@ public class PostRequest extends Request {
 
 	public void preRequest(final URLConnectionAdapter httpConnection)
 			throws IOException {
-		httpConnection.setRequestMethod(METHOD.POST);
+		httpConnection.setRequestMethod(RequestMethod.POST);
 		if (contentType != null)
 			httpConnection.setRequestProperty("Content-Type", contentType);
 		String parameter = postDataString != null ? postDataString
