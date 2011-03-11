@@ -33,10 +33,9 @@ public class BasicHTTP {
 
     public static void main(final String[] args) throws MalformedURLException, IOException, InterruptedException {
 
-        // final BasicHTTP client = new BasicHTTP();
-        // client.setProxy(prox);
-        // System.out.println(client.getPage(new
-        // URL("http://ipcheck0.jdowfnloader.org")));
+        final BasicHTTP client = new BasicHTTP();
+
+        System.out.println(client.getPage(new URL("http://ipcheck0.jdownloader.org")));
 
         // System.out.println(new BasicHTTP().postPage(new
         // URL("http://ipcheck0.jdownloader.org"), "BKA"));
@@ -53,12 +52,12 @@ public class BasicHTTP {
     private HTTPProxy proxy;
 
     public BasicHTTP() {
-        requestHeader = new HashMap<String, String>();
+        this.requestHeader = new HashMap<String, String>();
 
     }
 
     public void clearRequestHeader() {
-        requestHeader.clear();
+        this.requestHeader.clear();
     }
 
     /**
@@ -81,7 +80,7 @@ public class BasicHTTP {
                 }
 
                 if (file.length() > 0) {
-                    final IOException ex = new BasicHTTPException(connection, e);
+                    final IOException ex = new BasicHTTPException(this.connection, e);
                     file.delete();
                     throw ex;
                 }
@@ -100,7 +99,7 @@ public class BasicHTTP {
         try {
             this.download(url, progress, maxSize, baos);
         } catch (final IOException e) {
-            if (baos.size() > 0) { throw new BasicHTTPException(connection, e); }
+            if (baos.size() > 0) { throw new BasicHTTPException(this.connection, e); }
         }
         try {
             baos.close();
@@ -125,26 +124,26 @@ public class BasicHTTP {
         GZIPInputStream gzi = null;
         try {
 
-            connection = HTTPConnectionFactory.createHTTPConnection(url, proxy);
-            connection.setConnectTimeout(connectTimeout);
-            connection.setReadTimeout(readTimeout);
-            connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
-            connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
-            connection.setRequestProperty("Connection", "Close");
-            for (final Entry<String, String> next : requestHeader.entrySet()) {
-                connection.setRequestProperty(next.getKey(), next.getValue());
+            this.connection = HTTPConnectionFactory.createHTTPConnection(url, this.proxy);
+            this.connection.setConnectTimeout(this.connectTimeout);
+            this.connection.setReadTimeout(this.readTimeout);
+            this.connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
+            this.connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
+            this.connection.setRequestProperty("Connection", "Close");
+            for (final Entry<String, String> next : this.requestHeader.entrySet()) {
+                this.connection.setRequestProperty(next.getKey(), next.getValue());
             }
-            connection.connect();
+            this.connection.connect();
 
-            if (connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                input = new BufferedInputStream(gzi = new GZIPInputStream(connection.getInputStream()));
+            if (this.connection.getHeaderField("Content-Encoding") != null && this.connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+                input = new BufferedInputStream(gzi = new GZIPInputStream(this.connection.getInputStream()));
             } else {
-                input = new BufferedInputStream(connection.getInputStream());
+                input = new BufferedInputStream(this.connection.getInputStream());
             }
 
-            if (maxSize > 0 && connection.getContentLength() > maxSize) { throw new IOException("Max size exeeded!"); }
+            if (maxSize > 0 && this.connection.getContentLength() > maxSize) { throw new IOException("Max size exeeded!"); }
             if (progress != null) {
-                progress.setTotal(connection.getContentLength());
+                progress.setTotal(this.connection.getContentLength());
             }
             final byte[] b = new byte[32767];
             int len;
@@ -171,7 +170,7 @@ public class BasicHTTP {
             } catch (final Exception e) {
             }
             try {
-                connection.disconnect();
+                this.connection.disconnect();
             } catch (final Throwable e) {
             }
 
@@ -179,11 +178,11 @@ public class BasicHTTP {
     }
 
     public URLConnectionAdapter getConnection() {
-        return connection;
+        return this.connection;
     }
 
     public int getConnectTimeout() {
-        return connectTimeout;
+        return this.connectTimeout;
     }
 
     public String getPage(final URL url) throws IOException, InterruptedException {
@@ -192,21 +191,21 @@ public class BasicHTTP {
             InputStreamReader isr = null;
             try {
 
-                connection = HTTPConnectionFactory.createHTTPConnection(url, proxy);
-                connection.setConnectTimeout(connectTimeout);
-                connection.setReadTimeout(readTimeout);
-                connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
+                this.connection = HTTPConnectionFactory.createHTTPConnection(url, this.proxy);
+                this.connection.setConnectTimeout(this.connectTimeout);
+                this.connection.setReadTimeout(this.readTimeout);
+                this.connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
 
-                connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
-                connection.setRequestProperty("Connection", "Close");
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                for (final Entry<String, String> next : requestHeader.entrySet()) {
-                    connection.setRequestProperty(next.getKey(), next.getValue());
+                this.connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
+                this.connection.setRequestProperty("Connection", "Close");
+                this.connection.setRequestProperty("Accept-Charset", "UTF-8");
+                for (final Entry<String, String> next : this.requestHeader.entrySet()) {
+                    this.connection.setRequestProperty(next.getKey(), next.getValue());
                 }
                 int lookupTry = 0;
                 while (true) {
                     try {
-                        connection.connect();
+                        this.connection.connect();
                         break;
                     } catch (final UnknownHostException e) {
                         if (++lookupTry > 3) { throw e; }
@@ -215,7 +214,7 @@ public class BasicHTTP {
                     }
                 }
 
-                in = new BufferedReader(isr = new InputStreamReader(connection.getInputStream(), "UTF-8"));
+                in = new BufferedReader(isr = new InputStreamReader(this.connection.getInputStream(), "UTF-8"));
 
                 String str;
                 final StringBuilder sb = new StringBuilder();
@@ -239,7 +238,7 @@ public class BasicHTTP {
                 } catch (final Throwable e) {
                 }
                 try {
-                    connection.disconnect();
+                    this.connection.disconnect();
                 } catch (final Throwable e) {
                 }
 
@@ -248,54 +247,54 @@ public class BasicHTTP {
     }
 
     public HTTPProxy getProxy() {
-        return proxy;
+        return this.proxy;
     }
 
     public int getReadTimeout() {
-        return readTimeout;
+        return this.readTimeout;
     }
 
     /**
      * @return
      */
     public HashMap<String, String> getRequestHeader() {
-        return requestHeader;
+        return this.requestHeader;
     }
 
     public String getRequestHeader(final String key) {
-        return requestHeader.get(key);
+        return this.requestHeader.get(key);
     }
 
     public String getResponseHeader(final String string) {
         synchronized (BasicHTTP.CALL_LOCK) {
-            if (connection == null) { return null; }
-            return connection.getHeaderField(string);
+            if (this.connection == null) { return null; }
+            return this.connection.getHeaderField(string);
 
         }
     }
 
     public URLConnectionAdapter openGetConnection(final URL url) throws IOException, InterruptedException {
-        return this.openGetConnection(url, readTimeout);
+        return this.openGetConnection(url, this.readTimeout);
     }
 
     public URLConnectionAdapter openGetConnection(final URL url, final int readTimeout) throws IOException, InterruptedException {
         synchronized (BasicHTTP.CALL_LOCK) {
             try {
 
-                connection = HTTPConnectionFactory.createHTTPConnection(url, proxy);
-                connection.setConnectTimeout(connectTimeout);
-                connection.setReadTimeout(readTimeout < 0 ? this.readTimeout : readTimeout);
-                connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
-                connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
-                connection.setRequestProperty("Connection", "Close");
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                for (final Entry<String, String> next : requestHeader.entrySet()) {
-                    connection.setRequestProperty(next.getKey(), next.getValue());
+                this.connection = HTTPConnectionFactory.createHTTPConnection(url, this.proxy);
+                this.connection.setConnectTimeout(this.connectTimeout);
+                this.connection.setReadTimeout(readTimeout < 0 ? this.readTimeout : readTimeout);
+                this.connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
+                this.connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
+                this.connection.setRequestProperty("Connection", "Close");
+                this.connection.setRequestProperty("Accept-Charset", "UTF-8");
+                for (final Entry<String, String> next : this.requestHeader.entrySet()) {
+                    this.connection.setRequestProperty(next.getKey(), next.getValue());
                 }
                 int lookupTry = 0;
                 while (true) {
                     try {
-                        connection.connect();
+                        this.connection.connect();
                         break;
                     } catch (final UnknownHostException e) {
                         if (++lookupTry > 3) { throw e; }
@@ -303,10 +302,10 @@ public class BasicHTTP {
                         Thread.sleep(200);
                     }
                 }
-                return connection;
+                return this.connection;
             } finally {
                 try {
-                    connection.disconnect();
+                    this.connection.disconnect();
                 } catch (final Throwable e2) {
                 }
 
@@ -320,30 +319,30 @@ public class BasicHTTP {
             OutputStream outputStream = null;
             try {
 
-                connection = HTTPConnectionFactory.createHTTPConnection(url, proxy);
-                connection.setConnectTimeout(connectTimeout);
-                connection.setReadTimeout(readTimeout);
-                connection.setRequestMethod(RequestMethod.POST);
+                this.connection = HTTPConnectionFactory.createHTTPConnection(url, this.proxy);
+                this.connection.setConnectTimeout(this.connectTimeout);
+                this.connection.setReadTimeout(this.readTimeout);
+                this.connection.setRequestMethod(RequestMethod.POST);
 
-                connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
-                connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
-                connection.setRequestProperty(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, postData.getBytes().length + "");
+                this.connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
+                this.connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
+                this.connection.setRequestProperty(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, postData.getBytes().length + "");
 
-                connection.setRequestProperty("Connection", "Close");
+                this.connection.setRequestProperty("Connection", "Close");
                 /* connection specific headers */
                 if (header != null) {
                     for (final Entry<String, String> next : header.entrySet()) {
-                        connection.setRequestProperty(next.getKey(), next.getValue());
+                        this.connection.setRequestProperty(next.getKey(), next.getValue());
                     }
                 }
-                for (final Entry<String, String> next : requestHeader.entrySet()) {
-                    connection.setRequestProperty(next.getKey(), next.getValue());
+                for (final Entry<String, String> next : this.requestHeader.entrySet()) {
+                    this.connection.setRequestProperty(next.getKey(), next.getValue());
                 }
 
                 int lookupTry = 0;
                 while (true) {
                     try {
-                        connection.connect();
+                        this.connection.connect();
                         break;
                     } catch (final UnknownHostException e) {
                         if (++lookupTry > 3) { throw e; }
@@ -351,16 +350,16 @@ public class BasicHTTP {
                         Thread.sleep(200);
                     }
                 }
-                outputStream = connection.getOutputStream();
+                outputStream = this.connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream);
                 writer.write(postData);
                 writer.flush();
 
-                return connection;
+                return this.connection;
 
             } finally {
                 try {
-                    connection.disconnect();
+                    this.connection.disconnect();
                 } catch (final Throwable e2) {
                 }
                 try {
@@ -382,24 +381,24 @@ public class BasicHTTP {
             OutputStream outputStream = null;
             InputStreamReader isr = null;
             try {
-                connection = HTTPConnectionFactory.createHTTPConnection(url, proxy);
-                connection.setConnectTimeout(connectTimeout);
-                connection.setReadTimeout(readTimeout);
-                connection.setRequestMethod(RequestMethod.POST);
-                connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
-                connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
-                connection.setRequestProperty(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, data.getBytes().length + "");
+                this.connection = HTTPConnectionFactory.createHTTPConnection(url, this.proxy);
+                this.connection.setConnectTimeout(this.connectTimeout);
+                this.connection.setReadTimeout(this.readTimeout);
+                this.connection.setRequestMethod(RequestMethod.POST);
+                this.connection.setRequestProperty("Accept-Language", TranslationFactory.getDesiredLanguage());
+                this.connection.setRequestProperty("User-Agent", "AppWork " + Application.getApplication());
+                this.connection.setRequestProperty(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, data.getBytes().length + "");
 
-                connection.setRequestProperty("Connection", "Close");
+                this.connection.setRequestProperty("Connection", "Close");
 
-                for (final Entry<String, String> next : requestHeader.entrySet()) {
-                    connection.setRequestProperty(next.getKey(), next.getValue());
+                for (final Entry<String, String> next : this.requestHeader.entrySet()) {
+                    this.connection.setRequestProperty(next.getKey(), next.getValue());
                 }
 
                 int lookupTry = 0;
                 while (true) {
                     try {
-                        connection.connect();
+                        this.connection.connect();
                         break;
                     } catch (final UnknownHostException e) {
                         if (++lookupTry > 3) { throw e; }
@@ -407,11 +406,11 @@ public class BasicHTTP {
                         Thread.sleep(200);
                     }
                 }
-                outputStream = connection.getOutputStream();
+                outputStream = this.connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream);
                 writer.write(data);
                 writer.flush();
-                reader = new BufferedReader(isr = new InputStreamReader(connection.getInputStream(), "UTF-8"));
+                reader = new BufferedReader(isr = new InputStreamReader(this.connection.getInputStream(), "UTF-8"));
                 final StringBuilder sb = new StringBuilder();
                 String str;
                 while ((str = reader.readLine()) != null) {
@@ -442,7 +441,7 @@ public class BasicHTTP {
                 } catch (final Throwable e) {
                 }
                 try {
-                    connection.disconnect();
+                    this.connection.disconnect();
                 } catch (final Throwable e) {
                 }
 
@@ -451,7 +450,7 @@ public class BasicHTTP {
     }
 
     public void putRequestHeader(final String key, final String value) {
-        requestHeader.put(key, value);
+        this.requestHeader.put(key, value);
     }
 
     public void setConnectTimeout(final int connectTimeout) {

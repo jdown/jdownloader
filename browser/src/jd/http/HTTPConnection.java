@@ -72,114 +72,114 @@ public class HTTPConnection implements URLConnectionAdapter {
     }
 
     public HTTPConnection(final URL url, final HTTPProxy p) {
-        httpURL = url;
-        proxy = p;
-        requestProperties = new LinkedHashMap<String, String>();
-        addHostHeader();
-        headers = new LowerCaseHashMap<List<String>>();
+        this.httpURL = url;
+        this.proxy = p;
+        this.requestProperties = new LinkedHashMap<String, String>();
+        this.addHostHeader();
+        this.headers = new LowerCaseHashMap<List<String>>();
     }
 
     /* this will add Host header at the beginning */
     protected void addHostHeader() {
-        final int defaultPort = httpURL.getDefaultPort();
-        final int usedPort = httpURL.getPort();
+        final int defaultPort = this.httpURL.getDefaultPort();
+        final int usedPort = this.httpURL.getPort();
         String port = "";
         if (usedPort != -1 && defaultPort != -1 && usedPort != defaultPort) {
             port = ":" + usedPort;
         }
-        requestProperties.put("Host", httpURL.getHost() + port);
+        this.requestProperties.put("Host", this.httpURL.getHost() + port);
     }
 
     public void connect() throws IOException {
-        if (isConnected()) { return;/* oder fehler */
+        if (this.isConnected()) { return;/* oder fehler */
         }
-        if (httpURL.getProtocol().startsWith("https")) {
-            final SocketFactory socketFactory = SSLSocketFactory.getDefault();
-            httpSocket = socketFactory.createSocket();
-        } else {
-            httpSocket = createSocket();
-        }
-        httpSocket.setSoTimeout(readTimeout);
-        httpResponseCode = -1;
         /* host auflösen nur wenn kein proxy, ansonsten über proxy */
         InetAddress host = null;
         try {
-            host = InetAddress.getByName(httpURL.getHost());
+            host = InetAddress.getByName(this.httpURL.getHost());
         } catch (final UnknownHostException e) {
-            System.out.println("Unknown Host:" + httpURL);
+            System.out.println("Unknown Host:" + this.httpURL);
             throw e;
         }
-        int port = httpURL.getPort();
+        if (this.httpURL.getProtocol().startsWith("https")) {
+            final SocketFactory socketFactory = SSLSocketFactory.getDefault();
+            this.httpSocket = socketFactory.createSocket();
+        } else {
+            this.httpSocket = this.createSocket();
+        }
+        this.httpSocket.setSoTimeout(this.readTimeout);
+        this.httpResponseCode = -1;
+        int port = this.httpURL.getPort();
         if (port == -1) {
-            port = httpURL.getDefaultPort();
+            port = this.httpURL.getDefaultPort();
         }
         final long startTime = System.currentTimeMillis();
-        if (proxy != null && !proxy.getType().equals(HTTPProxy.TYPE.DIRECT)) {
+        if (this.proxy != null && !this.proxy.getType().equals(HTTPProxy.TYPE.DIRECT)) {
             throw new RuntimeException("Invalid Direct Proxy");
         } else {
-            if (proxy != null) {
+            if (this.proxy != null) {
                 /* bind socket to given interface */
                 try {
-                    if (proxy.getLocalIP() == null) { throw new IOException("Invalid localIP"); }
-                    httpSocket.bind(new InetSocketAddress(proxy.getLocalIP(), 0));
+                    if (this.proxy.getLocalIP() == null) { throw new IOException("Invalid localIP"); }
+                    this.httpSocket.bind(new InetSocketAddress(this.proxy.getLocalIP(), 0));
                 } catch (final IOException e) {
-                    proxy.setStatus(HTTPProxy.STATUS.OFFLINE);
+                    this.proxy.setStatus(HTTPProxy.STATUS.OFFLINE);
                     throw new ProxyConnectException(e.getMessage());
                 }
             }
-            httpSocket.connect(new InetSocketAddress(host, port), connectTimeout);
+            this.httpSocket.connect(new InetSocketAddress(host, port), this.connectTimeout);
         }
-        requestTime = System.currentTimeMillis() - startTime;
-        httpPath = new Regex(httpURL.toString(), "https?://.*?(/.+)").getMatch(0);
-        if (httpPath == null) {
-            httpPath = "/";
+        this.requestTime = System.currentTimeMillis() - startTime;
+        this.httpPath = new Regex(this.httpURL.toString(), "https?://.*?(/.+)").getMatch(0);
+        if (this.httpPath == null) {
+            this.httpPath = "/";
         }
         /* now send Request */
         final StringBuilder sb = new StringBuilder();
-        sb.append(httpMethod.name()).append(' ').append(httpPath).append(" HTTP/1.1\r\n");
-        for (final String key : requestProperties.keySet()) {
-            if (requestProperties.get(key) == null) {
+        sb.append(this.httpMethod.name()).append(' ').append(this.httpPath).append(" HTTP/1.1\r\n");
+        for (final String key : this.requestProperties.keySet()) {
+            if (this.requestProperties.get(key) == null) {
                 continue;
             }
-            sb.append(key).append(": ").append(requestProperties.get(key)).append("\r\n");
+            sb.append(key).append(": ").append(this.requestProperties.get(key)).append("\r\n");
         }
         sb.append("\r\n");
-        httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
-        httpSocket.getOutputStream().flush();
-        if (httpMethod != RequestMethod.POST) {
-            outputClosed = true;
-            connectInputStream();
+        this.httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
+        this.httpSocket.getOutputStream().flush();
+        if (this.httpMethod != RequestMethod.POST) {
+            this.outputClosed = true;
+            this.connectInputStream();
         }
     }
 
     protected synchronized void connectInputStream() throws IOException {
-        if (inputStreamConnected) { return; }
-        inputStreamConnected = true;
+        if (this.inputStreamConnected) { return; }
+        this.inputStreamConnected = true;
         /* first read http header */
-        ByteBuffer header = HTTPConnectionUtils.readheader(httpSocket.getInputStream(), true);
+        ByteBuffer header = HTTPConnectionUtils.readheader(this.httpSocket.getInputStream(), true);
         byte[] bytes = new byte[header.limit()];
         header.get(bytes);
-        httpHeader = new String(bytes, "ISO-8859-1").trim();
+        this.httpHeader = new String(bytes, "ISO-8859-1").trim();
         /* parse response code/message */
-        if (httpHeader.startsWith("HTTP")) {
-            final String code = new Regex(httpHeader, "HTTP.*? (\\d+)").getMatch(0);
+        if (this.httpHeader.startsWith("HTTP")) {
+            final String code = new Regex(this.httpHeader, "HTTP.*? (\\d+)").getMatch(0);
             if (code != null) {
-                httpResponseCode = Integer.parseInt(code);
+                this.httpResponseCode = Integer.parseInt(code);
             }
-            httpResponseMessage = new Regex(httpHeader, "HTTP.*? \\d+ (.+)").getMatch(0);
-            if (httpResponseMessage == null) {
-                httpResponseMessage = "";
+            this.httpResponseMessage = new Regex(this.httpHeader, "HTTP.*? \\d+ (.+)").getMatch(0);
+            if (this.httpResponseMessage == null) {
+                this.httpResponseMessage = "";
             }
         } else {
-            preReadBytes = bytes;
-            httpHeader = "unknown HTTP response";
-            httpResponseCode = 200;
-            httpResponseMessage = "unknown HTTP response";
-            inputStream = httpSocket.getInputStream();
+            this.preReadBytes = bytes;
+            this.httpHeader = "unknown HTTP response";
+            this.httpResponseCode = 200;
+            this.httpResponseMessage = "unknown HTTP response";
+            this.inputStream = this.httpSocket.getInputStream();
             return;
         }
         /* read rest of http headers */
-        header = HTTPConnectionUtils.readheader(httpSocket.getInputStream(), false);
+        header = HTTPConnectionUtils.readheader(this.httpSocket.getInputStream(), false);
         bytes = new byte[header.limit()];
         header.get(bytes);
         String temp = new String(bytes, "UTF-8");
@@ -201,20 +201,20 @@ public class HTTPConnection implements URLConnectionAdapter {
                 key = null;
                 value = line;
             }
-            List<String> list = headers.get(key);
+            List<String> list = this.headers.get(key);
             if (list == null) {
                 list = new ArrayList<String>();
-                headers.put(key, list);
+                this.headers.put(key, list);
             }
             list.add(value);
         }
         headerStrings = null;
-        final List<String> chunked = headers.get("Transfer-Encoding");
+        final List<String> chunked = this.headers.get("Transfer-Encoding");
         if (chunked != null && chunked.size() > 0 && "chunked".equalsIgnoreCase(chunked.get(0))) {
             /* TODO: write own chunkedinputstream */
-            inputStream = new ChunkedInputStream(httpSocket.getInputStream(), new MyHttpClient(), new MessageHeader());
+            this.inputStream = new ChunkedInputStream(this.httpSocket.getInputStream(), new MyHttpClient(), new MessageHeader());
         } else {
-            inputStream = httpSocket.getInputStream();
+            this.inputStream = this.httpSocket.getInputStream();
         }
     }
 
@@ -223,9 +223,9 @@ public class HTTPConnection implements URLConnectionAdapter {
     }
 
     public void disconnect() {
-        if (isConnected()) {
+        if (this.isConnected()) {
             try {
-                httpSocket.close();
+                this.httpSocket.close();
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
@@ -234,63 +234,63 @@ public class HTTPConnection implements URLConnectionAdapter {
 
     public String getCharset() {
         int i;
-        if (customcharset != null) { return customcharset; }
-        return getContentType() != null && (i = getContentType().toLowerCase().indexOf("charset=")) > 0 ? getContentType().substring(i + 8).trim() : null;
+        if (this.customcharset != null) { return this.customcharset; }
+        return this.getContentType() != null && (i = this.getContentType().toLowerCase().indexOf("charset=")) > 0 ? this.getContentType().substring(i + 8).trim() : null;
     }
 
     public int getContentLength() {
-        return (int) getLongContentLength();
+        return (int) this.getLongContentLength();
     }
 
     public String getContentType() {
-        final String type = getHeaderField("Content-Type");
+        final String type = this.getHeaderField("Content-Type");
         if (type == null) { return "unknown"; }
         return type;
     }
 
     public String getHeaderField(final String string) {
-        final List<String> ret = headers.get(string);
+        final List<String> ret = this.headers.get(string);
         if (ret == null || ret.size() == 0) { return null; }
         return ret.get(0);
     }
 
     public Map<String, List<String>> getHeaderFields() {
-        return headers;
+        return this.headers;
     }
 
     public List<String> getHeaderFields(final String string) {
-        final List<String> ret = headers.get(string);
+        final List<String> ret = this.headers.get(string);
         if (ret == null || ret.size() == 0) { return null; }
         return ret;
     }
 
     public InputStream getInputStream() throws IOException {
-        connect();
-        connectInputStream();
-        final int code = getResponseCode();
+        this.connect();
+        this.connectInputStream();
+        final int code = this.getResponseCode();
         if (code >= 200 && code <= 400 || code == 404 || code == 403) {
-            return inputStream;
+            return this.inputStream;
         } else {
-            throw new IOException(getResponseCode() + " " + getResponseMessage());
+            throw new IOException(this.getResponseCode() + " " + this.getResponseMessage());
         }
     }
 
     public long getLongContentLength() {
-        final String length = getHeaderField("Content-Length");
+        final String length = this.getHeaderField("Content-Length");
         if (length == null) { return -1; }
         return Long.parseLong(length);
     }
 
     public OutputStream getOutputStream() throws IOException {
-        connect();
-        if (outputClosed) { throw new IOException("OutputStream no longer available"); }
-        return httpSocket.getOutputStream();
+        this.connect();
+        if (this.outputClosed) { throw new IOException("OutputStream no longer available"); }
+        return this.httpSocket.getOutputStream();
     }
 
     public long[] getRange() {
         String range;
-        if (ranges != null) { return ranges; }
-        if ((range = getHeaderField("Content-Range")) == null) { return null; }
+        if (this.ranges != null) { return this.ranges; }
+        if ((range = this.getHeaderField("Content-Range")) == null) { return null; }
         // bytes 174239-735270911/735270912
         final String[] ranges = new Regex(range, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
         if (ranges == null) {
@@ -302,66 +302,66 @@ public class HTTPConnection implements URLConnectionAdapter {
     }
 
     public Request getRequest() {
-        return request;
+        return this.request;
     }
 
     public RequestMethod getRequestMethod() {
-        return httpMethod;
+        return this.httpMethod;
     }
 
     public Map<String, String> getRequestProperties() {
-        return requestProperties;
+        return this.requestProperties;
     }
 
     public String getRequestProperty(final String string) {
-        return requestProperties.get(string);
+        return this.requestProperties.get(string);
     }
 
     public long getRequestTime() {
-        return requestTime;
+        return this.requestTime;
     }
 
     public int getResponseCode() {
-        return httpResponseCode;
+        return this.httpResponseCode;
     }
 
     public String getResponseMessage() {
-        return httpResponseMessage;
+        return this.httpResponseMessage;
     }
 
     public URL getURL() {
-        return httpURL;
+        return this.httpURL;
     }
 
     public boolean isConnected() {
-        if (httpSocket != null && httpSocket.isConnected()) { return true; }
+        if (this.httpSocket != null && this.httpSocket.isConnected()) { return true; }
         return false;
     }
 
     public boolean isContentDisposition() {
-        return getHeaderField("Content-Disposition") != null;
+        return this.getHeaderField("Content-Disposition") != null;
     }
 
     public boolean isOK() {
-        if (getResponseCode() > -2 && getResponseCode() < 400) { return true; }
+        if (this.getResponseCode() > -2 && this.getResponseCode() < 400) { return true; }
         return false;
     }
 
     public void postDataSend() throws IOException {
-        if (!isConnected()) { return; }
+        if (!this.isConnected()) { return; }
         /* disable outputStream now */
-        outputClosed = true;
-        connectInputStream();
+        this.outputClosed = true;
+        this.connectInputStream();
     }
 
     public byte[] preReadBytes() {
-        final byte[] ret = preReadBytes;
-        preReadBytes = null;
+        final byte[] ret = this.preReadBytes;
+        this.preReadBytes = null;
         return ret;
     }
 
     public void setCharset(final String Charset) {
-        customcharset = Charset;
+        this.customcharset = Charset;
     }
 
     public void setConnectTimeout(final int connectTimeout) {
@@ -378,25 +378,25 @@ public class HTTPConnection implements URLConnectionAdapter {
     }
 
     public void setRequestMethod(final RequestMethod method) {
-        httpMethod = method;
+        this.httpMethod = method;
     }
 
     public void setRequestProperty(final String key, final String value) {
-        requestProperties.put(key, value);
+        this.requestProperties.put(key, value);
     }
 
     @Override
     public String toString() {
 
         final StringBuilder sb = new StringBuilder();
-        sb.append("-->").append(getURL()).append("\r\n");
+        sb.append("-->").append(this.getURL()).append("\r\n");
 
         sb.append("----------------Request------------------\r\n");
 
-        sb.append(httpMethod.toString()).append(' ').append(getURL().getPath()).append((getURL().getQuery() != null ? "?" + getURL().getQuery() : "")).append(" HTTP/1.1\r\n");
+        sb.append(this.httpMethod.toString()).append(' ').append(this.getURL().getPath()).append((this.getURL().getQuery() != null ? "?" + this.getURL().getQuery() : "")).append(" HTTP/1.1\r\n");
 
-        for (final String key : getRequestProperties().keySet()) {
-            final String v = getRequestProperties().get(key);
+        for (final String key : this.getRequestProperties().keySet()) {
+            final String v = this.getRequestProperties().get(key);
             if (v == null) {
                 continue;
             }
@@ -407,15 +407,15 @@ public class HTTPConnection implements URLConnectionAdapter {
         }
         sb.append(new char[] { '\r', '\n' });
 
-        if (getRequest() != null) {
-            if (getRequest() instanceof PostRequest) {
-                if (((PostRequest) getRequest()).getPostDataString() != null) {
-                    sb.append(((PostRequest) getRequest()).getPostDataString());
+        if (this.getRequest() != null) {
+            if (this.getRequest() instanceof PostRequest) {
+                if (((PostRequest) this.getRequest()).getPostDataString() != null) {
+                    sb.append(((PostRequest) this.getRequest()).getPostDataString());
                 }
 
-            } else if (getRequest() instanceof PostFormDataRequest) {
-                if (((PostFormDataRequest) getRequest()).getPostDataString() != null) {
-                    sb.append(((PostFormDataRequest) getRequest()).getPostDataString());
+            } else if (this.getRequest() instanceof PostFormDataRequest) {
+                if (((PostFormDataRequest) this.getRequest()).getPostDataString() != null) {
+                    sb.append(((PostFormDataRequest) this.getRequest()).getPostDataString());
                 }
                 sb.append(new char[] { '\r', '\n' });
             }
@@ -423,7 +423,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         }
 
         sb.append("----------------Response------------------\r\n");
-        sb.append(httpHeader).append("\r\n");
+        sb.append(this.httpHeader).append("\r\n");
         for (final Entry<String, List<String>> next : this.getHeaderFields().entrySet()) {
             // Achtung cookie reihenfolge ist wichtig!!!
             for (int i = next.getValue().size() - 1; i >= 0; i--) {
