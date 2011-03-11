@@ -142,6 +142,10 @@ public class HTMLParser {
         return HTMLParser.getFormInputHidden(pat);
     }
 
+    public static String getHttpLinkList(final String data) {
+        return HTMLParser.getHttpLinkList(data, null);
+    }
+
     /**
      * Gibt alle links die in data gefunden wurden als Stringliste zurück
      * 
@@ -151,6 +155,10 @@ public class HTMLParser {
     public static String getHttpLinkList(final String data, final String url) {
         final String[] links = HTMLParser.getHttpLinks(data, url);
         return HTMLParser.ArrayToString(links);
+    }
+
+    public static String[] getHttpLinks(final String data) {
+        return HTMLParser.getHttpLinks(data, null);
     }
 
     public static String[] getHttpLinks(final String data, final String url) {
