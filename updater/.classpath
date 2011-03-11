@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="libs/miglayout.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="libs/jackson-core.jar"/>
-	<classpathentry kind="lib" path="libs/jackson-mapper.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
+	<classpathentry kind="lib" path="libs/UpdateLib.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
