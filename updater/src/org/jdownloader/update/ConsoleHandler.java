@@ -10,6 +10,7 @@ import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
+import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.update.translate.T;
@@ -26,7 +27,7 @@ public class ConsoleHandler implements UpdaterListener {
 
     @Override
     public void onStateEnter(final UpdaterState state) {
-        System.out.println(state);
+
         if (state == this.updater.stateBranchUpdate) {
 
         } else if (state == this.updater.stateFilter) {
@@ -53,7 +54,15 @@ public class ConsoleHandler implements UpdaterListener {
             while (cause != null && cause.getCause() != null) {
                 cause = cause.getCause();
             }
+            if (cause instanceof InterruptedException) {
+                Main.out(T._.guiless_userinterrupted());
 
+                return;
+            } else if (cause instanceof ClientUpdateRequiredException) {
+                Main.out(T._.guiless_selfupdate());
+                return;
+
+            }
             if (cause != null) {
                 Main.out(T._.guiless_update_failed(cause.getLocalizedMessage()));
             } else {
@@ -65,7 +74,7 @@ public class ConsoleHandler implements UpdaterListener {
 
     @Override
     public void onStateExit(final UpdaterState state) {
-        System.out.println(state);
+
         if (this.updater.getNext() != this.updater.stateError) {
 
             if (state == this.updater.stateDownloadHashList) {
@@ -91,7 +100,7 @@ public class ConsoleHandler implements UpdaterListener {
 
     @Override
     public void onUpdaterEvent(final UpdaterEvent event) {
-        System.out.println(event);
+
         switch (event.getType()) {
             case BRANCH_UPDATED:
                 Main.out(T._.guiless_branch_updated(this.updater.getAppID(), event.getParameter() + ""));
@@ -114,7 +123,7 @@ public class ConsoleHandler implements UpdaterListener {
 
     @Override
     public void onUpdaterModuleEnd(final UpdaterEvent event) {
-        System.out.println(event);
+
     }
 
     @Override
@@ -126,7 +135,6 @@ public class ConsoleHandler implements UpdaterListener {
 
     @Override
     public void onUpdaterModuleStart(final UpdaterEvent event) {
-        System.out.println(event);
 
         // System.out.println(event.getParameter());
         switch (event.getType()) {

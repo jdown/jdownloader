@@ -14,6 +14,15 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Really cancel update?", "Update wirklich abbrechen?" })
     String dialog_rly_cancel();
 
+    @Default(lngs = { "en", "de" }, values = { "Service not available. Try again in 60 sec.)", "Service momentan nicht erreichbar. Bitte in einer Minute erneut versuchen." })
+    String error_service_not_available_right_now();
+
+    @Default(lngs = { "en", "de" }, values = { "Unexpected Error occured. Contact Support.", "Unerwarteter Fehler aufgetreten. Bitte Support kontaktieren." })
+    String exception_msg();
+
+    @Default(lngs = { "en", "de" }, values = { "Error occured", "Fehler aufgetreten" })
+    String exception_title();
+
     @Default(lngs = { "en", "de" }, values = { "Close", "Schließen" })
     String exit();
 
@@ -56,8 +65,17 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "%s1 has been closed. Continue now.", "%s1 wurde beendet. Installation wird fortgesetzt." })
     String guiless_locked_closed_app(String appID);
 
+    @Default(lngs = { "en", "de" }, values = { "Bypass Updates. -noupdates flag is set", "Bypass Updates -noupdates Flag ist gesetzt" })
+    String guiless_noupdates();
+
     @Default(lngs = { "en", "de" }, values = { "...Progress: %s1%", "...Fortschritt: %s1%" })
     String guiless_progress(int percent);
+
+    @Default(lngs = { "en", "de" }, values = { "Progress: %s1% | %s2/%s3", "Fortschritt: %s1% | %s2/%s3" })
+    void guiless_progress(long l, String loaded, String total);
+
+    @Default(lngs = { "en", "de" }, values = { "Updater will update itself... ", "Updater wird sich nun selbst aktualisieren..." })
+    String guiless_selfupdate();
 
     @Default(lngs = { "en", "de" }, values = { "Start installing %s1 file(s)", "Starte Installation von %s1 Datei(en)" })
     String guiless_start_install(int size);
@@ -74,6 +92,9 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "%s1 file(s) must be downloaded", "%s1 Datei(en) müssen heruntergeladen werden." })
     String guiless_updates_waiting_for_download(int size);
 
+    @Default(lngs = { "en", "de" }, values = { "User interrupted updated", "Benutzer hat Update unterbrochen." })
+    String guiless_userinterrupted();
+
     @Default(lngs = { "en", "de" }, values = { "You already have the latest version", "Sie nutzen bereits die aktuelle Version." })
     String guiless_you_are_up2date();
 
@@ -85,6 +106,12 @@ public interface Translation extends TranslateInterface {
 
     @Default(lngs = { "en", "de" }, values = { "Update has to restart now.", "Updater muss jetzt neu starten." })
     String restart_msg();
+
+    @Default(lngs = { "en", "de" }, values = { "Updater will restart itself now", "Updater wird sich nun selbst neu starten" })
+    String restart_required_msg();
+
+    @Default(lngs = { "en", "de" }, values = { "Restart Required", "Updater Neustart benötigt" })
+    String restart_required_title();
 
     @Default(lngs = { "en", "de" }, values = { "Restart!", "Neustart" })
     String restart_title();
@@ -115,6 +142,12 @@ public interface Translation extends TranslateInterface {
 
     @Default(lngs = { "en", "de" }, values = { "Yes(recommended)", "Ja(empfohlen)" })
     String update_dialog_yes();
+
+    @Default(lngs = { "en", "de" }, values = { "Updater failed to update himself. Please try again in a few minutes.", "Updater konnte sich nicht selbst aktualisieren. Bitte versuch es in einigen Minuten nochmal." })
+    String updateloop();
+
+    @Default(lngs = { "en", "de" }, values = { "Updateloop detected!", "Updateschleife endeckt!" })
+    String updateloop_title();
 
     @Default(lngs = { "en", "de" }, values = { "%s1 update(s) are ready for installation.", "%s1 Update(s) können jetzt installiert werden." })
     String updates_are_ready_for_install_now(int size);

@@ -6,9 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.Date;
@@ -18,25 +15,24 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.update.updateclient.Updater;
-import org.appwork.update.updateclient.UpdaterOptions;
 import org.appwork.update.updateclient.gui.StandaloneUpdaterGui;
+import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
 import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.locale.APPWORKUTILS;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging.LogFormatter;
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.net.HTTPException;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.ShellParser;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.zip.ZipIOReader;
@@ -49,10 +45,11 @@ public class Main {
 
     private static StandaloneUpdaterGui GUI                = null;
 
-    private static UpdaterOptions       OPTIONS;
+    private static Options              OPTIONS;
 
     private static Updater              UPDATER;
     private static PrintStream          OUT                = null;
+    private static String[]             ARGS;
     static {
         if (Charset.defaultCharset() == Charset.forName("cp1252")) {
             try {
@@ -76,17 +73,23 @@ public class Main {
     private static final SwitchParam    BRANCH             = new SwitchParam("branch", "BRANCHNAME | Sets the desired Branch");
 
     private static final SwitchParam    APP                = new SwitchParam("app", "AppID | Sets the desired AppID");
+    private static final SwitchParam    NOUPDATE           = new SwitchParam("noupdate", "| Bypasses updatesystem");
 
     public static void downloadInDialog(final File file, final String url, final String hash) throws Exception {
         if (file.exists()) { throw new Exception("File exists"); }
         file.getParentFile().mkdirs();
         Exception ret = null;
+
         if (Main.OPTIONS.getGuiless()) {
             final DownloadProgress progress = new DownloadProgress() {
                 @Override
                 public void increaseLoaded(final long increase) {
                     super.increaseLoaded(increase);
-                    System.out.println("Loaded: " + this.getLoaded());
+                    if (this.getTotal() <= 0) {
+
+                    } else {
+                        T._.guiless_progress((100 * this.getLoaded() / this.getTotal()), SizeFormatter.formatBytes(this.getLoaded()), SizeFormatter.formatBytes(this.getTotal()));
+                    }
                 }
 
                 @Override
@@ -97,11 +100,11 @@ public class Main {
                 @Override
                 public void setTotal(final long total) {
                     super.setTotal(total);
-                    System.out.println("Total: " + this.getTotal());
+
                 }
 
             };
-
+            Main.out(T._.guiless_selfupdate());
             Main.UPDATER.getHttpClient().download(file, url, progress);
         } else {
             ret = new EDTHelper<Exception>() {
@@ -129,7 +132,7 @@ public class Main {
                                 this.total = progress.getTotal();
                                 this.loaded = progress.getLoaded();
                                 if (this.total <= 0) { return APPWORKUTILS.T.connecting(); }
-                                return APPWORKUTILS.T.progress(this.loaded, this.total, this.loaded * 10000f / this.total / 100.0);
+                                return APPWORKUTILS.T.progress(SizeFormatter.formatBytes(this.loaded), SizeFormatter.formatBytes(this.total), this.loaded * 10000f / this.total / 100.0);
                             }
 
                             @Override
@@ -167,15 +170,6 @@ public class Main {
             throw new Exception("Hash Mismatch");
         }
         if (ret != null) { throw ret; }
-    }
-
-    private static String getJarName() throws MalformedURLException, URISyntaxException {
-        final String url = Application.getRessourceURL("tbs.jar").toString();
-        System.out.println(url);
-        ;
-        final int index = url.indexOf(".jar!");
-        System.out.println(url.substring(4, index + 4));
-        return new File(new URL(url.substring(4, index + 4)).toURI()).getName();
     }
 
     private static void init() {
@@ -234,7 +228,11 @@ public class Main {
 
         Main.out(T._.start());
         Main.out(JSonStorage.toString(Main.OPTIONS));
+
         Main.UPDATER = new Updater(new UpdaterHttpClientImpl(), Main.OPTIONS);
+        if (!Application.isJared(Main.class)) {
+            Main.UPDATER.setVersion(-1);
+        }
 
         Application.getResource("tbs.jar").delete();
         try {
@@ -247,7 +245,6 @@ public class Main {
 
                     @Override
                     public StandaloneUpdaterGui edtRun() {
-                        // TODO Auto-generated method stub
                         final StandaloneUpdaterGui upd = new StandaloneUpdaterGui(Main.UPDATER);
                         upd.getFrame().setAlwaysOnTop(true);
                         upd.getFrame().toFront();
@@ -259,11 +256,16 @@ public class Main {
             } else {
 
                 Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER));
+                ShutdownController.getInstance().addShutdownEvent(new CtrlCHandler(Main.UPDATER));
             }
             while (true) {
 
                 try {
-                    Main.UPDATER.start();
+                    if (!Main.OPTIONS.isNoUpdates()) {
+                        Main.UPDATER.start();
+                    } else {
+                        Main.out(T._.guiless_noupdates());
+                    }
                     if (Main.OPTIONS.getRestart() != null && Main.OPTIONS.getRestart().trim().length() > 0) {
                         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -290,6 +292,7 @@ public class Main {
 
                     break;
                 } catch (final HTTPIOException e) {
+                    if (Main.UPDATER.isInterrupted()) { throw e; }
                     if (e.getCause() != null && e.getCause() instanceof HTTPException) {
                         final HTTPException cause = (HTTPException) e.getCause();
 
@@ -299,7 +302,8 @@ public class Main {
                                 Main.GUI.onServiceNotAvailable(cause);
 
                             } else {
-                                System.out.println("Service not available. Try again in 60 sec.");
+
+                                Main.out(T._.error_service_not_available_right_now());
                                 throw e;
                             }
                         } else if (cause.getConnection().getResponseCode() == 503) {
@@ -308,7 +312,7 @@ public class Main {
                                 Main.GUI.onServiceNotAvailable(cause);
 
                             } else {
-                                System.out.println("Service not available. Try again in 60 sec.");
+                                Main.out(T._.error_service_not_available_right_now());
                                 throw e;
                             }
                         } else {
@@ -321,23 +325,16 @@ public class Main {
 
             }
         } catch (final InterruptedException e) {
-            Log.exception(Level.WARNING, e);
-            if (Main.GUI != null) {
-                // Main.GUI.onInterrupt();
-            }
+
+        } catch (final ClientUpdateRequiredException e) {
+            e.printStackTrace();
+
+            Main.selfUpdate(e);
 
         } catch (final Exception e) {
-            // if (e.getCause() != null && e.getCause() instanceof
-            // RedirectException) {
-            // update available:
-            // Main.selfUpdate(((RedirectException) e.getCause()).getMessage());
-
-            // } else {
-            // Log.exception(Level.WARNING, e);
-            // if (Main.GUI != null) {
-            // Main.GUI.onException(e);
-            // }
-            // }
+            if (!Main.UPDATER.isInterrupted()) {
+                Log.exception(Level.WARNING, e);
+            }
 
         }
 
@@ -353,6 +350,7 @@ public class Main {
 
     private static void parseParams(final String[] args) {
         Main.OPTIONS = new Options();
+        Main.ARGS = args;
         for (int i = 0; i < args.length; i++) {
             final String p = args[i];
             if (Main.RESTART.matches(p)) {
@@ -369,6 +367,8 @@ public class Main {
                 Main.OPTIONS.setDebug(true);
             } else if (Main.GUILESS.matches(p)) {
                 Main.OPTIONS.setGuiless(true);
+            } else if (Main.NOUPDATE.matches(p)) {
+                Main.OPTIONS.setNoUpdate(true);
 
             } else if (Main.DISABLED_OS_FILTER.matches(p)) {
                 Main.OPTIONS.setOsFilter(false);
@@ -390,100 +390,23 @@ public class Main {
         }
     }
 
-    private static void restart(final String path) throws MalformedURLException, URISyntaxException, InterruptedException, DialogClosedException, DialogCanceledException {
-
-        final String tiny[] = new String[] { "java", "-jar", "tbs.jar", path };
-        String args[] = null;
-        /*
-         * only if restart is wanted, we append binary arguments to
-         * tinybootstrap
-         */
-
-        if (CrossSystem.isWindows()) {
-            args = new String[] { "java", "-jar", Main.getJarName() };
-            System.out.println(Main.getJarName() + " .exists " + new File(Main.getJarName()).exists());
-            /*
-             * windows starts exe launcher
-             */
-            // args = new String[] { Main.getJarName() };
-            // System.out.println(Main.getJarName() + " " + new
-            // File(Main.getJarName()).exists());
-        } else if (CrossSystem.isMac()) {
-            /*
-             * windows starts exe launcher
-             */
-            String appname = Main.getJarName();
-            try {
-                appname = Application.getResource("../../../../").getCanonicalFile().getName();
-
-                System.out.println("APPNAME " + appname + " - " + Application.getResource("../../../../").getCanonicalPath());
-                args = new String[] { "open", "-n", "../../../../" + appname };
-                System.out.println(appname + ".exists " + new File("../../../../" + appname).exists());
-
-            } catch (final IOException e) {
-
-                e.printStackTrace();
-            }
-            if (!appname.endsWith(".app")) {
-                args = new String[] { "java", "-jar", Main.getJarName() };
-                System.out.println(Main.getJarName() + " .exists " + new File(Main.getJarName()).exists());
-            }
-
-        } else {
-            /*
-             * all other start jar version
-             */
-            args = new String[] { "java", "-jar", Main.getJarName() };
-            System.out.println(Main.getJarName() + " .exists " + new File(Main.getJarName()).exists());
-
-        }
-
-        /*
-         * build complete call arguments for tinybootstrap
-         */
-        final StringBuilder sb = new StringBuilder();
-        final String tbsargs[] = new String[tiny.length + (args == null ? 0 : args.length)];
-        int i = 0;
-        for (final String arg : tiny) {
-            sb.append(arg + " ");
-            tbsargs[i++] = arg;
-        }
-        if (args != null) {
-            for (final String arg : args) {
-                sb.append(arg + " ");
-                tbsargs[i++] = arg;
-            }
-        }
-        System.out.println("TinyBootStrap: " + sb.toString());
-
-        final ProcessBuilder pb = new ProcessBuilder(tbsargs);
-        /*
-         * needed because the root is different for jre/class version
-         */
-        File pbroot = null;
-
-        pbroot = new File(Application.getRoot());
-
-        System.out.println("tbs.exists " + new File(pbroot, "tbs.jar").exists());
-        pb.directory(pbroot);
+    private static void selfUpdate(final ClientUpdateRequiredException e2) {
         try {
-            if (Main.OPTIONS.getGuiless()) {
-                System.out.println("Restart in 5 Seconds");
-                Thread.sleep(5000);
-            } else {
-                Dialog.getInstance().showConfirmDialog(0, T._.restart_title(), T._.restart_msg());
-            }
-            pb.start();
-        } catch (final IOException e) {
-        }
-        System.exit(0);
-    }
+            for (final String a : Main.ARGS) {
+                if (a.equals("-tbs")) {
+                    if (Main.OPTIONS.getGuiless()) {
+                        Main.out(T._.updateloop());
+                        ShutdownController.getInstance().requestShutdown();
+                    } else {
+                        Dialog.getInstance().showMessageDialog(Dialog.LOGIC_COUNTDOWN, T._.updateloop_title(), T._.updateloop());
+                        ShutdownController.getInstance().requestShutdown();
+                    }
 
-    private static void selfUpdate(final String message) {
-        try {
-            final int index = message.lastIndexOf('?');
-            final String url = message.substring(0, index);
-            final String hash = message.substring(index + 1).trim();
+                    return;
+                }
+            }
+            final String url = e2.getUrl();
+            final String hash = e2.getHash();
             final File file = Application.getResource("tmp/" + hash + ".zip");
             if (!file.exists() || Hash.getMD5(file).equals(hash)) {
                 if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
@@ -499,10 +422,23 @@ public class Main {
             final File bootStrapper = Application.getResource("tbs.jar");
             bootStrapper.delete();
             IO.writeToFile(bootStrapper, IO.readURL(Application.getRessourceURL("tbs.jar")));
-            Main.restart(dest.getAbsolutePath());
 
+            ShutdownController.getInstance().addShutdownEvent(new RestartEvent(dest, Main.ARGS));
+            if (Main.OPTIONS.getGuiless()) {
+                Main.out(T._.restart_required_msg());
+                ShutdownController.getInstance().requestShutdown();
+            } else {
+                Dialog.getInstance().showMessageDialog(Dialog.LOGIC_COUNTDOWN, T._.restart_required_title(), T._.restart_required_msg());
+                ShutdownController.getInstance().requestShutdown();
+            }
         } catch (final Throwable e) {
             // Main.GUI.onException(e);
+            if (Main.OPTIONS.getGuiless()) {
+                Main.out(Exceptions.getStackTrace(e));
+            } else {
+                Dialog.getInstance().showExceptionDialog(T._.exception_title(), T._.exception_msg(), e);
+            }
+            ShutdownController.getInstance().requestShutdown();
         }
     }
 }

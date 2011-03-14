@@ -16,6 +16,7 @@ public class Options implements UpdaterOptions {
 
     private final UpdaterOptions op;
     private boolean              debug;
+    private boolean              noUpdates = false;
 
     public Options() {
         // some options shall not be written back to configfile.
@@ -56,7 +57,7 @@ public class Options implements UpdaterOptions {
 
     @Override
     public boolean getGuiless() {
-        return this.guiless;
+        return this.guiless || this.noUpdates;
     }
 
     @Override
@@ -85,6 +86,10 @@ public class Options implements UpdaterOptions {
         return this.workingDirectory;
     }
 
+    public boolean isNoUpdates() {
+        return this.noUpdates;
+    }
+
     @Override
     public void setApp(final String app) {
         this.app = app;
@@ -111,6 +116,10 @@ public class Options implements UpdaterOptions {
     @Override
     public void setGuiless(final boolean b) {
         this.guiless = b;
+    }
+
+    public void setNoUpdate(final boolean b) {
+        this.noUpdates = b;
     }
 
     @Override
