@@ -1,5 +1,7 @@
 package org.jdownloader.update;
 
+import java.awt.GraphicsEnvironment;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterOptions;
 
@@ -24,7 +26,7 @@ public class Options implements UpdaterOptions {
         }
 
         this.branch = this.op.getBranch();
-        this.guiless = this.op.getGuiless();
+        this.guiless = this.op.getGuiless() || GraphicsEnvironment.isHeadless();
         this.osFilter = this.op.getOsFilter();
         this.restart = this.op.getRestart();
         this.workingDirectory = this.op.getWorkingDirectory();
