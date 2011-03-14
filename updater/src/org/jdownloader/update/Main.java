@@ -1,25 +1,26 @@
 package org.jdownloader.update;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.update.updateclient.ConsoleHandler;
+import org.appwork.storage.JSonStorage;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.UpdaterOptions;
 import org.appwork.update.updateclient.gui.StandaloneUpdaterGui;
-import org.appwork.update.updateclient.gui.launcher.ConsoleLogHandler;
 import org.appwork.update.updateclient.http.HTTPIOException;
-import org.appwork.update.updateclient.translation.T;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -39,6 +40,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.zip.ZipIOReader;
+import org.jdownloader.update.translate.T;
 
 public class Main {
 
@@ -50,6 +52,19 @@ public class Main {
     private static UpdaterOptions       OPTIONS;
 
     private static Updater              UPDATER;
+    private static PrintStream          OUT                = null;
+    static {
+        if (Charset.defaultCharset() == Charset.forName("cp1252")) {
+            try {
+                Main.OUT = new PrintStream(new FileOutputStream(FileDescriptor.out), true, "CP850");
+            } catch (final UnsupportedEncodingException e) {
+                Main.OUT = System.out;
+            }
+        } else {
+            Main.OUT = System.out;
+        }
+
+    }
     private static final SwitchParam    DEBUG              = new SwitchParam("debug", "| Run In debug mode. does not write logfiles, but writes to stdout/stderr");
 
     private static final SwitchParam    GUILESS            = new SwitchParam("guiless", "| Run silently or in console mode");
@@ -169,16 +184,19 @@ public class Main {
     }
 
     public static void main(final String[] args) {
-        Application.setApplication(".appwork");
-        Main.init();
-        if (Application.isJared(Main.class)) {
-            Log.L.setLevel(Level.INFO);
-        } else {
-            Log.L.setLevel(Level.ALL);
-        }
-        Main.parseParams(args);
 
-        if (!Main.OPTIONS.getDebug() && Application.isJared(Main.class)) {
+        Application.setApplication(".jd_home");
+
+        // resolving debug flag is the first thing we do, because al other
+        // actions might already do outputs
+        boolean debug = false;
+        for (final String a : args) {
+            if (a.trim().equalsIgnoreCase("-debug")) {
+                debug = true;
+                break;
+            }
+        }
+        if (!debug && Application.isJared(Main.class)) {
             final Calendar cal = Calendar.getInstance();
 
             cal.setTimeInMillis(new Date().getTime());
@@ -193,9 +211,10 @@ public class Main {
                 }
                 final FileOutputStream outStr = new FileOutputStream(file, true);
                 final PrintStream printStream = new PrintStream(outStr);
+
                 System.setErr(printStream);
                 System.setOut(printStream);
-                final ConsoleLogHandler cHandler = new ConsoleLogHandler(printStream);
+                final org.appwork.update.updateclient.gui.ConsoleLogHandler cHandler = new org.appwork.update.updateclient.gui.ConsoleLogHandler(printStream);
                 cHandler.setFormatter(new LogFormatter());
                 Log.L.addHandler(cHandler);
             } catch (final IOException e) {
@@ -203,6 +222,18 @@ public class Main {
             }
 
         }
+
+        Application.setApplication(".appwork");
+        Main.init();
+        if (Application.isJared(Main.class)) {
+            Log.L.setLevel(Level.INFO);
+        } else {
+            Log.L.setLevel(Level.ALL);
+        }
+        Main.parseParams(args);
+
+        Main.out(T._.start());
+        Main.out(JSonStorage.toString(Main.OPTIONS));
         Main.UPDATER = new Updater(new UpdaterHttpClientImpl(), Main.OPTIONS);
 
         Application.getResource("tbs.jar").delete();
@@ -312,6 +343,14 @@ public class Main {
 
     }
 
+    public static void out(final String string) {
+
+        Main.OUT.println("   " + string);
+        if (Main.OUT != System.out) {
+            System.out.println("   " + string);
+        }
+    }
+
     private static void parseParams(final String[] args) {
         Main.OPTIONS = new Options();
         for (int i = 0; i < args.length; i++) {
@@ -320,16 +359,20 @@ public class Main {
                 final String path = args[++i];
                 Main.OPTIONS.setRestart(path);
                 Main.RESTART.print();
+
             } else if (Main.WORKINGDIR.matches(p)) {
                 final String path = args[++i];
                 Main.OPTIONS.setWorkinfDirectory(path);
                 Main.WORKINGDIR.print();
+
             } else if (Main.DEBUG.matches(p)) {
                 Main.OPTIONS.setDebug(true);
             } else if (Main.GUILESS.matches(p)) {
                 Main.OPTIONS.setGuiless(true);
+
             } else if (Main.DISABLED_OS_FILTER.matches(p)) {
                 Main.OPTIONS.setOsFilter(false);
+
             } else if (Main.APP.matches(p)) {
                 final String app = args[++i];
                 Main.OPTIONS.setApp(app);
