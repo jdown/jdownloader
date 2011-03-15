@@ -9,6 +9,7 @@ public class CtrlCHandler extends ShutdownEvent {
 
     public CtrlCHandler(final Updater uPDATER) {
         this.updater = uPDATER;
+        this.setMaxDuration(0);
     }
 
     @Override
