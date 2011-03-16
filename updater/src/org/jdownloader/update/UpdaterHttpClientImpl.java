@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import jd.http.basic.BasicHTTP;
-import jd.http.basic.BasicHTTPException;
-
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.update.exchange.ServerError;
 import org.appwork.update.exchange.ServerResponses;
@@ -16,6 +13,8 @@ import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.update.updateclient.http.UpdateServerException;
 import org.appwork.update.updateclient.translation.T;
 import org.appwork.utils.net.DownloadProgress;
+import org.appwork.utils.net.BasicHTTP.BasicHTTP;
+import org.appwork.utils.net.BasicHTTP.BasicHTTPException;
 
 public class UpdaterHttpClientImpl implements UpdateHttpClient {
     private final BasicHTTP client;

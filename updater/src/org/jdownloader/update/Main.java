@@ -14,6 +14,8 @@ import java.util.logging.Level;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
+import org.appwork.storage.simplejson.mapper.JSonMapper;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.gui.StandaloneUpdaterGui;
 import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
@@ -39,7 +41,12 @@ import org.appwork.utils.zip.ZipIOReader;
 import org.jdownloader.update.translate.T;
 
 public class Main {
-
+    static {
+        final JSonMapper mapper = ((SimpleMapper) JSonStorage.getMapper()).getMapper();
+        // ignore Mapping errors. If client is not up2date, illegal server
+        // responses shall not kill him.
+        mapper.setIgnoreIllegalArgumentMappings(true);
+    }
     private static final SwitchParam    RESTART            = new SwitchParam("restart", "| Restartpath after update");
     private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
 

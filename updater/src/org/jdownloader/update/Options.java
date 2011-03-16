@@ -67,7 +67,8 @@ public class Options implements UpdaterOptions {
 
     @Override
     public long getPackagePollInterval() {
-        return this.op.getPackagePollInterval();
+        // do not allow shorter intervals
+        return Math.max(5000, this.op.getPackagePollInterval());
     }
 
     @Override
