@@ -31,7 +31,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
 
@@ -98,22 +97,13 @@ public abstract class Request {
     }
 
     public static byte[] read(final URLConnectionAdapter con) throws IOException {
-        InputStream is = null;
-        if (con.getInputStream() != null) {
-            if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                is = new GZIPInputStream(con.getInputStream());
-            } else if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("deflate") && Application.getJavaVersion() >= 16000000) {
-                is = new java.util.zip.DeflaterInputStream(con.getInputStream());
-            } else {
-                is = con.getInputStream();
-            }
-        }
+        final InputStream is = con.getInputStream();
         if (is == null) {
             // TODO: check if we have t close con here
             return null;
         }
         ByteArrayOutputStream tmpOut;
-        final long contentLength = con.getLongContentLength();
+        final long contentLength = con.getContentLength();
         if (contentLength != -1) {
             final int length = contentLength > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) contentLength;
             tmpOut = new ByteArrayOutputStream(length);
@@ -483,16 +473,6 @@ public abstract class Request {
     public void setConnectTimeout(final int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
-
-    // public void setProxy(String ip, String port) throws
-    // NumberFormatException, MalformedURLException {
-    // proxyip = ip;
-    // proxyport = port;
-    // if (ip == null || port == null) return;
-    // url = new URL("http", proxyip, Integer.parseInt(proxyport),
-    // url.toString());
-    //
-    // }
 
     public void setCookies(final Cookies cookies) {
         this.cookies = cookies;

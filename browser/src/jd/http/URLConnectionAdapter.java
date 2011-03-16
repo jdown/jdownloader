@@ -16,8 +16,11 @@
 
 package jd.http;
 
-
 public interface URLConnectionAdapter extends org.appwork.utils.net.httpconnection.HTTPConnection {
+    /**
+     * DO NOT rename this or change data type
+     */
+    long getLongContentLength();
 
     public Request getRequest();
 

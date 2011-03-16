@@ -23,6 +23,11 @@ public class URLConnectionAdapterDirectImpl extends HTTPConnectionImpl implement
     }
 
     @Override
+    public long getLongContentLength() {
+        return this.getContentLength();
+    }
+
+    @Override
     public Request getRequest() {
         return this.request;
     }

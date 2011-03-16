@@ -32,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -222,21 +221,31 @@ public class Browser {
         }
         file.createNewFile();
 
-        final BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-        BufferedInputStream input;
-        if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-            input = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
-        } else {
+        FileOutputStream fos = null;
+        BufferedOutputStream output = null;
+        BufferedInputStream input = null;
+        try {
+            output = new BufferedOutputStream(fos = new FileOutputStream(file, false));
             input = new BufferedInputStream(con.getInputStream());
+            final byte[] b = new byte[1024];
+            int len;
+            while ((len = input.read(b)) != -1) {
+                output.write(b, 0, len);
+            }
+        } finally {
+            try {
+                output.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                input.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
-
-        final byte[] b = new byte[1024];
-        int len;
-        while ((len = input.read(b)) != -1) {
-            output.write(b, 0, len);
-        }
-        output.close();
-        input.close();
     }
 
     public static String getBasicAuthfromURL(final String url) {

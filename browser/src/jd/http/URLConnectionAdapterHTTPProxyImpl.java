@@ -19,6 +19,11 @@ public class URLConnectionAdapterHTTPProxyImpl extends HTTPProxyHTTPConnectionIm
     }
 
     @Override
+    public long getLongContentLength() {
+        return this.getContentLength();
+    }
+
+    @Override
     public Request getRequest() {
         return this.request;
     }

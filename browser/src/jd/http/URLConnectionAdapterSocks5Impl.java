@@ -19,6 +19,11 @@ public class URLConnectionAdapterSocks5Impl extends Socks5HTTPConnectionImpl imp
     }
 
     @Override
+    public long getLongContentLength() {
+        return this.getContentLength();
+    }
+
+    @Override
     public Request getRequest() {
         return this.request;
     }
