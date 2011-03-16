@@ -19,7 +19,6 @@ package jd.http;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +33,7 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
+import jd.http.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
@@ -96,19 +96,19 @@ public abstract class Request {
         return ret;
     }
 
-    public static byte[] read(final URLConnectionAdapter con) throws IOException {
+    public static ReusableByteArrayOutputStream read(final URLConnectionAdapter con) throws IOException {
         final InputStream is = con.getInputStream();
         if (is == null) {
             // TODO: check if we have t close con here
             return null;
         }
-        ByteArrayOutputStream tmpOut;
+        ReusableByteArrayOutputStream tmpOut;
         final long contentLength = con.getContentLength();
         if (contentLength != -1) {
             final int length = contentLength > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) contentLength;
-            tmpOut = new ByteArrayOutputStream(length);
+            tmpOut = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(length);
         } else {
-            tmpOut = new ByteArrayOutputStream(16384);
+            tmpOut = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(16384);
         }
         final byte[] preRead = con.preReadBytes();
         if (preRead != null) {
@@ -144,7 +144,7 @@ public abstract class Request {
             } catch (final Exception e) {
             }
         }
-        return tmpOut.toByteArray();
+        return tmpOut;
     }
 
     /*
@@ -166,7 +166,7 @@ public abstract class Request {
     private URL orgURL;
     private String customCharset = null;
 
-    private byte[] byteArray;
+    private ReusableByteArrayOutputStream byteArray;
 
     private BufferedImage image;
 
@@ -243,16 +243,6 @@ public abstract class Request {
         return this.headers;
     }
 
-    // public static boolean isExpired(String cookie) {
-    // if (cookie == null) return false;
-    //
-    // try {
-    // return (new Date().compareTo()) > 0;
-    // } catch (Exception e) {
-    // return false;
-    // }
-    // }
-
     public String getHtmlCode() throws CharacterCodingException {
         final String ct = this.httpConnection.getContentType();
         /* check for image content type */
@@ -265,19 +255,22 @@ public abstract class Request {
                     try {
                         if (useCS != null) {
                             /* try to use wanted charset */
-                            this.htmlCode = new String(this.byteArray, useCS.toUpperCase());
+                            this.htmlCode = new String(this.byteArray.getInternalBuffer(), 0, this.byteArray.size(), useCS.toUpperCase());
+                            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
                             this.byteArray = null;
                             return this.htmlCode;
                         }
                     } catch (final Exception e) {
                     }
-                    this.htmlCode = new String(this.byteArray, "ISO-8859-1");
+                    this.htmlCode = new String(this.byteArray.getInternalBuffer(), 0, this.byteArray.size(), "ISO-8859-1");
+                    ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
                     this.byteArray = null;
                     return this.htmlCode;
                 } catch (final Exception e) {
                     Log.getLogger().severe("could neither charset: " + useCS + " nor default charset");
                     /* fallback to default charset in error case */
-                    this.htmlCode = new String(this.byteArray);
+                    this.htmlCode = new String(this.byteArray.getInternalBuffer(), 0, this.byteArray.size());
+                    ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
                     this.byteArray = null;
                     return this.htmlCode;
                 }
@@ -287,6 +280,16 @@ public abstract class Request {
         }
         return this.htmlCode;
     }
+
+    // public static boolean isExpired(String cookie) {
+    // if (cookie == null) return false;
+    //
+    // try {
+    // return (new Date().compareTo()) > 0;
+    // } catch (Exception e) {
+    // return false;
+    // }
+    // }
 
     public URLConnectionAdapter getHttpConnection() {
         return this.httpConnection;
@@ -346,13 +349,11 @@ public abstract class Request {
     }
 
     /**
-     * Returns the loaded bytes
-     * 
-     * @return
+     * @return the byteArray
      */
     public byte[] getResponseBytes() {
-        if (this.byteArray != null) { return this.byteArray.clone(); }
-        return null;
+        if (this.byteArray == null) { return null; }
+        return this.byteArray.toByteArray();
     }
 
     public String getResponseHeader(final String key) {
@@ -374,11 +375,10 @@ public abstract class Request {
         if (ct != null && !Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) { throw new IllegalStateException("Content-Type: " + ct); }
         // TODO..this is just quick and dirty.. may result in memory leaks
         if (this.image == null && this.byteArray != null) {
-            final InputStream fake = new ByteArrayInputStream(this.byteArray);
+            final InputStream fake = new ByteArrayInputStream(this.byteArray.getInternalBuffer(), 0, this.byteArray.size());
             try {
                 this.image = ImageIO.read(fake);
-                // BasicWindow.showImage(image);
-                // its an immage;
+                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
                 this.byteArray = null;
             } catch (final Exception e) {
                 Log.exception(e);
@@ -484,6 +484,7 @@ public abstract class Request {
 
     public void setHtmlCode(final String htmlCode) {
         // set bytebuffer to null... user works with htmlcode
+        ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
         this.byteArray = null;
         this.htmlCode = htmlCode;
     }
