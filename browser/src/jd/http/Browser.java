@@ -48,6 +48,8 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+
 public class Browser {
     // we need this class in here due to jdownloader stable 0.9 compatibility
     public class BrowserException extends IOException {

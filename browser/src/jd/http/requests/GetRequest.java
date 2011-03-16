@@ -22,28 +22,27 @@ import java.net.MalformedURLException;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLConnectionAdapter.RequestMethod;
+
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 
 public class GetRequest extends Request {
 
-	public GetRequest(String url) throws MalformedURLException {
-		super(Browser.correctURL(url));
-		/* forward basicauth from url to headers */
-		String basicAuth = Browser.getBasicAuthfromURL(url);
-		if (basicAuth != null) {
-			getHeaders().put("Authorization", "Basic "+basicAuth);
-		}
+    public GetRequest(final String url) throws MalformedURLException {
+        super(Browser.correctURL(url));
+        /* forward basicauth from url to headers */
+        final String basicAuth = Browser.getBasicAuthfromURL(url);
+        if (basicAuth != null) {
+            this.getHeaders().put("Authorization", "Basic " + basicAuth);
+        }
 
-	}
+    }
 
-	public long postRequest(URLConnectionAdapter httpConnection)
-			throws IOException {
-		return 0;
-	}
+    public long postRequest(final URLConnectionAdapter httpConnection) throws IOException {
+        return 0;
+    }
 
-	public void preRequest(URLConnectionAdapter httpConnection)
-			throws IOException {
-		httpConnection.setRequestMethod(RequestMethod.GET);
-	}
+    public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
+        httpConnection.setRequestMethod(RequestMethod.GET);
+    }
 
 }

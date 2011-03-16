@@ -18,7 +18,6 @@ package jd.http;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -36,12 +35,13 @@ import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
 
-import jd.http.URLConnectionAdapter.RequestMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public abstract class Request {
     // public static int MAX_REDIRECTS = 30;
@@ -98,14 +98,14 @@ public abstract class Request {
     }
 
     public static byte[] read(final URLConnectionAdapter con) throws IOException {
-        BufferedInputStream is = null;
+        InputStream is = null;
         if (con.getInputStream() != null) {
             if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                is = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
+                is = new GZIPInputStream(con.getInputStream());
             } else if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("deflate") && Application.getJavaVersion() >= 16000000) {
-                is = new BufferedInputStream(new java.util.zip.DeflaterInputStream(con.getInputStream()));
+                is = new java.util.zip.DeflaterInputStream(con.getInputStream());
             } else {
-                is = new BufferedInputStream(con.getInputStream());
+                is = con.getInputStream();
             }
         }
         if (is == null) {
@@ -113,7 +113,7 @@ public abstract class Request {
             return null;
         }
         ByteArrayOutputStream tmpOut;
-        final long contentLength = con.getContentLength();
+        final long contentLength = con.getLongContentLength();
         if (contentLength != -1) {
             final int length = contentLength > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) contentLength;
             tmpOut = new ByteArrayOutputStream(length);

@@ -16,86 +16,10 @@
 
 package jd.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
 
-public interface URLConnectionAdapter {
-
-    public static enum RequestMethod {
-        GET, POST, HEAD
-    }
-
-    void connect() throws IOException;
-
-    void disconnect();
-
-    public String getCharset();
-
-    int getContentLength();
-
-    String getContentType();
-
-    String getHeaderField(String string);
-
-    /* WARNING: this returns a Case-Sensitive map */
-    Map<String, List<String>> getHeaderFields();
-
-    List<String> getHeaderFields(String string);
-
-    InputStream getInputStream() throws IOException;
-
-    long getLongContentLength();
-
-    OutputStream getOutputStream() throws IOException;
-
-    long[] getRange();
+public interface URLConnectionAdapter extends org.appwork.utils.net.httpconnection.HTTPConnection {
 
     public Request getRequest();
 
-    RequestMethod getRequestMethod();
-
-    Map<String, String> getRequestProperties();
-
-    String getRequestProperty(String string);
-
-    public long getRequestTime();
-
-    int getResponseCode();
-
-    String getResponseMessage();
-
-    URL getURL();
-
-    boolean isConnected();
-
-    boolean isContentDisposition();
-
-    boolean isOK();
-
-    /* needs to get called after postData is send */
-    public void postDataSend() throws IOException;
-
-    /**
-     * returns bytearray that belongs to content, WARNING will get null after
-     * first call
-     * 
-     * @return
-     */
-    public byte[] preReadBytes();
-
-    public void setCharset(String charset);
-
-    void setConnectTimeout(int connectTimeout);
-
-    void setReadTimeout(int readTimeout);
-
     void setRequest(Request request);
-
-    void setRequestMethod(RequestMethod method);
-
-    void setRequestProperty(String key, String string);
 }

@@ -26,10 +26,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
 
 public class HTMLParser {
 
@@ -251,7 +251,7 @@ public class HTMLParser {
                 return new String[] {};
             } else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
-                URLConnectionAdapter con = null;
+                HTTPConnection con = null;
                 try {
 
                     if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
