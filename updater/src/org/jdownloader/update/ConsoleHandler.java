@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import org.appwork.update.exchange.Mirror;
 import org.appwork.update.exchange.UpdatePackage;
+import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
@@ -86,6 +87,8 @@ public class ConsoleHandler implements UpdaterListener {
                 } else {
                     final ArrayList<File> files = this.updater.getFilesToInstall();
                     final UpdatePackage updates = this.updater.getUpdates();
+                    final ArrayList<InstalledFile> removes = this.updater.getFilesToRemove();
+                    Main.out(T._.guiless_files_wait_for_removal(removes.size()));
                     Main.out(T._.guiless_files_ready_for_install(files.size()));
                     Main.out(T._.guiless_updates_waiting_for_download(updates.size()));
                 }
