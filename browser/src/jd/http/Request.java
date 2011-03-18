@@ -33,11 +33,12 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
-import jd.http.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
