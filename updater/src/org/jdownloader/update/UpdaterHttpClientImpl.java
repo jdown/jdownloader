@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.net.URL;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.ServerError;
 import org.appwork.update.exchange.ServerResponses;
 import org.appwork.update.updateclient.UpdateHttpClient;
+import org.appwork.update.updateclient.UpdateHttpClientOptions;
 import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
 import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.update.updateclient.http.UpdateServerException;
@@ -17,11 +19,15 @@ import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.BasicHTTP.BasicHTTPException;
 
 public class UpdaterHttpClientImpl implements UpdateHttpClient {
-    private final BasicHTTP client;
-    private boolean         interrupted = false;
+    private final BasicHTTP               client;
+    private boolean                       interrupted = false;
+    private final UpdateHttpClientOptions options;
 
     public UpdaterHttpClientImpl() {
         this.client = new BasicHTTP();
+        this.options = JsonConfig.create(UpdateHttpClientOptions.class);
+        this.client.setConnectTimeout(this.options.getConnectTimeout());
+        this.client.setReadTimeout(this.options.getConnectTimeout());
 
     }
 
@@ -58,6 +64,11 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient {
 
         }
 
+    }
+
+    @Override
+    public UpdateHttpClientOptions getOptions() {
+        return this.options;
     }
 
     private void handleClientErrors() throws ClientUpdateRequiredException, UpdateServerException, HTTPIOException {

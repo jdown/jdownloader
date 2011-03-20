@@ -16,7 +16,11 @@ public class Options implements UpdaterOptions {
 
     private final UpdaterOptions op;
     private boolean              debug;
+
+    private boolean              fullUpdate;
     private boolean              noUpdates = false;
+    private String[]             optionalList;
+    private String[]             uninstallList;
 
     public Options() {
         // some options shall not be written back to configfile.
@@ -27,11 +31,16 @@ public class Options implements UpdaterOptions {
         }
 
         this.branch = this.op.getBranch();
-        this.guiless = this.op.getGuiless() || GraphicsEnvironment.isHeadless();
-        this.osFilter = this.op.getOsFilter();
-        this.restart = this.op.getRestart();
+        this.guiless = this.op.isGuiless() || GraphicsEnvironment.isHeadless();
+        this.osFilter = this.op.isOsFilterEnabled();
+        this.restart = this.op.getRestartCommand();
         this.workingDirectory = this.op.getWorkingDirectory();
-        this.debug = this.op.getDebug();
+        this.debug = this.op.isDebug();
+        this.fullUpdate = this.op.isFullUpdate();
+        this.optionalList = this.op.getOptionalList();
+        if (this.optionalList == null) {
+            this.optionalList = new String[] {};
+        }
 
     }
 
@@ -51,18 +60,8 @@ public class Options implements UpdaterOptions {
     }
 
     @Override
-    public boolean getDebug() {
-        return this.debug;
-    }
-
-    @Override
-    public boolean getGuiless() {
-        return this.guiless || this.noUpdates;
-    }
-
-    @Override
-    public boolean getOsFilter() {
-        return this.osFilter;
+    public String[] getOptionalList() {
+        return this.optionalList;
     }
 
     @Override
@@ -72,14 +71,18 @@ public class Options implements UpdaterOptions {
     }
 
     @Override
-    public String getRestart() {
+    public String getRestartCommand() {
         return this.restart;
     }
 
-    @Override
-    public String[] getUpdServer() {
+    public String[] getUninstallList() {
+        return this.uninstallList;
+    }
 
-        return this.op.getUpdServer();
+    @Override
+    public String[] getUpdServerList() {
+
+        return this.op.getUpdServerList();
     }
 
     @Override
@@ -87,8 +90,27 @@ public class Options implements UpdaterOptions {
         return this.workingDirectory;
     }
 
+    @Override
+    public boolean isDebug() {
+        return this.debug;
+    }
+
+    public boolean isFullUpdate() {
+        return this.fullUpdate;
+    }
+
+    @Override
+    public boolean isGuiless() {
+        return this.guiless || this.noUpdates;
+    }
+
     public boolean isNoUpdates() {
         return this.noUpdates;
+    }
+
+    @Override
+    public boolean isOsFilterEnabled() {
+        return this.osFilter;
     }
 
     @Override
@@ -114,6 +136,10 @@ public class Options implements UpdaterOptions {
 
     }
 
+    public void setFullUpdate(final boolean fullUpdate) {
+        this.fullUpdate = fullUpdate;
+    }
+
     @Override
     public void setGuiless(final boolean b) {
         this.guiless = b;
@@ -123,18 +149,28 @@ public class Options implements UpdaterOptions {
         this.noUpdates = b;
     }
 
+    public void setOptionalList(final String[] split) {
+        this.optionalList = split;
+
+    }
+
     @Override
-    public void setOsFilter(final boolean b) {
+    public void setOsFilterEnabled(final boolean b) {
         this.osFilter = b;
     }
 
     @Override
-    public void setRestart(final String b) {
+    public void setRestartCommand(final String b) {
         this.restart = b;
     }
 
+    public void setUninstallList(final String[] split) {
+        this.uninstallList = split;
+
+    }
+
     @Override
-    public void setWorkinfDirectory(final String dir) {
+    public void setWorkingDirectory(final String dir) {
         this.workingDirectory = dir;
     }
 

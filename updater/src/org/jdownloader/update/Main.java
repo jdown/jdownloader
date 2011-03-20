@@ -49,6 +49,8 @@ public class Main {
     }
     private static final SwitchParam    RESTART            = new SwitchParam("restart", "| Restartpath after update");
     private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
+    private static final SwitchParam    INSTALL_PACKAGE    = new SwitchParam("install", "PACKAGE_ID | Install optional package");
+    private static final SwitchParam    UNINSTALL_PACKAGE  = new SwitchParam("uninstall", "PACKAGE_ID | Uninstall optional package");
 
     private static StandaloneUpdaterGui GUI                = null;
 
@@ -87,7 +89,7 @@ public class Main {
         file.getParentFile().mkdirs();
         Exception ret = null;
 
-        if (Main.OPTIONS.getGuiless()) {
+        if (Main.OPTIONS.isGuiless()) {
             final DownloadProgress progress = new DownloadProgress() {
                 @Override
                 public void increaseLoaded(final long increase) {
@@ -247,7 +249,7 @@ public class Main {
             // Main.UPDATER.getEventSender().addListener(new
             // ConsoleHandler(Main.UPDATER));
 
-            if (!Main.OPTIONS.getGuiless()) {
+            if (!Main.OPTIONS.isGuiless()) {
                 Main.GUI = new EDTHelper<StandaloneUpdaterGui>() {
 
                     @Override
@@ -273,13 +275,13 @@ public class Main {
                     } else {
                         Main.out(T._.guiless_noupdates());
                     }
-                    if (Main.OPTIONS.getRestart() != null && Main.OPTIONS.getRestart().trim().length() > 0) {
+                    if (Main.OPTIONS.getRestartCommand() != null && Main.OPTIONS.getRestartCommand().trim().length() > 0) {
                         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                             @Override
                             public void run() {
-                                final ProcessBuilder pb = new ProcessBuilder(ShellParser.splitCommandString(Main.OPTIONS.getRestart()));
-                                System.out.println(ShellParser.splitCommandString(Main.OPTIONS.getRestart()));
+                                final ProcessBuilder pb = new ProcessBuilder(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
+                                System.out.println(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
                                 /*
                                  * needed because the root is different for
                                  * jre/class version
@@ -362,13 +364,20 @@ public class Main {
             final String p = args[i];
             if (Main.RESTART.matches(p)) {
                 final String path = args[++i];
-                Main.OPTIONS.setRestart(path);
+                Main.OPTIONS.setRestartCommand(path);
                 Main.RESTART.print();
 
             } else if (Main.WORKINGDIR.matches(p)) {
                 final String path = args[++i];
-                Main.OPTIONS.setWorkinfDirectory(path);
+                Main.OPTIONS.setWorkingDirectory(path);
                 Main.WORKINGDIR.print();
+            } else if (Main.INSTALL_PACKAGE.matches(p)) {
+                final String path = args[++i];
+                Main.OPTIONS.setOptionalList(path.split("\\,\\s*"));
+
+            } else if (Main.UNINSTALL_PACKAGE.matches(p)) {
+                final String path = args[++i];
+                Main.OPTIONS.setUninstallList(path.split("\\,\\s*"));
 
             } else if (Main.DEBUG.matches(p)) {
                 Main.OPTIONS.setDebug(true);
@@ -378,7 +387,7 @@ public class Main {
                 Main.OPTIONS.setNoUpdate(true);
 
             } else if (Main.DISABLED_OS_FILTER.matches(p)) {
-                Main.OPTIONS.setOsFilter(false);
+                Main.OPTIONS.setOsFilterEnabled(false);
 
             } else if (Main.APP.matches(p)) {
                 final String app = args[++i];
@@ -401,7 +410,7 @@ public class Main {
         try {
             for (final String a : Main.ARGS) {
                 if (a.equals("-tbs")) {
-                    if (Main.OPTIONS.getGuiless()) {
+                    if (Main.OPTIONS.isGuiless()) {
                         Main.out(T._.updateloop());
                         ShutdownController.getInstance().requestShutdown();
                     } else {
@@ -431,7 +440,7 @@ public class Main {
             IO.writeToFile(bootStrapper, IO.readURL(Application.getRessourceURL("tbs.jar")));
 
             ShutdownController.getInstance().addShutdownEvent(new RestartEvent(dest, Main.ARGS));
-            if (Main.OPTIONS.getGuiless()) {
+            if (Main.OPTIONS.isGuiless()) {
                 Main.out(T._.restart_required_msg());
                 ShutdownController.getInstance().requestShutdown();
             } else {
@@ -440,7 +449,7 @@ public class Main {
             }
         } catch (final Throwable e) {
             // Main.GUI.onException(e);
-            if (Main.OPTIONS.getGuiless()) {
+            if (Main.OPTIONS.isGuiless()) {
                 Main.out(Exceptions.getStackTrace(e));
             } else {
                 Dialog.getInstance().showExceptionDialog(T._.exception_title(), T._.exception_msg(), e);
