@@ -1,6 +1,8 @@
 package org.jdownloader.update;
 
 import java.io.File;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
@@ -12,6 +14,7 @@ import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
+import org.appwork.update.updateclient.http.UpdateServerException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.update.translate.T;
@@ -55,7 +58,7 @@ public class ConsoleHandler implements UpdaterListener {
             while (cause != null && cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            if (cause instanceof InterruptedException) {
+            if (cause instanceof InterruptedException || this.updater.isInterrupted()) {
                 Main.out(T._.guiless_userinterrupted());
 
                 return;
@@ -64,11 +67,38 @@ public class ConsoleHandler implements UpdaterListener {
                 return;
 
             }
-            if (cause != null) {
-                Main.out(T._.guiless_update_failed(cause.getLocalizedMessage()));
+            String message;
+            if (cause != null && cause.getLocalizedMessage() != null) {
+                message = T._.guiless_update_failed(cause.getLocalizedMessage());
             } else {
-                Main.out(T._.guiless_update_failed_unknown());
+                message = T._.guiless_update_failed_unknown();
             }
+            if (cause instanceof SocketException) {
+                message = T._.UpdateException_socket(cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName());
+            } else if (cause instanceof SocketTimeoutException) {
+                message = T._.UpdateException_socket(cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName());
+            } else if (cause instanceof UpdateServerException) {
+
+                switch (((UpdateServerException) cause).getType()) {
+                    case DOWNLOADPACKAGE_VALIDATION_ERROR:
+                    case DOWNLOADPACKAGE_VALIDATION_ERROR_INTERN:
+                    case PKG_CREATE_HASHMISMATCH:
+                        message = T._.error_unknown_server();
+                        break;
+                    case UNKNOWN_APP:
+                        message = T._.error_unknown_app(this.updater.getAppID());
+                        break;
+                    case UNKNOWN_BRANCH:
+                        message = T._.error_unknown_branch(this.updater.getBranch().getName());
+                    case INVALID_BRANCH:
+                        message = T._.error_invalid_branch(this.updater.getBranch().getName());
+
+                        break;
+
+                }
+            }
+            Main.out(message);
+
         }
 
     }

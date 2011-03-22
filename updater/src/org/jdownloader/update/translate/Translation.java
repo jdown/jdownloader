@@ -14,8 +14,20 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Really cancel update?", "Update wirklich abbrechen?" })
     String dialog_rly_cancel();
 
+    @Default(lngs = { "en", "de" }, values = { "The '%s1'-Edition cannot be updated right now. Please try again later!", "Die '%s1' Edition kann momentan nicht aktualisiert werden. Bitte später versuchen." })
+    String error_invalid_branch(String name);
+
     @Default(lngs = { "en", "de" }, values = { "Service not available. Try again in 60 sec.)", "Service momentan nicht erreichbar. Bitte in einer Minute erneut versuchen." })
     String error_service_not_available_right_now();
+
+    @Default(lngs = { "en", "de" }, values = { "Cannot update %s1. \r\n                  Try again later!", "Kann %s1 nicht aktualisieren. \r\n                  Bitte später erneut versuchen." })
+    String error_unknown_app(String appID);
+
+    @Default(lngs = { "en", "de" }, values = { "Unknown Edition: %s1", "Unbekannte Version: %s1" })
+    String error_unknown_branch(String string);
+
+    @Default(lngs = { "en", "de" }, values = { "Unknown Updateserver problems.\r\nPlease try again later", "Unbekannte Updateprobleme.\r\n                  Bitte versuchen Sie es später erneut." })
+    String error_unknown_server();
 
     @Default(lngs = { "en", "de" }, values = { "Unexpected Error occured. Contact Support.", "Unerwarteter Fehler aufgetreten. Bitte Support kontaktieren." })
     String exception_msg();
@@ -146,6 +158,9 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Yes(recommended)", "Ja(empfohlen)" })
     String update_dialog_yes();
 
+    @Default(lngs = { "en", "de" }, values = { "No Internet connection to updateserver: %s1", "Keine Internetverbindung zum Updateserver: %s1" })
+    String UpdateException_socket(String message);
+
     @Default(lngs = { "en", "de" }, values = { "Updater failed to update himself. Please try again in a few minutes.", "Updater konnte sich nicht selbst aktualisieren. Bitte versuch es in einigen Minuten nochmal." })
     String updateloop();
 
@@ -157,4 +172,5 @@ public interface Translation extends TranslateInterface {
 
     @Default(lngs = { "en", "de" }, values = { "%s1 update(s) are ready for installation.", "%s1 Update(s) können jetzt installiert werden." })
     String updates_ready_for_install(int size);
+
 }
