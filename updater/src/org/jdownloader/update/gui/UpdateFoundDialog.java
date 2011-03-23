@@ -14,7 +14,7 @@ import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.update.updateclient.Updater;
-import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -27,7 +27,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
     private AbstractAction nowAction   = null;
 
     public UpdateFoundDialog(final Runnable later, final Runnable now, final Updater updater) {
-        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, T._.update_dialog_title_updates_available(), T._.update_dialog_msg_x_updates_available(updater.getFilesToInstall().size() + updater.getUpdates().size(), updater.getFilesToRemove().size()), ImageProvider.getImageIcon("logo", 32, 32), null, T._.update_dialog_cancel());
+        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, T._.update_dialog_title_updates_available(), T._.update_dialog_msg_x_updates_available(updater.getFilesToInstall().size() + updater.getUpdates().size(), updater.getFilesToRemove().size()), IconIO.getImageIcon(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon32.png")), null, T._.update_dialog_cancel());
         this.setCountdownTime(60);
         if (later != null) {
             this.laterAction = new AbstractAction(T._.update_dialog_later()) {
