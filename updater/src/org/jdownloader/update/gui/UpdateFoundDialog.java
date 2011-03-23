@@ -1,4 +1,4 @@
-package org.jdownloader.update;
+package org.jdownloader.update.gui;
 
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;

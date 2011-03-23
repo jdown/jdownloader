@@ -1,5 +1,7 @@
 package org.jdownloader.update;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -32,12 +34,14 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging.LogFormatter;
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.net.HTTPException;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.ShellParser;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.zip.ZipIOReader;
+import org.jdownloader.update.gui.JDStandaloneUpdaterGui;
 import org.jdownloader.update.translate.T;
 
 public class Main {
@@ -46,6 +50,11 @@ public class Main {
         // ignore Mapping errors. If client is not up2date, illegal server
         // responses shall not kill him.
         mapper.setIgnoreIllegalArgumentMappings(true);
+
+        // do this call to keep the correct root in Application Cache
+        Application.setApplication(".jd_home");
+        Application.getRoot(Main.class);
+
     }
     private static final SwitchParam    RESTART            = new SwitchParam("restart", "| Restartpath after update");
     private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
@@ -254,8 +263,27 @@ public class Main {
 
                     @Override
                     public StandaloneUpdaterGui edtRun() {
-                        final StandaloneUpdaterGui upd = new StandaloneUpdaterGui(Main.UPDATER);
-                        upd.getFrame().setAlwaysOnTop(true);
+                        final JDStandaloneUpdaterGui upd = new JDStandaloneUpdaterGui(Main.UPDATER, new ActionListener() {
+
+                            @Override
+                            public void actionPerformed(final ActionEvent e) {
+                                String rest = Main.OPTIONS.getRestartCommand();
+                                if (rest == null || rest.trim().length() == 0) {
+                                    if (CrossSystem.isWindows()) {
+                                        rest = "JDownloader.exe";
+                                    } else if (CrossSystem.isLinux()) {
+                                        rest = "java -jar JDownloader.jar";
+                                    } else {
+                                        rest = "open ../../../JDownloader.app";
+                                    }
+
+                                    Main.OPTIONS.setRestartCommand(rest);
+                                    Main.restart();
+                                }
+
+                            }
+                        });
+                        // upd.getFrame().setAlwaysOnTop(true);
                         upd.getFrame().toFront();
                         return upd;
                     }
@@ -276,27 +304,7 @@ public class Main {
                         Main.out(T._.guiless_noupdates());
                     }
                     if (Main.OPTIONS.getRestartCommand() != null && Main.OPTIONS.getRestartCommand().trim().length() > 0) {
-                        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-                            @Override
-                            public void run() {
-                                final ProcessBuilder pb = new ProcessBuilder(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
-                                System.out.println(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
-                                /*
-                                 * needed because the root is different for
-                                 * jre/class version
-                                 */
-
-                                System.out.println(Main.UPDATER.getInstallDirectory());
-                                pb.directory(Main.UPDATER.getInstallDirectory());
-                                try {
-                                    pb.start();
-                                } catch (final IOException e) {
-                                }
-                            }
-                        });
-
-                        ShutdownController.getInstance().requestShutdown();
+                        Main.restart();
                     }
 
                     break;
@@ -404,6 +412,29 @@ public class Main {
 
             }
         }
+    }
+
+    private static void restart() {
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void run() {
+                final ProcessBuilder pb = new ProcessBuilder(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
+                System.out.println(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
+                /*
+                 * needed because the root is different for jre/class version
+                 */
+
+                System.out.println(Main.UPDATER.getInstallDirectory());
+                pb.directory(Main.UPDATER.getInstallDirectory());
+                try {
+                    pb.start();
+                } catch (final IOException e) {
+                }
+            }
+        });
+
+        ShutdownController.getInstance().requestShutdown();
     }
 
     private static void selfUpdate(final ClientUpdateRequiredException e2) {
