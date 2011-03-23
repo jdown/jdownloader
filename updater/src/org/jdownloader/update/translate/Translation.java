@@ -6,7 +6,6 @@ import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en", "de" })
 public interface Translation extends TranslateInterface {
-    //
 
     @Default(lngs = { "en", "de" }, values = { "Updater outdated. Could not update the updater!", "Updater veraltet. Konnte Updater nicht aktualisieren." })
     String could_not_update_updater();
@@ -65,7 +64,7 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "%s1 file(s) are waiting to get installed!", "%s1 Datei(en) warten auf Installation." })
     String guiless_files_ready_for_install(int size);
 
-    @Default(lngs = { "en", "de" }, values = { "%s1 file(s) are outdated and will be removed.", "%s1 Datei(en) sind verwaltet und werden entfernt." })
+    @Default(lngs = { "en", "de" }, values = { "%s1 file(s) are outdated and will be removed.", "%s1 Datei(en) sind veraltet und werden entfernt." })
     String guiless_files_wait_for_removal(int size);
 
     @Default(lngs = { "en", "de" }, values = { "Compare filelist with installed file(s)", "Vergleiche Dateiliste mit installierten Datei(en)" })
@@ -87,7 +86,7 @@ public interface Translation extends TranslateInterface {
     String guiless_progress(int percent);
 
     @Default(lngs = { "en", "de" }, values = { "Progress: %s1% | %s2/%s3", "Fortschritt: %s1% | %s2/%s3" })
-    void guiless_progress(long l, String loaded, String total);
+    String guiless_progress(long l, String loaded, String total);
 
     @Default(lngs = { "en", "de" }, values = { "Updater will update itself... ", "Updater wird sich nun selbst aktualisieren..." })
     String guiless_selfupdate();
