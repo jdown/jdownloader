@@ -143,8 +143,8 @@ public interface Translation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Ask me later", "Später erneut fragen" })
     String update_dialog_later();
 
-    @Default(lngs = { "en", "de" }, values = { "Updates are ready for Installation. Do you want to run the update now?\r\n\r\nDetails:\r\n    * Install %s1 new file(s)\r\n    * Remove %s3 outdated file(s)", "Updates können jetzt installiert werden. Soll das Update jetzt gestartet werden?\r\n\r\nDetails:\r\n    * %s1 neue Datei(en) installieren\r\n    * %s2 veraltete Datei(en) entfernen" })
-    String update_dialog_msg_x_updates_available(int install, int remove);
+    @Default(lngs = { "en", "de" }, values = { "Updates are ready for Installation. Do you want to run the update now?", "Updates können jetzt installiert werden. Soll das Update jetzt gestartet werden?" })
+    String update_dialog_msg_x_updates_available();
 
     @Default(lngs = { "en", "de" }, values = { "Open Changelog", "Änderungen ansehen" })
     String update_dialog_news_button();
