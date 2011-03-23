@@ -27,7 +27,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
     private AbstractAction nowAction   = null;
 
     public UpdateFoundDialog(final Runnable later, final Runnable now, final Updater updater) {
-        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, T._.update_dialog_title_updates_available(), T._.update_dialog_msg_x_updates_available(updater.getFilesToInstall().size() + updater.getUpdates().size(), updater.getFilesToRemove().size()), IconIO.getImageIcon(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon32.png")), null, T._.update_dialog_cancel());
+        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, T._.update_dialog_title_updates_available(), T._.update_dialog_msg_x_updates_available(updater.getFilesToInstall().size() + updater.getUpdates().size(), updater.getFilesToRemove().size()), IconIO.getImageIcon(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon64.png")), null, T._.update_dialog_cancel());
         this.setCountdownTime(60);
         if (later != null) {
             this.laterAction = new AbstractAction(T._.update_dialog_later()) {
