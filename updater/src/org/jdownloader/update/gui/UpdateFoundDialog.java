@@ -13,26 +13,21 @@ import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.update.updateclient.Updater;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.update.translate.T;
 
 public class UpdateFoundDialog extends ConfirmDialog {
 
-    public static void main(final String[] args) throws DialogClosedException, DialogCanceledException {
-        Dialog.getInstance().showDialog(new UpdateFoundDialog(null, null, 1));
-    }
-
     private AbstractAction laterAction = null;
     private AbstractAction nowAction   = null;
 
-    public UpdateFoundDialog(final Runnable later, final Runnable now, final int num) {
-        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, T._.update_dialog_title_updates_available(), T._.update_dialog_msg_x_updates_available(num), ImageProvider.getImageIcon("logo", 32, 32), null, T._.update_dialog_cancel());
+    public UpdateFoundDialog(final Runnable later, final Runnable now, final Updater updater) {
+        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, T._.update_dialog_title_updates_available(), T._.update_dialog_msg_x_updates_available(updater.getFilesToInstall().size() + updater.getUpdates().size(), updater.getFilesToRemove().size()), ImageProvider.getImageIcon("logo", 32, 32), null, T._.update_dialog_cancel());
         this.setCountdownTime(60);
         if (later != null) {
             this.laterAction = new AbstractAction(T._.update_dialog_later()) {
@@ -68,6 +63,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
         }
     }
 
+    @Override
     protected JPanel getDefaultButtonPanel() {
         final JPanel ret = new JPanel(new MigLayout("ins 0", "[]", "0[]0"));
 
@@ -82,6 +78,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
 
     }
 
+    @Override
     protected boolean isIgnoreSizeLimitations() {
         return true;
     }
