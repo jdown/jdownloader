@@ -77,6 +77,7 @@ public class PostFormDataRequest extends Request {
      * send the postData of the Request. in case httpConnection is null, it
      * outputs the data to a NullOutputStream
      */
+    @Override
     public long postRequest(final URLConnectionAdapter httpConnection) throws IOException {
         CountingOutputStream output = null;
         if (httpConnection != null && httpConnection.getOutputStream() != null) {
@@ -98,9 +99,10 @@ public class PostFormDataRequest extends Request {
                 httpConnection.postDataSend();
             }
         }
-        return output.bytesWritten();
+        return output.transferedBytes();
     }
 
+    @Override
     public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod(RequestMethod.POST);
         httpConnection.setRequestProperty("Content-Type", this.encodeType + "; boundary=" + this.boundary.substring(2));
