@@ -95,9 +95,6 @@ public class PostFormDataRequest extends Request {
             writer.flush();
             output.flush();
         } finally {
-            if (httpConnection != null) {
-                httpConnection.postDataSend();
-            }
         }
         return output.transferedBytes();
     }

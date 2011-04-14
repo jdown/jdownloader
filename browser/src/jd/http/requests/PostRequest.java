@@ -122,9 +122,6 @@ public class PostRequest extends Request {
                 output.flush();
             }
         } finally {
-            if (httpConnection != null) {
-                httpConnection.postDataSend();
-            }
         }
         return output.transferedBytes();
     }

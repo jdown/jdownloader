@@ -111,10 +111,6 @@ public abstract class Request {
         } else {
             tmpOut = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(16384);
         }
-        final byte[] preRead = con.preReadBytes();
-        if (preRead != null) {
-            tmpOut.write(preRead);
-        }
         /* added "Corrupt GZIP trailer" for CamWinsCom */
         try {
             final byte[] b = new byte[1024];
