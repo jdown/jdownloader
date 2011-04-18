@@ -204,7 +204,11 @@ public abstract class Request {
         this.requested = true;
         this.openConnection();
         this.postRequest(this.httpConnection);
-        this.httpConnection.connect();
+        /*
+         * we connect to inputstream to make sure the response headers are
+         * getting parsed first
+         */
+        this.httpConnection.getInputStream();
         try {
             this.collectCookiesFromConnection();
         } catch (final NullPointerException e) {

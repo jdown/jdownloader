@@ -1,5 +1,6 @@
 package jd.http;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map.Entry;
@@ -72,8 +73,14 @@ public class URLConnectionAdapterDirectImpl extends HTTPConnectionImpl implement
             }
 
         }
-
         sb.append("----------------Response------------------\r\n");
+        try {
+            if (this.isConnected()) {
+                this.connectInputStream();
+            }
+        } catch (final IOException nothing) {
+            sb.append("----no InputStream available----");
+        }
         sb.append(this.httpHeader).append("\r\n");
         for (final Entry<String, List<String>> next : this.getHeaderFields().entrySet()) {
             // Achtung cookie reihenfolge ist wichtig!!!
