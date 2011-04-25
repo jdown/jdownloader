@@ -200,6 +200,7 @@ public class HTMLParser {
      * @return Linkliste aus data extrahiert
      */
     public static String[] getHttpLinksIntern(String data, String url) {
+        String baseUrl = url;
         data = data.trim();
         /*
          * replace urlencoded br tags, so we can find all links seperated by
@@ -228,7 +229,7 @@ public class HTMLParser {
                 break;
             } else {
                 /* lets check if tag contains links */
-                final String[] result = HTMLParser.getHttpLinksIntern(nexttag, url);
+                final String[] result = HTMLParser.getHttpLinksIntern(nexttag, baseUrl);
                 if (result.length == 0) {
                     if (nexttag.startsWith("/div")) {
                         /* <div>, insert newline here */
@@ -248,7 +249,10 @@ public class HTMLParser {
         if (!data.matches(".*<.*>.*")) {
             final int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0) {
-                return new String[] {};
+                if (!data.contains("href")) {
+                    /* no href inside */
+                    return new String[] {};
+                }
             } else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 HTTPConnection con = null;
@@ -276,13 +280,16 @@ public class HTMLParser {
         String basename = "";
         String host = "";
         final LinkedList<String> set = new LinkedList<String>();
-        final Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+        final Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
         for (final Pattern element : basePattern) {
             m = element.matcher(data);
             if (m.find()) {
                 url = m.group(2);
                 break;
             }
+        }
+        if (baseUrl != null && url != null && url.startsWith("./")) {
+            url = Browser.correctURL(baseUrl + url);
         }
         String pro = "http";
         if (url != null && url.trim().length() > 0) {
@@ -329,6 +336,9 @@ public class HTMLParser {
             url = pro + "://" + url;
         } else {
             url = "";
+        }
+        if (!set.contains(url)) {
+            set.add(url);
         }
 
         final class Httppattern {

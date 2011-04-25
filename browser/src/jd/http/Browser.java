@@ -128,7 +128,7 @@ public class Browser {
             /* check for missing first / in url */
             url = url + "/";
         }
-        if (begin > 0 && (!url.substring(begin + 3).contains("//") || !url.contains("./"))) { return url; }
+        if (begin > 0 && (!url.substring(begin + 3).contains("//") && !url.contains("./"))) { return url; }
         String ret = url;
         String end = null;
         String tmp = null;
