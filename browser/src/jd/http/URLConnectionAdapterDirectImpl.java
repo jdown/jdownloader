@@ -1,9 +1,6 @@
 package jd.http;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.List;
-import java.util.Map.Entry;
 
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
@@ -41,24 +38,7 @@ public class URLConnectionAdapterDirectImpl extends HTTPConnectionImpl implement
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("-->").append(this.getURL()).append("\r\n");
-
-        sb.append("----------------Request------------------\r\n");
-
-        sb.append(this.httpMethod.toString()).append(' ').append(this.getURL().getPath()).append((this.getURL().getQuery() != null ? "?" + this.getURL().getQuery() : "")).append(" HTTP/1.1\r\n");
-
-        for (final String key : this.getRequestProperties().keySet()) {
-            final String v = this.getRequestProperties().get(key);
-            if (v == null) {
-                continue;
-            }
-            sb.append(key);
-            sb.append(new char[] { ':', ' ' });
-            sb.append(v);
-            sb.append(new char[] { '\r', '\n' });
-        }
-        sb.append(new char[] { '\r', '\n' });
-
+        sb.append(this.getRequestInfo());
         if (this.getRequest() != null) {
             if (this.getRequest() instanceof PostRequest) {
                 if (((PostRequest) this.getRequest()).getPostDataString() != null) {
@@ -73,31 +53,7 @@ public class URLConnectionAdapterDirectImpl extends HTTPConnectionImpl implement
             }
 
         }
-        sb.append("----------------Response------------------\r\n");
-        try {
-            if (this.isConnected()) {
-                this.connectInputStream();
-            }
-        } catch (final IOException nothing) {
-            sb.append("----no InputStream available----");
-        }
-        sb.append(this.httpHeader).append("\r\n");
-        for (final Entry<String, List<String>> next : this.getHeaderFields().entrySet()) {
-            // Achtung cookie reihenfolge ist wichtig!!!
-            for (int i = next.getValue().size() - 1; i >= 0; i--) {
-                if (next.getKey() == null) {
-                    sb.append(next.getValue().get(i));
-                    sb.append(new char[] { '\r', '\n' });
-                } else {
-                    sb.append(next.getKey());
-                    sb.append(new char[] { ':', ' ' });
-                    sb.append(next.getValue().get(i));
-                    sb.append(new char[] { '\r', '\n' });
-                }
-            }
-        }
-        sb.append(new char[] { '\r', '\n' });
-
+        sb.append(this.getResponseInfo());
         return sb.toString();
     }
 }
