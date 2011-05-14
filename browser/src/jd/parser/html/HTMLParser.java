@@ -33,6 +33,18 @@ import org.appwork.utils.net.httpconnection.HTTPConnection;
 
 public class HTMLParser {
 
+    final static class Httppattern {
+        public Pattern p;
+        public int group;
+
+        public Httppattern(final Pattern p, final int group) {
+            this.p = p;
+            this.group = group;
+        }
+    }
+
+    final private static Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("src.*?=.*?['|\"](.*?)['|\"]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("src.*?=(.*?)[ |>]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
+
     /**
      * converts a String array into a string which is parsable by
      * getHttpLinksIntern
@@ -161,9 +173,10 @@ public class HTMLParser {
         return HTMLParser.getHttpLinks(data, null);
     }
 
-    public static String[] getHttpLinks(final String data, final String url) {
+    public static String[] getHttpLinks(String data, final String url) {
         final String[] links = HTMLParser.getHttpLinksIntern(data, url);
         if (links == null || links.length == 0) { return links; }
+        data=null;
         /*
          * in case we have valid and invalid (...) urls for the same link, we
          * only use the valid one
@@ -189,24 +202,15 @@ public class HTMLParser {
         return tmplinks.toArray(new String[tmplinks.size()]);
     }
 
-    /**
-     * Sucht alle Links heraus
-     * 
-     * @param data
-     *            ist der Quelltext einer Html-Datei
-     * @param url
-     *            der Link von dem der Quelltext stammt (um die base automatisch
-     *            zu setzen)
-     * @return Linkliste aus data extrahiert
-     */
     public static String[] getHttpLinksIntern(String data, String url) {
-        String baseUrl = url;
         data = data.trim();
         /*
          * replace urlencoded br tags, so we can find all links seperated by
          * those
          */
-        data = data.replaceAll("%3Cbr%20/%3E", "<br />");
+        /* find a better solution for this html codings */
+        data = data.replaceAll("&lt;", ">");
+        data = data.replaceAll("&gt;", "<");
         /* place all replaces here that seperates links */
         /* replace <br> tags with space so we we can seperate the links */
         /* we replace the complete br tag with a newline */
@@ -220,28 +224,45 @@ public class HTMLParser {
         // data = data.replaceAll("(?i)</span.*?>", "");
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
+        LinkedList<String> result = _getHttpLinksIntern(data, url);
+        data=null;
+        if (result == null) {
+            return new String[] {};
+        } else {
+            return result.toArray(new String[] {});
+        }
+    }
 
+    /**
+     * Sucht alle Links heraus
+     * 
+     * @param data
+     *            ist der Quelltext einer Html-Datei
+     * @param url
+     *            der Link von dem der Quelltext stammt (um die base automatisch
+     *            zu setzen)
+     * @return Linkliste aus data extrahiert
+     */
+    private static LinkedList<String> _getHttpLinksIntern(String data, String url) {
+        //System.out.println("Call: "+data.length());
+        String baseUrl = url;
+        final LinkedList<String> set = new LinkedList<String>();
         /* filtering tags, recursion command me ;) */
         while (true) {
-            final String nexttag = new Regex(data, "<(.*?)>").getMatch(0);
+            final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
             if (nexttag == null) {
                 /* no further tag found, lets continue */
                 break;
             } else {
                 /* lets check if tag contains links */
-                final String[] result = HTMLParser.getHttpLinksIntern(nexttag, baseUrl);
-                if (result.length == 0) {
-                    if (nexttag.startsWith("/div")) {
-                        /* <div>, insert newline here */
-                        data = data.replaceFirst("(?s)<.*?>", "\r\n");
-                    } else {
-                        /* no links, lets replace it with nothing */
-                        data = data.replaceFirst("(?s)<.*?>", "");
-                    }
-                } else {
-                    /* lets replace the tag with the links */
-                    data = data.replaceFirst("(?s)<.*?>", HTMLParser.ArrayToString(result));
+                LinkedList<String> result = HTMLParser._getHttpLinksIntern(nexttag, baseUrl);
+                if (result != null && result.size() > 0) {
+                    set.addAll(result);
                 }
+                result = null;
+                int pos = data.indexOf('>');
+                if (pos>0 && data.length()>=pos+1)data=data.substring(pos+1);
+                //System.out.println("SubCall: "+data.length());
             }
         }
 
@@ -251,25 +272,24 @@ public class HTMLParser {
             if (c == 0) {
                 if (!data.contains("href")) {
                     /* no href inside */
-                    return new String[] {};
+                    return set;
                 }
             } else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 HTTPConnection con = null;
                 try {
-
                     if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
-                        if (con != null) {
-                            con.disconnect();
-                        }
-                        return new String[] { link.replaceAll("\\s", "%20") };
+                        set.add(link.replaceAll("\\s", "%20"));
+                        return set;
                     }
                 } catch (final Exception e) {
                     // TODO Auto-generated catch block
                     Log.exception(e);
-                }
-                if (con != null) {
-                    con.disconnect();
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -279,7 +299,6 @@ public class HTMLParser {
         String link;
         String basename = "";
         String host = "";
-        final LinkedList<String> set = new LinkedList<String>();
         final Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
         for (final Pattern element : basePattern) {
             m = element.matcher(data);
@@ -341,16 +360,6 @@ public class HTMLParser {
             set.add(url);
         }
 
-        final class Httppattern {
-            public Pattern p;
-            public int group;
-
-            public Httppattern(final Pattern p, final int group) {
-                this.p = p;
-                this.group = group;
-            }
-        }
-        final Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("src.*?=.*?['|\"](.*?)['|\"]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("src.*?=(.*?)[ |>]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
         for (final Httppattern element : linkAndFormPattern) {
             m = element.p.matcher(data);
             while (m.find()) {
@@ -393,7 +402,7 @@ public class HTMLParser {
             }
         }
 
-        return set.toArray(new String[set.size()]);
+        return set;
     }
 
     /**
