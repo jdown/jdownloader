@@ -3,6 +3,7 @@ package org.jdownloader.update;
 import java.awt.GraphicsEnvironment;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.StorageHandler;
 import org.appwork.update.updateclient.UpdaterOptions;
 
 public class Options implements UpdaterOptions {
@@ -73,6 +74,12 @@ public class Options implements UpdaterOptions {
     @Override
     public String getRestartCommand() {
         return this.restart;
+    }
+
+    @Override
+    public StorageHandler<?> getStorageHandler() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     public String[] getUninstallList() {
