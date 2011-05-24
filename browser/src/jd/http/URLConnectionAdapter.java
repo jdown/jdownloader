@@ -18,6 +18,12 @@ package jd.http;
 
 public interface URLConnectionAdapter extends org.appwork.utils.net.httpconnection.HTTPConnection {
     /**
+     * DO NOT USE in Plugins for old Stable <10000
+     */
+    @Deprecated
+    long getContentLength();
+
+    /**
      * DO NOT rename this or change data type
      */
     long getLongContentLength();

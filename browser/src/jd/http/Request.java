@@ -104,6 +104,7 @@ public abstract class Request {
             return null;
         }
         ReusableByteArrayOutputStream tmpOut;
+        ReusableByteArrayOutputStream tmpOut2 = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(1048);
         final long contentLength = con.getContentLength();
         if (contentLength != -1) {
             final int length = contentLength > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) contentLength;
@@ -111,18 +112,23 @@ public abstract class Request {
         } else {
             tmpOut = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(16384);
         }
+        boolean okay = false;
         /* added "Corrupt GZIP trailer" for CamWinsCom */
         try {
-            final byte[] b = new byte[1024];
             int len;
-            while ((len = is.read(b)) != -1) {
-                tmpOut.write(b, 0, len);
+            while ((len = is.read(tmpOut2.getInternalBuffer())) != -1) {
+                if (len > 0) {
+                    tmpOut.write(tmpOut2.getInternalBuffer(), 0, len);
+                }
             }
+            okay = true;
         } catch (final EOFException e) {
             Log.L.log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+            okay = true;
         } catch (final IOException e) {
             if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature") || e.toString().contains("Corrupt GZIP trailer")) {
                 Log.L.log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+                okay = true;
             } else {
                 throw e;
             }
@@ -139,6 +145,12 @@ public abstract class Request {
                 /* disconnect connection */
                 con.disconnect();
             } catch (final Exception e) {
+            }
+            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(tmpOut2);
+            tmpOut2 = null;
+            if (okay == false) {
+                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(tmpOut);
+                tmpOut = null;
             }
         }
         return tmpOut;
