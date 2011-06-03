@@ -60,8 +60,7 @@ public class Encoding {
     }
 
     /**
-     * Wenden htmlDecode an, bis es keine Änderungen mehr gibt. Aber max 50
-     * mal!
+     * Wenden htmlDecode an, bis es keine Änderungen mehr gibt. Aber max 50 mal!
      * 
      * @param string
      * @return
