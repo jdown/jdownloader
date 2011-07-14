@@ -161,6 +161,21 @@ public class Encoding {
         return str;
     }
 
+    /**
+     * 
+     * Wandelt HTML in CDATA um
+     * 
+     * @param str
+     * @return decoded string
+     */
+    public static String cdataEncode(String str) {
+        if (str == null) { return null; }
+        str = str.replaceAll("<", "&lt;");
+        str = str.replaceAll(">", "&gt;");
+        return str;
+    }
+
+    
     public static boolean isUrlCoded(final String str) {
         if (str == null) { return false; }
         try {
