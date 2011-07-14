@@ -46,6 +46,180 @@ public class HTMLParser {
     final private static Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("src.*?=.*?['|\"](.*?)['|\"]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("src.*?=(.*?)[ |>]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
 
     /**
+     * Sucht alle Links heraus
+     * 
+     * @param data
+     *            ist der Quelltext einer Html-Datei
+     * @param url
+     *            der Link von dem der Quelltext stammt (um die base automatisch
+     *            zu setzen)
+     * @return Linkliste aus data extrahiert
+     */
+    private static LinkedList<String> _getHttpLinksIntern(String data, String url) {
+        // System.out.println("Call: "+data.length());
+        final String baseUrl = url;
+        final LinkedList<String> set = new LinkedList<String>();
+        /* filtering tags, recursion command me ;) */
+        while (true) {
+            final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
+            if (nexttag == null) {
+                /* no further tag found, lets continue */
+                break;
+            } else {
+                /* lets check if tag contains links */
+                LinkedList<String> result = HTMLParser._getHttpLinksIntern(nexttag, baseUrl);
+                if (result != null && result.size() > 0) {
+                    set.addAll(result);
+                }
+                result = null;
+                final int pos = data.indexOf('>');
+                if (pos >= 0 && data.length() >= pos + 1) {
+                    data = data.substring(pos + 1);
+                    // System.out.println("SubCall: "+data.length());
+                }
+            }
+        }
+
+        final String protocolPattern = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
+        if (!data.matches(".*<.*>.*")) {
+            final int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
+            if (c == 0) {
+                if (!data.contains("href")) {
+                    /* no href inside */
+                    return set;
+                }
+            } else if (c == 1 && data.length() < 100 && data.matches("^\"?(" + protocolPattern + "://|www\\.).*")) {
+                final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceAll("[<>\"]*", "");
+                HTTPConnection con = null;
+                try {
+                    if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
+                        set.add(link.replaceAll("\\s", "%20"));
+                        return set;
+                    }
+                } catch (final Exception e) {
+                    // TODO Auto-generated catch block
+                    Log.exception(e);
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        }
+
+        url = url == null ? "" : url;
+        Matcher m;
+        String link;
+        String basename = "";
+        String host = "";
+        final Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+        for (final Pattern element : basePattern) {
+            m = element.matcher(data);
+            if (m.find()) {
+                url = m.group(2);
+                break;
+            }
+        }
+        if (baseUrl != null && url != null && url.startsWith("./")) {
+            url = Browser.correctURL(baseUrl + url);
+        }
+        String pro = "http";
+        if (url != null && url.trim().length() > 0) {
+            if (url.startsWith("directhttp://")) {
+                pro = "directhttp";
+            }
+            if (url.startsWith("https://")) {
+                pro = "https";
+            }
+            if (url.startsWith("jd://")) {
+                pro = "jd";
+            }
+            if (url.startsWith("rsdf://")) {
+                pro = "rsdf";
+            }
+            if (url.startsWith("ccf://")) {
+                pro = "ccf";
+            }
+            if (url.startsWith("dlc://")) {
+                pro = "dlc";
+            }
+            if (url.startsWith("jdlist://")) {
+                pro = "jdlist";
+            }
+            if (url.startsWith("ftp://")) {
+                pro = "ftp";
+            }
+            if (url.startsWith("flashget://")) {
+                pro = "flashget";
+            }
+            url = url.replace(pro + "://", "");
+            int dot = url.lastIndexOf('/');
+            if (dot != -1) {
+                basename = pro + "://" + url.substring(0, dot + 1);
+            } else {
+                basename = pro + "://" + url + "/";
+            }
+            dot = url.indexOf('/');
+            if (dot != -1) {
+                host = pro + "://" + url.substring(0, dot);
+            } else {
+                host = pro + "://" + url;
+            }
+            url = pro + "://" + url;
+        } else {
+            url = "";
+        }
+        if (!set.contains(url)) {
+            set.add(url);
+        }
+
+        for (final Httppattern element : HTMLParser.linkAndFormPattern) {
+            m = element.p.matcher(data);
+            while (m.find()) {
+                link = m.group(element.group);
+                link = link.replaceAll("h.{2,3}://", "http://");
+                if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
+                    if (link.length() > 2 && link.startsWith("www")) {
+                        link = pro + "://" + link;
+                    }
+                    if (link.charAt(0) == '/') {
+                        link = host + link;
+                    } else if (link.charAt(0) == '#') {
+                        link = url + link;
+                    } else {
+                        link = basename + link;
+                    }
+                }
+                link = link.trim();
+
+                try {
+                    new URL(link);
+                    if (!set.contains(link)) {
+                        set.add(link);
+                    }
+                } catch (final MalformedURLException e) {
+
+                }
+
+            }
+        }
+
+        m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
+        while (m.find()) {
+            link = m.group(0);
+            link = link.replaceAll("^h.{2,3}://", "http://");
+            link = link.replaceFirst("^www\\.", "http://www\\.");
+            link = link.trim();
+            if (!set.contains(link)) {
+                set.add(link);
+            }
+        }
+
+        return set;
+    }
+
+    /**
      * converts a String array into a string which is parsable by
      * getHttpLinksIntern
      */
@@ -176,7 +350,7 @@ public class HTMLParser {
     public static String[] getHttpLinks(String data, final String url) {
         final String[] links = HTMLParser.getHttpLinksIntern(data, url);
         if (links == null || links.length == 0) { return links; }
-        data=null;
+        data = null;
         /*
          * in case we have valid and invalid (...) urls for the same link, we
          * only use the valid one
@@ -202,7 +376,7 @@ public class HTMLParser {
         return tmplinks.toArray(new String[tmplinks.size()]);
     }
 
-    public static String[] getHttpLinksIntern(String data, String url) {
+    public static String[] getHttpLinksIntern(String data, final String url) {
         data = data.trim();
         /*
          * replace urlencoded br tags, so we can find all links seperated by
@@ -224,185 +398,13 @@ public class HTMLParser {
         // data = data.replaceAll("(?i)</span.*?>", "");
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
-        LinkedList<String> result = _getHttpLinksIntern(data, url);
-        data=null;
+        final LinkedList<String> result = HTMLParser._getHttpLinksIntern(data, url);
+        data = null;
         if (result == null) {
             return new String[] {};
         } else {
             return result.toArray(new String[] {});
         }
-    }
-
-    /**
-     * Sucht alle Links heraus
-     * 
-     * @param data
-     *            ist der Quelltext einer Html-Datei
-     * @param url
-     *            der Link von dem der Quelltext stammt (um die base automatisch
-     *            zu setzen)
-     * @return Linkliste aus data extrahiert
-     */
-    private static LinkedList<String> _getHttpLinksIntern(String data, String url) {
-        //System.out.println("Call: "+data.length());
-        String baseUrl = url;
-        final LinkedList<String> set = new LinkedList<String>();
-        /* filtering tags, recursion command me ;) */
-        while (true) {
-            final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
-            if (nexttag == null) {
-                /* no further tag found, lets continue */
-                break;
-            } else {
-                /* lets check if tag contains links */
-                LinkedList<String> result = HTMLParser._getHttpLinksIntern(nexttag, baseUrl);
-                if (result != null && result.size() > 0) {
-                    set.addAll(result);
-                }
-                result = null;
-                int pos = data.indexOf('>');
-                if (pos>0 && data.length()>=pos+1)data=data.substring(pos+1);
-                //System.out.println("SubCall: "+data.length());
-            }
-        }
-
-        final String protocolPattern = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
-        if (!data.matches(".*<.*>.*")) {
-            final int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
-            if (c == 0) {
-                if (!data.contains("href")) {
-                    /* no href inside */
-                    return set;
-                }
-            } else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
-                final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
-                HTTPConnection con = null;
-                try {
-                    if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
-                        set.add(link.replaceAll("\\s", "%20"));
-                        return set;
-                    }
-                } catch (final Exception e) {
-                    // TODO Auto-generated catch block
-                    Log.exception(e);
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        }
-
-        url = url == null ? "" : url;
-        Matcher m;
-        String link;
-        String basename = "";
-        String host = "";
-        final Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
-        for (final Pattern element : basePattern) {
-            m = element.matcher(data);
-            if (m.find()) {
-                url = m.group(2);
-                break;
-            }
-        }
-        if (baseUrl != null && url != null && url.startsWith("./")) {
-            url = Browser.correctURL(baseUrl + url);
-        }
-        String pro = "http";
-        if (url != null && url.trim().length() > 0) {
-            if (url.startsWith("directhttp://")) {
-                pro = "directhttp";
-            }
-            if (url.startsWith("https://")) {
-                pro = "https";
-            }
-            if (url.startsWith("jd://")) {
-                pro = "jd";
-            }
-            if (url.startsWith("rsdf://")) {
-                pro = "rsdf";
-            }
-            if (url.startsWith("ccf://")) {
-                pro = "ccf";
-            }
-            if (url.startsWith("dlc://")) {
-                pro = "dlc";
-            }
-            if (url.startsWith("jdlist://")) {
-                pro = "jdlist";
-            }
-            if (url.startsWith("ftp://")) {
-                pro = "ftp";
-            }
-            if (url.startsWith("flashget://")) {
-                pro = "flashget";
-            }
-            url = url.replace(pro + "://", "");
-            int dot = url.lastIndexOf('/');
-            if (dot != -1) {
-                basename = pro + "://" + url.substring(0, dot + 1);
-            } else {
-                basename = pro + "://" + url + "/";
-            }
-            dot = url.indexOf('/');
-            if (dot != -1) {
-                host = pro + "://" + url.substring(0, dot);
-            } else {
-                host = pro + "://" + url;
-            }
-            url = pro + "://" + url;
-        } else {
-            url = "";
-        }
-        if (!set.contains(url)) {
-            set.add(url);
-        }
-
-        for (final Httppattern element : linkAndFormPattern) {
-            m = element.p.matcher(data);
-            while (m.find()) {
-                link = m.group(element.group);
-                link = link.replaceAll("h.{2,3}://", "http://");
-                if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
-                    if (link.length() > 2 && link.startsWith("www")) {
-                        link = pro + "://" + link;
-                    }
-                    if (link.charAt(0) == '/') {
-                        link = host + link;
-                    } else if (link.charAt(0) == '#') {
-                        link = url + link;
-                    } else {
-                        link = basename + link;
-                    }
-                }
-                link = link.trim();
-
-                try {
-                    new URL(link);
-                    if (!set.contains(link)) {
-                        set.add(link);
-                    }
-                } catch (final MalformedURLException e) {
-
-                }
-
-            }
-        }
-
-        m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
-        while (m.find()) {
-            link = m.group(0);
-            link = link.replaceAll("^h.{2,3}://", "http://");
-            link = link.replaceFirst("^www\\.", "http://www\\.");
-            link = link.trim();
-            if (!set.contains(link)) {
-                set.add(link);
-            }
-        }
-
-        return set;
     }
 
     /**

@@ -143,7 +143,7 @@ public class Encoding {
         if (str == null) { return null; }
         try {
             str = URLDecoder.decode(str, "UTF-8");
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             Log.exception(e);
         }
         return Encoding.htmlOnlyDecode(str);
