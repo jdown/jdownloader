@@ -90,6 +90,7 @@ public class ConsoleHandler implements UpdaterListener {
                         break;
                     case UNKNOWN_BRANCH:
                         message = T._.error_unknown_branch(this.updater.getBranch().getName());
+                        break;
                     case INVALID_BRANCH:
                         message = T._.error_invalid_branch(this.updater.getBranch().getName());
 
