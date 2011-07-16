@@ -45,7 +45,7 @@ public class Cookie {
 		this.value = value;
 	}
 
-	/* compares host and key */
+	/* compares host and key ignoring case */
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -74,6 +74,16 @@ public class Cookie {
 		}
 		return true;
 	}
+	
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((host == null) ? 0 : host.toUpperCase().hashCode());
+        result = prime * result + ((key == null) ? 0 : key.toUpperCase().hashCode());
+        return result;
+    }
+	
 
 	public long getCreationTime() {
 		return this.creationTime;
