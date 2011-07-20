@@ -74,16 +74,22 @@ public class HTMLParser {
                 result = null;
                 final int pos = data.indexOf('>');
                 if (pos >= 0 && data.length() >= pos + 1) {
-                    int posb=data.indexOf('<');
-                    if (posb >= 0 && posb!=0) {
-                        /*there might be some data left before the tag, do not remove that data*/
-                        String dataLeft = data.substring(0, posb);
-                        data = dataLeft+data.substring(pos + 1);
+                    final int posb = data.indexOf('<');
+                    if (posb >= 0 && posb != 0) {
+                        /*
+                         * there might be some data left before the tag, do not
+                         * remove that data
+                         */
+                        final String dataLeft = data.substring(0, posb - 1);
+                        data = dataLeft + " " + data.substring(pos + 1);
                     } else {
-                        /*remove tag at begin of data*/
+                        /* remove tag at begin of data */
                         data = data.substring(pos + 1);
                     }
                     // System.out.println("SubCall: "+data.length());
+                } else {
+                    /* remove tag at begin of data */
+                    data = data.substring(pos + 1);
                 }
             }
         }
