@@ -75,13 +75,19 @@ public class HTMLParser {
                 final int pos = data.indexOf('>');
                 if (pos >= 0 && data.length() >= pos + 1) {
                     final int posb = data.indexOf('<');
-                    if (posb >= 0 && posb != 0) {
+                    if (posb > 0) {
                         /*
                          * there might be some data left before the tag, do not
                          * remove that data
                          */
-                        final String dataLeft = data.substring(0, posb - 1);
+                        String dataLeft = data.substring(0, posb);
+                        if (dataLeft.contains(">")) {
+                            dataLeft = "<" + dataLeft;
+                        } else {
+                            dataLeft = "<" + dataLeft + ">";
+                        }
                         data = dataLeft + " " + data.substring(pos + 1);
+                        dataLeft = null;
                     } else {
                         /* remove tag at begin of data */
                         data = data.substring(pos + 1);
