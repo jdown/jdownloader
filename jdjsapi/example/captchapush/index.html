@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7 ]> <html class="no-js ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]>    <html class="no-js ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]>    <html class="no-js ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="no-js" lang="en">
+<!--<![endif]-->
+<head>
+<meta charset="utf-8">
+
+<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+       Remove this if you use the .htaccess -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+<title>CaptchaPush for JDownloader</title>
+<meta name="description" content="Solve your captchas from everywhere.">
+<meta name="author" content="JDownloader Team">
+
+<!-- Mobile viewport optimized: j.mp/bplateviewport -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=no">
+
+<!-- Place favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+  <link rel="shortcut icon" href="./favicon.ico">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png"> <!-- -->
+
+<!-- CSS: implied media="all" -->
+<link rel="stylesheet" href="css/style.css?v=2">
+<link href='http://fonts.googleapis.com/css?family=Kreon|Carter+One&v2' rel='stylesheet' type='text/css'>
+
+<!-- Uncomment if you are specifically targeting less enabled mobile browsers -->
+  <link rel="stylesheet" media="handheld, screen and (max-device-width: 480px)" href="css/handheld.css?v=2">
+
+<!-- All JavaScript at the bottom, except for Modernizr which enables HTML5 elements & feature detects -->
+<script src="js/libs/modernizr-1.7.min.js"></script>
+
+</head>
+
+<body>
+
+	<div id="container">
+		<header>JD Captcha Push</header>
+		<div id="main" role="main">
+		<div class="drop-shadow curled">
+			<div class="active" id="connect">
+				<label for="apiurl">API-URL:</label>
+				<input id="apiurl" name="apiurl" placeholder="http://127.0.0.1:3128/"
+					value="http://127.0.0.1:3128/">
+				<button data-href="auth" class="do">Connect</button>
+			</div>
+			<div id="auth" style="display: none;">
+				<label for="user">Username: </label>
+				<input type="text" id="user" name="user" placeholder="user">
+				<label for="password">Password: </label>
+				<input type="password" id="pass" placeholder="password">
+				<table id="settingswrapper">
+				<tr>
+					<td>
+						<input id="sound" name="sound" type="checkbox" checked="checked">
+					</td>
+					<td>
+						<label for="sound">Enable Sound</label>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<input id="remember" name="remember" type="checkbox">
+					</td>
+					<td>
+						<label for="remember">Remember me</label>
+					</td>
+				</tr>
+				<tr style="display: none;">
+					<td>
+						<input id="autologin" name="autologin" type="checkbox">
+					</td>
+					<td>
+						<label for="autologin">Auto-Login</label>
+					</td>
+				</tr>
+				</table>
+				<button data-href="captcha" class="do">Login</button>
+				<a href="" class="back" >back</a>
+			</div>
+			<div id="captcha" style="display: none;">
+				<div id="display" style="display: none;">
+					<img src="" alt="Captcha Image">
+					<input id="captchaInput" name="captchaInput">
+					
+				</div>
+				<button class="solve">Solve</button>
+				<a href="" class="back">back</a>
+			</div>
+			<span id="status">init...</span>
+			</div>
+		</div>
+		<footer> </footer>
+	</div>
+	<!--! end of #container -->
+
+
+	<!-- JavaScript at the bottom for fast page loading -->
+
+	<!-- Grab Google CDN's jQuery, with a protocol relative URL; fall back to local if necessary -->
+	<script
+		src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script>
+		window.jQuery || document.write("<script src='js/libs/jquery-1.6.2.js'>\x3C/script>")
+	</script>
+
+
+	<!-- scripts concatenated and minified via ant build script-->
+	<script src="../jdapi/dist/jdapi.jquery.min.js"></script>
+	<script src="js/mylibs/jquery.webStorage.min.js"></script>
+	<script src="js/mylibs/jquery.history.js"></script>
+	<script src="js/mylibs/buzz.js"></script>
+	<script src="js/plugins.js"></script>
+	<script src="js/script.js"></script>
+	<!-- end scripts-->
+
+
+	<!--[if lt IE 7 ]>
+    <script src="js/libs/dd_belatedpng.js"></script>
+    <script>DD_belatedPNG.fix("img, .png_bg"); // Fix any <img> or .png_bg bg-images. Also, please read goo.gl/mZiyb </script>
+  <![endif]-->
+
+
+	<!-- mathiasbynens.be/notes/async-analytics-snippet Change UA-XXXXX-X to be your site's ID -->
+	<script>
+		var _gaq = [ [ "_setAccount", "UA-XXXXX-X" ], [ "_trackPageview" ] ];
+		(function(d, t) {
+			var g = d.createElement(t), s = d.getElementsByTagName(t)[0];
+			g.async = 1;
+			g.src = ("https:" == location.protocol ? "//ssl" : "//www") + ".google-analytics.com/ga.js";
+			s.parentNode.insertBefore(g, s)
+		}(document, "script"));
+	</script>
+
+</body>
+</html>
