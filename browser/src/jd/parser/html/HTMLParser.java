@@ -62,7 +62,7 @@ public class HTMLParser {
         /* filtering tags, recursion command me ;) */
         while (true) {
             final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
-            if (nexttag == null) {
+            if (nexttag == null || nexttag.length() == 0) {
                 /* no further tag found, lets continue */
                 break;
             } else {
@@ -81,12 +81,19 @@ public class HTMLParser {
                          * remove that data
                          */
                         String dataLeft = data.substring(0, posb);
+                        StringBuilder sb = new StringBuilder();
                         if (dataLeft.contains(">")) {
-                            dataLeft = "<" + dataLeft;
+                            sb.append("<");
+                            sb.append(dataLeft);
                         } else {
-                            dataLeft = "<" + dataLeft + ">";
+                            sb.append("<");
+                            sb.append(dataLeft);
+                            sb.append(">");
                         }
-                        data = dataLeft + " " + data.substring(pos + 1);
+                        sb.append(" ");
+                        sb.append(data.substring(pos + 1));
+                        data = sb.toString();
+                        sb = null;
                         dataLeft = null;
                     } else {
                         /* remove tag at begin of data */
@@ -419,6 +426,8 @@ public class HTMLParser {
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
         final LinkedList<String> result = HTMLParser._getHttpLinksIntern(data, url);
+        /* html parser can use alot of heap, so in case jvm is able to, do a gc */
+        System.gc();
         data = null;
         if (result == null) {
             return new String[] {};
