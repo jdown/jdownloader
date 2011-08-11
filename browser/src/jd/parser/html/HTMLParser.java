@@ -20,7 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +44,18 @@ public class HTMLParser {
     }
 
     final private static Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("src.*?=.*?['|\"](.*?)['|\"]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("src.*?=(.*?)[ |>]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
+    final private static String protocolPattern = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
+    final private static Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+    final private static Pattern pat1 = Pattern.compile("(" + HTMLParser.protocolPattern + "://|(?<!://)www\\.)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static Pattern mp = null;
+
+    static {
+        try {
+            HTMLParser.mp = Pattern.compile("(" + HTMLParser.protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + HTMLParser.protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE);
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+    }
 
     /**
      * Sucht alle Links heraus
@@ -55,10 +67,10 @@ public class HTMLParser {
      *            zu setzen)
      * @return Linkliste aus data extrahiert
      */
-    private static LinkedList<String> _getHttpLinksIntern(String data, String url) {
+    private static HashSet<String> _getHttpLinksIntern(String data, String url) {
         // System.out.println("Call: "+data.length());
         final String baseUrl = url;
-        final LinkedList<String> set = new LinkedList<String>();
+        final HashSet<String> set = new HashSet<String>();
         /* filtering tags, recursion command me ;) */
         while (true) {
             final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
@@ -67,7 +79,7 @@ public class HTMLParser {
                 break;
             } else {
                 /* lets check if tag contains links */
-                LinkedList<String> result = HTMLParser._getHttpLinksIntern(nexttag, baseUrl);
+                HashSet<String> result = HTMLParser._getHttpLinksIntern(nexttag, baseUrl);
                 if (result != null && result.size() > 0) {
                     set.addAll(result);
                 }
@@ -107,15 +119,14 @@ public class HTMLParser {
             }
         }
 
-        final String protocolPattern = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
-            final int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
+            final int c = new Regex(data, HTMLParser.pat1).count();
             if (c == 0) {
                 if (!data.contains("href")) {
                     /* no href inside */
                     return set;
                 }
-            } else if (c == 1 && data.length() < 100 && data.matches("^\"?(" + protocolPattern + "://|www\\.).*")) {
+            } else if (c == 1 && data.length() < 100 && data.matches("^\"?(" + HTMLParser.protocolPattern + "://|www\\.).*")) {
                 final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceAll("[<>\"]*", "");
                 HTTPConnection con = null;
                 try {
@@ -140,8 +151,8 @@ public class HTMLParser {
         String link;
         String basename = "";
         String host = "";
-        final Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
-        for (final Pattern element : basePattern) {
+
+        for (final Pattern element : HTMLParser.basePattern) {
             m = element.matcher(data);
             if (m.find()) {
                 url = m.group(2);
@@ -155,29 +166,21 @@ public class HTMLParser {
         if (url != null && url.trim().length() > 0) {
             if (url.startsWith("directhttp://")) {
                 pro = "directhttp";
-            }
-            if (url.startsWith("https://")) {
+            } else if (url.startsWith("https://")) {
                 pro = "https";
-            }
-            if (url.startsWith("jd://")) {
+            } else if (url.startsWith("jd://")) {
                 pro = "jd";
-            }
-            if (url.startsWith("rsdf://")) {
+            } else if (url.startsWith("rsdf://")) {
                 pro = "rsdf";
-            }
-            if (url.startsWith("ccf://")) {
+            } else if (url.startsWith("ccf://")) {
                 pro = "ccf";
-            }
-            if (url.startsWith("dlc://")) {
+            } else if (url.startsWith("dlc://")) {
                 pro = "dlc";
-            }
-            if (url.startsWith("jdlist://")) {
+            } else if (url.startsWith("jdlist://")) {
                 pro = "jdlist";
-            }
-            if (url.startsWith("ftp://")) {
+            } else if (url.startsWith("ftp://")) {
                 pro = "ftp";
-            }
-            if (url.startsWith("flashget://")) {
+            } else if (url.startsWith("flashget://")) {
                 pro = "flashget";
             }
             url = url.replace(pro + "://", "");
@@ -194,11 +197,9 @@ public class HTMLParser {
                 host = pro + "://" + url;
             }
             url = pro + "://" + url;
+            set.add(url);
         } else {
             url = "";
-        }
-        if (!set.contains(url)) {
-            set.add(url);
         }
 
         for (final Httppattern element : HTMLParser.linkAndFormPattern) {
@@ -206,7 +207,7 @@ public class HTMLParser {
             while (m.find()) {
                 link = m.group(element.group);
                 link = link.replaceAll("h.{2,3}://", "http://");
-                if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
+                if (!(link.length() > 3 && link.matches("^" + HTMLParser.protocolPattern + "://.*")) && link.length() > 0) {
                     if (link.length() > 2 && link.startsWith("www")) {
                         link = pro + "://" + link;
                     }
@@ -222,23 +223,20 @@ public class HTMLParser {
 
                 try {
                     new URL(link);
-                    if (!set.contains(link)) {
-                        set.add(link);
-                    }
+                    set.add(link);
                 } catch (final MalformedURLException e) {
 
                 }
 
             }
         }
-
-        m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
-        while (m.find()) {
-            link = m.group(0);
-            link = link.replaceAll("^h.{2,3}://", "http://");
-            link = link.replaceFirst("^www\\.", "http://www\\.");
-            link = link.trim();
-            if (!set.contains(link)) {
+        if (HTMLParser.mp != null) {
+            m = HTMLParser.mp.matcher(data);
+            while (m.find()) {
+                link = m.group(0);
+                link = link.replaceAll("^h.{2,3}://", "http://");
+                link = link.replaceFirst("^www\\.", "http://www\\.");
+                link = link.trim();
                 set.add(link);
             }
         }
@@ -382,7 +380,7 @@ public class HTMLParser {
          * in case we have valid and invalid (...) urls for the same link, we
          * only use the valid one
          */
-        final ArrayList<String> tmplinks = new ArrayList<String>();
+        final ArrayList<String> tmplinks = new ArrayList<String>(links.length);
         for (final String link : links) {
             if (link.contains("...")) {
                 final String check = link.substring(0, link.indexOf("..."));
@@ -425,14 +423,12 @@ public class HTMLParser {
         // data = data.replaceAll("(?i)</span.*?>", "");
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
-        final LinkedList<String> result = HTMLParser._getHttpLinksIntern(data, url);
-        /* html parser can use alot of heap, so in case jvm is able to, do a gc */
-        System.gc();
+        final HashSet<String> result = HTMLParser._getHttpLinksIntern(data, url);
         data = null;
-        if (result == null) {
+        if (result == null || result.isEmpty()) {
             return new String[] {};
         } else {
-            return result.toArray(new String[] {});
+            return result.toArray(new String[result.size()]);
         }
     }
 
@@ -523,4 +519,5 @@ public class HTMLParser {
         }
         return buffer.toString();
     }
+
 }

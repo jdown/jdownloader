@@ -504,6 +504,7 @@ public class Browser {
         br.cookiesExclusive = this.cookiesExclusive;
         br.debug = this.debug;
         br.verbose = this.verbose;
+        br.logger = this.logger;
         return br;
     }
 
