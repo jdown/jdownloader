@@ -372,15 +372,15 @@ public class HTMLParser {
         return HTMLParser.getHttpLinks(data, null);
     }
 
-    public static String[] getHttpLinks(String data, final String url) {
+    public static String[] getHttpLinks(final String data, final String url) {
         final String[] links = HTMLParser.getHttpLinksIntern(data, url);
         if (links == null || links.length == 0) { return links; }
-        data = null;
         /*
          * in case we have valid and invalid (...) urls for the same link, we
          * only use the valid one
          */
-        final ArrayList<String> tmplinks = new ArrayList<String>(links.length);
+
+        final HashSet<String> tmplinks = new HashSet<String>(links.length);
         for (final String link : links) {
             if (link.contains("...")) {
                 final String check = link.substring(0, link.indexOf("..."));
@@ -391,9 +391,7 @@ public class HTMLParser {
                         break;
                     }
                 }
-                if (!tmplinks.contains(found)) {
-                    tmplinks.add(found);
-                }
+                tmplinks.add(found);
             } else {
                 tmplinks.add(link);
             }
@@ -401,6 +399,10 @@ public class HTMLParser {
         return tmplinks.toArray(new String[tmplinks.size()]);
     }
 
+    /*
+     * parses data for available links and returns a stringarray which does not
+     * contain any duplicates
+     */
     public static String[] getHttpLinksIntern(String data, final String url) {
         data = data.trim();
         /*

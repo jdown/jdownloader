@@ -167,14 +167,14 @@ public abstract class Request {
     private RequestHeader headers;
 
     private String htmlCode;
-    protected URLConnectionAdapter httpConnection;
 
+    protected URLConnectionAdapter httpConnection;
     private long readTime = -1;
+
     private boolean requested = false;
     private HTTPProxy proxy;
     private URL orgURL;
     private String customCharset = null;
-
     private ReusableByteArrayOutputStream byteArray;
 
     private BufferedImage image;
@@ -294,6 +294,10 @@ public abstract class Request {
         return this.htmlCode;
     }
 
+    public URLConnectionAdapter getHttpConnection() {
+        return this.httpConnection;
+    }
+
     // public static boolean isExpired(String cookie) {
     // if (cookie == null) return false;
     //
@@ -303,10 +307,6 @@ public abstract class Request {
     // return false;
     // }
     // }
-
-    public URLConnectionAdapter getHttpConnection() {
-        return this.httpConnection;
-    }
 
     public String getLocation() {
         if (this.httpConnection == null) { return null; }
@@ -415,7 +415,7 @@ public abstract class Request {
         return this.cookies != null && !this.cookies.isEmpty();
     }
 
-    private void initDefaultHeader() {
+    protected void initDefaultHeader() {
         this.headers = new RequestHeader();
         this.headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
         this.headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -493,6 +493,13 @@ public abstract class Request {
 
     public void setCustomCharset(final String charset) {
         this.customCharset = charset;
+    }
+
+    /**
+     * DO NOT USE in 09581 Stable
+     */
+    public void setHeaders(final RequestHeader headers) {
+        this.headers = headers;
     }
 
     public void setHtmlCode(final String htmlCode) {
