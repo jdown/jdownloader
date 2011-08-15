@@ -412,6 +412,7 @@ public class HTMLParser {
         /* find a better solution for this html codings */
         data = data.replaceAll("&lt;", ">");
         data = data.replaceAll("&gt;", "<");
+        data = data.replaceAll("&amp;", "&");
         /* place all replaces here that seperates links */
         /* replace <br> tags with space so we we can seperate the links */
         /* we replace the complete br tag with a newline */
