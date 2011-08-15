@@ -149,8 +149,8 @@ public class HTMLParser {
         url = url == null ? "" : url;
         Matcher m;
         String link;
-        String basename = "";
-        String host = "";
+        final String basename = "";
+        final String host = "";
 
         for (final Pattern element : HTMLParser.basePattern) {
             m = element.matcher(data);
@@ -159,44 +159,17 @@ public class HTMLParser {
                 break;
             }
         }
-        if (baseUrl != null && url != null && url.startsWith("./")) {
+        /* get protocol of the url */
+        String pro = HTMLParser.getProtocol(url);
+        if (baseUrl != null && url != null && (url.startsWith("./") || pro == null)) {
+            if (pro == null && !url.startsWith("/") && !url.startsWith("./")) {
+                url = "/" + url;
+            }
             url = Browser.correctURL(baseUrl + url);
+            pro = HTMLParser.getProtocol(url);
         }
-        String pro = "http";
+
         if (url != null && url.trim().length() > 0) {
-            if (url.startsWith("directhttp://")) {
-                pro = "directhttp";
-            } else if (url.startsWith("https://")) {
-                pro = "https";
-            } else if (url.startsWith("jd://")) {
-                pro = "jd";
-            } else if (url.startsWith("rsdf://")) {
-                pro = "rsdf";
-            } else if (url.startsWith("ccf://")) {
-                pro = "ccf";
-            } else if (url.startsWith("dlc://")) {
-                pro = "dlc";
-            } else if (url.startsWith("jdlist://")) {
-                pro = "jdlist";
-            } else if (url.startsWith("ftp://")) {
-                pro = "ftp";
-            } else if (url.startsWith("flashget://")) {
-                pro = "flashget";
-            }
-            url = url.replace(pro + "://", "");
-            int dot = url.lastIndexOf('/');
-            if (dot != -1) {
-                basename = pro + "://" + url.substring(0, dot + 1);
-            } else {
-                basename = pro + "://" + url + "/";
-            }
-            dot = url.indexOf('/');
-            if (dot != -1) {
-                host = pro + "://" + url.substring(0, dot);
-            } else {
-                host = pro + "://" + url;
-            }
-            url = pro + "://" + url;
             set.add(url);
         } else {
             url = "";
@@ -413,6 +386,7 @@ public class HTMLParser {
         data = data.replaceAll("&lt;", ">");
         data = data.replaceAll("&gt;", "<");
         data = data.replaceAll("&amp;", "&");
+        data = data.replaceAll("&quot;", "\"");
         /* place all replaces here that seperates links */
         /* replace <br> tags with space so we we can seperate the links */
         /* we replace the complete br tag with a newline */
@@ -494,6 +468,33 @@ public class HTMLParser {
      */
     public static HashMap<String, String> getInputHiddenFields(final String data, final String startPattern, final String lastPattern) {
         return HTMLParser.getInputHiddenFields(new Regex(data, startPattern + "(.*?)" + lastPattern).getMatch(0));
+    }
+
+    private static String getProtocol(final String url) {
+        if (url == null) { return null; }
+        String pro = null;
+        if (url.startsWith("directhttp://")) {
+            pro = "directhttp";
+        } else if (url.startsWith("https://")) {
+            pro = "https";
+        } else if (url.startsWith("jd://")) {
+            pro = "jd";
+        } else if (url.startsWith("rsdf://")) {
+            pro = "rsdf";
+        } else if (url.startsWith("ccf://")) {
+            pro = "ccf";
+        } else if (url.startsWith("dlc://")) {
+            pro = "dlc";
+        } else if (url.startsWith("jdlist://")) {
+            pro = "jdlist";
+        } else if (url.startsWith("ftp://")) {
+            pro = "ftp";
+        } else if (url.startsWith("flashget://")) {
+            pro = "flashget";
+        } else if (url.startsWith("http://")) {
+            pro = "http";
+        }
+        return pro;
     }
 
     /**
