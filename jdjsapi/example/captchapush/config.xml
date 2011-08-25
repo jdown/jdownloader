@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns		= "http://www.w3.org/ns/widgets"
+	xmlns:gap	= "http://phonegap.com/ns/1.0"
+	id			= "org.jdownloader.captchapush"
+	version 	= "1.0.0"
+	versionCode = "1" >
+
+	<name>CaptchaPush</name>
+
+	<description>
+		Push your CAPTCHAs to your phone!
+	</description>
+
+	<author href="http://www.jdownloader.org"
+		email="scr4ve@jdownloader.org">
+		scr4ve
+	</author>
+
+	<gap:platforms>
+		<gap:platform name="android" minVersion="1.5" />
+		<gap:platform name="webos" />
+		<gap:platform name="symbian.wrt" />
+		<gap:platform name="blackberry" project="widgets"/>
+	</gap:platforms>
+
+	<icon src="icon.png" width="57" height="57" gap:role="default" />
+
+	<feature name="http://api.phonegap.com/1.0/notification"/>
+	<feature name="http://api.phonegap.com/1.0/network"/>
+
+	<!-- sample preference specification -->
+	<preference name="orientation" value="default" />
+	
+	<!-- Splash Screen
+	PhoneGap scales the icon to device width and height. looks awful.
+	<gap:splash src="splash.png" width="600" height="800" />
+	 -->
+	
+</widget>

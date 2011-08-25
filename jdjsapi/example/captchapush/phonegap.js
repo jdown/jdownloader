@@ -1,0 +1,1 @@
+/* Empty and useless for the desktop version. See phonegap.com */

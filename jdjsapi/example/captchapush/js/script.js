@@ -4,17 +4,22 @@
  * @author mhils
  */
 
-$(function() {
+isPhoneGap = false; // Perform several adjustments for mobile platforms
 
-	/**
-	 * TODO: Android/iPhone native stuff?
-	 */
+document.addEventListener("deviceready", onPhoneGap, false);
+
+function onPhoneGap() {
+	isPhoneGap = true;
+	$("#sound").attr("checked","checked").parents("tr").hide();
+}
+
+$(function() {
 
 	initComplete = false;
 	/*
 	 * Needed for the history plugin. The callback function will get triggered
 	 * 1-2 times (depending on browser) on init, we don't change anything in
-	 * this cases.
+	 * these cases.
 	 */
 
 	function setStatus(status) {
@@ -38,10 +43,12 @@ $(function() {
 	function onAuth(resp) {
 		console.log(resp);
 		
-		//if(resp.)
-		window.history.back();
-		setStatus("");
-		
+		//FIXME: Error handling: if(resp.)
+		//window.history.back();
+		//setStatus("");
+
+		//FIXME: rm debug
+		$("#display").show();
 		
 		// FIXME Error handling & start polling
 		setStatus("Waiting for Captchas!");
@@ -62,12 +69,25 @@ $(function() {
 			});			
 		}
 
-	}
-	;
+	};
 
+	function notifyUser()
+	{
+		if(isPhoneGap)
+		{
+			navigator.notification.vibrate(1000);
+			navigator.notification.beep(1);
+		}
+		else
+		{
+			if($("#sound").is(":checked"))
+				captchaSound.play();			
+		}
+	}
+	
 	function onEvent(event) {
 		$("#captcha #display").slideToggle();
-		captchaSound.play();
+		notifyUser();
 		console.log(event);
 	}
 
@@ -79,6 +99,7 @@ $(function() {
 			// debug: true,
 			apiTimeout : 200
 		}).send('ping', onConnect);
+		
 	});
 
 	$("#auth .do").click(function() {
@@ -132,7 +153,6 @@ $(function() {
 			});
 		}
 	}
-	
 
 	window.location.hash = "";
 	$.history.init(hashChanged);
@@ -171,6 +191,7 @@ $(function() {
 	var isMobile = navigator.userAgent.match(/iPad|iPhone|android|symian|maemo|meego|webos|phone|mobile/i);
 	if(isMobile)
 		{
+			//Increase performance by diabling jquery effects
 			$.fx.off = true;
 		}
 		
