@@ -79,11 +79,6 @@ public class UpdateFoundDialog extends ConfirmDialog {
     }
 
     @Override
-    protected boolean isIgnoreSizeLimitations() {
-        return true;
-    }
-
-    @Override
     public JComponent layoutDialogContent() {
         final JComponent txt = super.layoutDialogContent();
         final JPanel ret = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill][]"));

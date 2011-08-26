@@ -29,7 +29,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.locale.APPWORKUTILS;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging.LogFormatter;
 import org.appwork.utils.net.DownloadProgress;
@@ -149,8 +149,8 @@ public class Main {
                             public String getString() {
                                 this.total = progress.getTotal();
                                 this.loaded = progress.getLoaded();
-                                if (this.total <= 0) { return APPWORKUTILS.T.connecting(); }
-                                return APPWORKUTILS.T.progress(SizeFormatter.formatBytes(this.loaded), SizeFormatter.formatBytes(this.total), this.loaded * 10000f / this.total / 100.0);
+                                if (this.total <= 0) { return _AWU.T.connecting(); }
+                                return _AWU.T.progress(SizeFormatter.formatBytes(this.loaded), SizeFormatter.formatBytes(this.total), this.loaded * 10000f / this.total / 100.0);
                             }
 
                             @Override
@@ -160,7 +160,7 @@ public class Main {
                             }
 
                         };
-                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, APPWORKUTILS.T.download_title(), APPWORKUTILS.T.download_msg(), ImageProvider.getImageIcon("download", 32, 32, true)) {
+                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), ImageProvider.getImageIcon("download", 32, 32, true)) {
                             /**
                          * 
                          */
@@ -169,7 +169,7 @@ public class Main {
                             @Override
                             public boolean closeAllowed() {
 
-                                Dialog.getInstance().showMessageDialog(APPWORKUTILS.T.please_wait());
+                                Dialog.getInstance().showMessageDialog(_AWU.T.please_wait());
 
                                 return false;
                             }
