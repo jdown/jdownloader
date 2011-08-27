@@ -310,10 +310,9 @@ public abstract class Request {
 
     public String getLocation() {
         if (this.httpConnection == null) { return null; }
-
-        String red = this.httpConnection.getHeaderField("Location");
-        final String encoding = this.httpConnection.getHeaderField("Content-Type");
+        String red = this.httpConnection.getHeaderField("Location");        
         if (red == null || red.length() == 0) { return null; }
+        final String encoding = this.httpConnection.getHeaderField("Content-Type");
         if (encoding != null && encoding.contains("UTF-8")) {
             red = Encoding.UTF8Decode(red, "ISO-8859-1");
         }
@@ -322,9 +321,10 @@ public abstract class Request {
         } catch (final Exception e) {
             String path = this.getHttpConnection().getURL().getFile();
             if (!path.endsWith("/")) {
-                final int lastSlash = path.lastIndexOf("/");
-                if (lastSlash > 0) {
-                    path = path.substring(0, path.lastIndexOf("/"));
+                /*path does not end with / we have to find latest valid path*/
+                String validPath=new Regex(path,"(/.*?)(\\?|$)").getMatch(0);
+                if (validPath!=null && validPath.length()>0) {
+                    path = validPath;
                 } else {
                     path = "";
                 }
