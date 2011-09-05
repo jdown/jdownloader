@@ -220,7 +220,7 @@ public abstract class Request {
          * we connect to inputstream to make sure the response headers are
          * getting parsed first
          */
-        this.httpConnection.getInputStream();
+        this.httpConnection.finalizeConnect();
         try {
             this.collectCookiesFromConnection();
         } catch (final NullPointerException e) {
@@ -310,7 +310,7 @@ public abstract class Request {
 
     public String getLocation() {
         if (this.httpConnection == null) { return null; }
-        String red = this.httpConnection.getHeaderField("Location");        
+        String red = this.httpConnection.getHeaderField("Location");
         if (red == null || red.length() == 0) { return null; }
         final String encoding = this.httpConnection.getHeaderField("Content-Type");
         if (encoding != null && encoding.contains("UTF-8")) {
@@ -321,9 +321,9 @@ public abstract class Request {
         } catch (final Exception e) {
             String path = this.getHttpConnection().getURL().getFile();
             if (!path.endsWith("/")) {
-                /*path does not end with / we have to find latest valid path*/
-                String validPath=new Regex(path,"(/.*?)(\\?|$)").getMatch(0);
-                if (validPath!=null && validPath.length()>0) {
+                /* path does not end with / we have to find latest valid path */
+                final String validPath = new Regex(path, "(/.*?)(\\?|$)").getMatch(0);
+                if (validPath != null && validPath.length() > 0) {
                     path = validPath;
                 } else {
                     path = "";
