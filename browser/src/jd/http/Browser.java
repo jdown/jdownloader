@@ -112,6 +112,8 @@ public class Browser {
 
     private static int TIMEOUT_READ = 30000;
 
+    private int[] allowedResponseCodes = new int[0];
+
     private static boolean VERBOSE = false;
 
     /**
@@ -505,6 +507,7 @@ public class Browser {
         br.debug = this.debug;
         br.verbose = this.verbose;
         br.logger = this.logger;
+        br.allowedResponseCodes = this.allowedResponseCodes;
         return br;
     }
 
@@ -849,6 +852,8 @@ public class Browser {
         }
         try {
             this.checkContentLengthLimit(this.request);
+            /* we update allowedResponseCodes here */
+            this.request.getHttpConnection().setAllowedResponseCodes(this.allowedResponseCodes);
             this.request.read();
         } catch (final BrowserException e) {
             throw e;
@@ -899,6 +904,13 @@ public class Browser {
 
     public String getAcceptLanguage() {
         return this.acceptLanguage;
+    }
+
+    /**
+     * @return the allowedResponseCodes
+     */
+    public int[] getAllowedResponseCodes() {
+        return this.allowedResponseCodes;
     }
 
     private String getBase(final String string) {
@@ -1188,6 +1200,8 @@ public class Browser {
         try {
             this.checkContentLengthLimit(requ);
             con = requ.getHttpConnection();
+            /* we update allowedResponseCodes here */
+            con.setAllowedResponseCodes(this.allowedResponseCodes);
             requ.read();
         } catch (final BrowserException e) {
             throw e;
@@ -1348,6 +1362,7 @@ public class Browser {
         this.requestTimeMap = null;
         this.cookiesExclusive = true;
         this.verbose = false;
+        this.allowedResponseCodes = new int[0];
         this.acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
     }
 
@@ -1361,6 +1376,14 @@ public class Browser {
 
     public void setAcceptLanguage(final String acceptLanguage) {
         this.acceptLanguage = acceptLanguage;
+    }
+
+    /**
+     * @param allowedResponseCodes
+     *            the allowedResponseCodes to set
+     */
+    public void setAllowedResponseCodes(final int[] allowedResponseCodes) {
+        this.allowedResponseCodes = allowedResponseCodes;
     }
 
     /* TODO: setauth needs to be done */
@@ -1472,6 +1495,8 @@ public class Browser {
     public String submitForm(final Form form) throws Exception {
         this.openFormConnection(form);
         this.checkContentLengthLimit(this.request);
+        /* we update allowedResponseCodes here */
+        this.request.getHttpConnection().setAllowedResponseCodes(this.allowedResponseCodes);
         return this.request.read().getHtmlCode();
     }
 
