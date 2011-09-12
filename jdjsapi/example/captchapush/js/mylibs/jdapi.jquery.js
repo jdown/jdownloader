@@ -7,14 +7,14 @@
  * 
  */
 
-(function($) {
+(function jdapi($) {
 	$.jd = {
 		/**
 		 * Set options
 		 * 
 		 * @param options to set
 		 */
-		setOptions : function(options) {
+		setOptions : function setOptions(options) {
 			if (options) {
 				$.extend($.jd._settings, options);
 			}
@@ -27,7 +27,7 @@
 		 * 
 		 * @return {Object.<string, *>}
 		 */
-		getOptions : function() {
+		getOptions : function getOptions() {
 			return $.extend(true, {}, $.jd._settings);
 		},
 		/**
@@ -41,14 +41,14 @@
 		 * @param {function(Object.<string, *>,?string=)=} callback
 		 * @suppress {checkTypes}
 		 */
-		startSession : function(user, pass, callback) {
+		startSession : function startSession(user, pass, callback) {
 			if ($.jd._ajax.sessionStatus !== $.jd.e.sessionStatus.NO_SESSION) {
 				$.jd.stopSession(function() {
 					$.jd.startSession(user, pass, callback);
 				}); // disconnect first then
 				return;
 			}
-			// Shift parameters if user and pass are ommited
+			// Shift parameters if user and pass are omitted
 			if ($.isFunction(user)) {
 				callback = user;
 				user = pass = undefined;
@@ -57,7 +57,7 @@
 			$.jd._settings.pass = (pass) ? pass : $.jd._settings.pass;
 
 			$.jd.send("session/handshake", ($.jd._settings.user) ? [ $.jd._settings.user, $.jd._settings.pass ]
-					: /* anonymous */[ "", "" ], function(response, pid) {
+					: /* anonymous */[ "", "" ], function handshakeResponse(response) {
 				if ($.jd._settings.debug)
 					console.log([ "Handshake response:", response ]);
 				// Check if server is returning a session id. If so, our
@@ -82,7 +82,7 @@
 						"data" : response
 					});
 				}
-			}, function(response) {
+			}, function handshakeError(response) {
 				if ($.isFunction(callback)) {
 					callback({
 						"status" : $.jd.e.sessionStatus.ERROR,
@@ -97,7 +97,7 @@
 		 * 
 		 * @param {function(Object.<string, *>,?string=)=} callback
 		 */
-		stopSession : function(callback) {
+		stopSession : function stopSession(callback) {
 			$.jd.stopPolling();
 			$.jd._ajax.token = undefined;
 			// No matter whether
@@ -105,24 +105,21 @@
 			// invalidates the
 			// session, we do!
 			$.jd._ajax.sessionStatus = $.jd.e.sessionStatus.NO_SESSION;
-			$.jd
-					.send("session/disconnect", callback, callback /*
-																	 * As we
-																	 * invalidate
-																	 * the
-																	 * session
-																	 * locally,
-																	 * there are
-																	 * no errors
-																	 * ;-P
-																	 */);
+			$.jd.send("session/disconnect", callback, callback /*
+																 * As we
+																 * invalidate
+																 * the session
+																 * locally,
+																 * there are no
+																 * errors ;-P
+																 */);
 		},
 		/**
 		 * Get the current session status. See sessionStatus enum.
 		 * 
 		 * @return {string|undefined}
 		 */
-		getSessionStatus : function() {
+		getSessionStatus : function getSessionStatus() {
 			return $.jd._ajax.sessionStatus;
 		},
 		/**
@@ -130,7 +127,7 @@
 		 * 
 		 * @return {jQuery}
 		 */
-		startPolling : function() {
+		startPolling : function startPolling() {
 
 			if ($.jd.isPollingContinuously())
 				return this;
@@ -145,7 +142,7 @@
 		 * 
 		 * @return {jQuery}
 		 */
-		stopPolling : function() {
+		stopPolling : function stopPolling() {
 			$.jd._ajax.active = false;
 			if ($.jd._ajax.jqXHR && $.jd._ajax.jqXHR.abort)
 				$.jd._ajax.jqXHR.abort();
@@ -158,7 +155,7 @@
 		 * 
 		 * @return {boolean}
 		 */
-		isPollingContinuously : function() {
+		isPollingContinuously : function isPollingContinuously() {
 			return $.jd._ajax.active;
 		},
 
@@ -167,7 +164,7 @@
 		 * 
 		 * @return {jQuery}
 		 */
-		pollOnce : function() {
+		pollOnce : function pollOnce() {
 			if ($.jd._ajax.sessionStatus === $.jd.e.sessionStatus.NO_SESSION) {
 				$.jd.stopPolling();
 				$.jd._ajax.handlePoll({
@@ -184,7 +181,7 @@
 				$.jd._ajax.jqXHR = $.ajax({
 					dataType : ($.jd._settings.sameDomain ? "json" : "jsonp"),
 					type : "GET",
-					url : $.jd._settings.apiServer + 'events/listen',
+					url : $.jd.getURL('events/listen'),
 					data : {
 						token : $.jd._ajax.token,
 						lastEventId : $.jd._ajax.lastEventId
@@ -198,6 +195,21 @@
 				});
 			}
 			return this;
+		},
+		
+		getURL: function getURL(action,params){
+			// Remove leading /, it's already in the apiServer URL
+			if (action[0] === "/")
+				action = action.substr(1);
+			var query = "";
+			if(params)
+			{
+				query = "?"+$.param({
+					"token" : $.jd._ajax.token,
+					"p" : params
+				});
+			}
+			return $.jd._settings.apiServer + action + query;
 		},
 
 		/**
@@ -220,7 +232,7 @@
 		 * @returns {jQuery}
 		 * @suppress {checkTypes}
 		 */
-		send : function(action, params, onSuccess, onError, onEvent) {
+		send : function send(action, params, onSuccess, onError, onEvent) {
 			// shift callback if params are undefined
 			if ($.isFunction(params)) {
 				onEvent = onError;
@@ -238,10 +250,6 @@
 			if (!$.isFunction(onError))
 				onError = undefined;
 
-			// Remove leading /, it's already in the apiServer URL
-			if (action[0] === "/")
-				action = action.substr(1);
-
 			// Try to interpolate if we didn't get an array for
 			// params
 			if ((!$.isArray(params)) && (params !== undefined)) {
@@ -255,11 +263,11 @@
 					params = $.makeArray(params);
 			}
 			if ($.jd._settings.debug)
-				console.log([ $.jd._settings.apiServer + action, params, onSuccess, onError, onEvent ]);
+				console.log([ $.jd.getURL(action), params, onSuccess, onError, onEvent ]);
 			$.ajax({
 				dataType : ($.jd._settings.sameDomain ? "json" : "jsonp"),
 				type : "GET",
-				url : $.jd._settings.apiServer + action,
+				url : $.jd.getURL(action),
 				data : {
 					"token" : $.jd._ajax.token,
 					"p" : params
@@ -300,19 +308,22 @@
 			 */
 			apiServer : 'http://127.0.0.1:3128/',
 			/**
-			 * Callback function to be called if an event is recieved.
+			 * Callback function to be called if an event is recieved. If the
+			 * event is linked to a PID, this function won't be executed if
+			 * the pids function returns false;
 			 * 
 			 * @type {function(Object,number=)|undefined}
 			 */
 			onmessage : undefined,
 			/**
-			 * Callback function to be called if an error occured.
+			 * Callback function to be called if an internal error occured.
+			 * (Disconnect, out of sync, unknown error)
 			 * 
 			 * @type {function(Object)|undefined}
 			 */
 			onerror : undefined,
 			/**
-			 * Debug Mode
+			 * Debug Mode.
 			 * 
 			 * @type {boolean}
 			 */
@@ -361,7 +372,7 @@
 				ERROR : "error",
 				DISCONNECT : "disconnect",
 				HEARTBEAT : "heartbeat",
-				OUT_OF_SYNC: "outofsync"
+				OUT_OF_SYNC : "outofsync"
 			}
 		},
 		// internal functions
@@ -400,21 +411,25 @@
 			 * (fixed process id)
 			 * 
 			 * @param event direct return value of the request
-			 * @param {function(Object.<string, *>,?string=)=} onSuccess to be called
-			 * after direct response has been recieved.
-			 * @param {function(Object.<string, *>)=} onError to be called if an error occurs
-			 * @param {function(Object.<string, *>,?string=)=} onEvent
-			 * to be called if further events associated with this pid are
-			 * streamed.
+			 * @param {function(Object.<string, *>,?string=)=} onSuccess to be
+			 * called after direct response has been recieved.
+			 * @param {function(Object.<string, *>)=} onError to be called if
+			 * an error occurs
+			 * @param {function(Object.<string, *>,?string=)=} onEvent to be
+			 * called if further events associated with this pid are streamed.
 			 */
-			sendSuccess : function(event, onSuccess, onError, onEvent) {
+			sendSuccess : function sendSuccess(event, onSuccess, onError, onEvent) {
 				
-				//Check for errors
-				if (event.type && event.type === $.jd.e.messageType.SYSTEM && event.message && event.message === $.jd.e.sysMessage.ERROR) {
+				if ($.jd._settings.debug)
+					console.log("sendSuccess:", event);
+				
+				// Check for errors
+				if (event.type && event.type === $.jd.e.messageType.SYSTEM && event.message
+						&& event.message === $.jd.e.sysMessage.ERROR) {
 					onError(event.data);
 					return;
 				}
-				
+
 				// register processCallback
 				if (event.pid && $.isFunction(onEvent)) {
 					$.jd._ajax.callbackMap[event.pid] = onEvent;
@@ -430,29 +445,33 @@
 			 * 
 			 * @param {Object.<string,*>} event data received from the server
 			 */
-			handlePoll : function(event) {
-				// accept message if lastEventId is valid. System events come out
-				// of scope
+			handlePoll : function handlePoll(event) {
+				// accept message if lastEventId is valid. System events come out of scope
 				if (($.jd._ajax.lastEventId === undefined || (event.data && ($.jd._ajax.lastEventId === (event.id - event.data.length))))
 						|| (event.type && event.type === $.jd.e.messageType.SYSTEM)) {
 					if (event.data && !(event.type && event.type == $.jd.e.messageType.SYSTEM))
 						$.jd._ajax.lastEventId = event.id;
-					
-					//System events will be handeled internally and might be passed to the onerror function
+
+					// System events will be handeled internally and might be
+					// passed to the onerror function
 					if (event.type && event.type === $.jd.e.messageType.SYSTEM) {
 						switch (event.message) {
 						case $.jd.e.sysMessage.DISCONNECT:
 							$.jd.stopPolling();
 							if ($.isFunction($.jd._settings.onerror))
-								$.jd._settings.onerror({"status":$.jd.e.sysMessage.DISCONNECT});
+								$.jd._settings.onerror({
+									"status" : $.jd.e.sysMessage.DISCONNECT
+								});
 						break;
 						case $.jd.e.sysMessage.HEARTBEAT:
 						break;
 						case $.jd.e.sysMessage.OUT_OF_SYNC:
 							$.jd.stopPolling();
 							if ($.isFunction($.jd._settings.onerror))
-								$.jd._settings.onerror({"status":$.jd.e.sysMessage.OUT_OF_SYNC});
-							break;
+								$.jd._settings.onerror({
+									"status" : $.jd.e.sysMessage.OUT_OF_SYNC
+								});
+						break;
 						default:
 							if ($.isFunction($.jd._settings.onerror))
 								$.jd._settings.onerror(event.data);
@@ -475,7 +494,7 @@
 			 * @param {Object.<string, *>} event the event
 			 * @suppress {checkTypes}
 			 */
-			handleEvent : function(event) {
+			handleEvent : function handleEvent(event) {
 				if (event.pid && (event.pid in $.jd._ajax.callbackMap)) {
 					// If specific callback returns false,
 					// don't trigger general callback
@@ -493,7 +512,7 @@
 			 * @param jqXHR see jQuery.ajax doc
 			 * @param textStatus see jQuery.ajax doc
 			 */
-			pollComplete : function(jqXHR, textStatus) {
+			pollComplete : function pollComplete(jqXHR, textStatus) {
 				$.jd._ajax.jqXHR = null;
 				if ($.jd._ajax.active && $.jd._ajax.active === true) {
 					if ($.jd._settings.debug === true) {
@@ -510,7 +529,7 @@
 			 * @param textStatus see jQuery.ajax doc
 			 * @param errorThrown see jQuery.ajax doc
 			 */
-			pollError : function(jqXHR, textStatus, errorThrown) {
+			pollError : function pollError(jqXHR, textStatus, errorThrown) {
 				$.jd._ajax.handlePoll({
 					"type" : $.jd.e.messageType.SYSTEM,
 					"message" : $.jd.e.sysMessage.ERROR,
@@ -530,7 +549,7 @@
 			 * @param {function(Object.<string, *>,?string=)=} onError
 			 * additional callback to be executed
 			 */
-			sendError : function(jqXHR, textStatus, errorThrown, onError) {
+			sendError : function sendError(jqXHR, textStatus, errorThrown, onError) {
 				if ($.isFunction(onError))
 					onError({
 						"jqXHR" : jqXHR,

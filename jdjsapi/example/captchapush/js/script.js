@@ -10,10 +10,10 @@ document.addEventListener("deviceready", onPhoneGap, false);
 
 function onPhoneGap() {
 	isPhoneGap = true;
-	$("#sound").attr("checked","checked").parents("tr").hide();
+	$("#sound").attr("checked", "checked").parents("tr").hide();
 }
 
-$(function() {
+$(function CaptchaPush() {
 
 	initComplete = false;
 	/*
@@ -22,9 +22,31 @@ $(function() {
 	 * these cases.
 	 */
 
+	var CaptchaHandler = {
+		_queue : [],
+		addCaptcha : function addCaptcha(captcha) {
+			CaptchaHandler._queue.push(captcha);
+			if (CaptchaHandler._queue.length == 1) {
+				CaptchaHandler.showNext();
+			}
+		},
+		showNext : function showNext() {
+			$("#captcha img").attr("src", $.jd.getURL("captcha/get", CaptchaHandler._queue[0].captchaID));
+			notifyUser();
+			$("#captcha #display").slideDown();
+			$("#captchaInput").val("").focus();
+		},
+		solve : function solve() {
+			$.jd.send("captcha/solve", [ CaptchaHandler._queue.shift().captchaID, $("#captchaInput").val() ]);
+			$("#captcha #display").slideUp();
+			if (CaptchaHandler._queue.length > 0)
+				CaptchaHandler.showNext();
+		}
+	};
+
 	function setStatus(status) {
 		console.log(status);
-		if(status =="")
+		if (status == "")
 			status = "&nbsp;";
 		$("#status").html(status);
 	}
@@ -32,6 +54,7 @@ $(function() {
 	function onConnect(resp) {
 		console.log(resp);
 		// FIXME Error handling
+		$("#auth .do").attr("disabled", null);
 		setStatus("Connection etablished.");
 		if ($.webStorage.local().getItem("autologin") === true) {
 			$("#auth .do").click();
@@ -42,53 +65,52 @@ $(function() {
 
 	function onAuth(resp) {
 		console.log(resp);
-		
-		//FIXME: Error handling: if(resp.)
-		//window.history.back();
-		//setStatus("");
 
-		//FIXME: rm debug
-		$("#display").show();
-		
-		// FIXME Error handling & start polling
-		setStatus("Waiting for Captchas!");
-		if ($("#remember").is(':checked')) {
-			$.each(settingIds, function(i, a) {
-				o = $("#" + a);
-				if (o.is('[type="checkbox"]')) {
-					var isChecked = (o.attr("checked") === "checked");
-					$.webStorage.local().setItem(a, isChecked);
-				} else
-					$.webStorage.local().setItem(a, o.val());
-			});
-		}
-		else
-		{
-			$.each(settingIds, function(i, a) {
+		if (resp.status == $.jd.e.sessionStatus.REGISTERED) {
+			// Save config in localStorage
+			setStatus("Waiting for Captchas!");
+			if ($("#remember").is(':checked')) {
+				$.each(settingIds, function(i, a) {
+					o = $("#" + a);
+					if (o.is('[type="checkbox"]')) {
+						var isChecked = (o.attr("checked") === "checked");
+						$.webStorage.local().setItem(a, isChecked);
+					} else
+						$.webStorage.local().setItem(a, o.val());
+				});
+			} else {
+				$.each(settingIds, function(i, a) {
 					$.webStorage.local().removeItem(a);
-			});			
-		}
-
-	};
-
-	function notifyUser()
-	{
-		if(isPhoneGap)
-		{
-			navigator.notification.vibrate(1000);
-			navigator.notification.beep(1);
-		}
-		else
-		{
-			if($("#sound").is(":checked"))
-				captchaSound.play();			
+				});
+			}
+			
+			$.jd.setOptions({
+				debug: true,
+				onmessage : onEvent
+			});
+			$.jd.startPolling();
+		} else {
+			window.history.back();
+			setStatus("Authentication failed!");
 		}
 	}
-	
+	;
+
+	function notifyUser() {
+		if (isPhoneGap) {
+			navigator.notification.vibrate(1000);
+			navigator.notification.beep(1);
+		} else {
+			if ($("#sound").is(":checked"))
+				captchaSound.play();
+		}
+	}
+
 	function onEvent(event) {
-		$("#captcha #display").slideToggle();
-		notifyUser();
 		console.log(event);
+		if (event.module === "captcha" && event.type === "new") {
+			CaptchaHandler.addCaptcha(event.data);
+		}
 	}
 
 	$("#connect .do").click(function() {
@@ -96,24 +118,22 @@ $(function() {
 		setStatus("Connecting...");
 		$.jd.setOptions({
 			apiServer : $("#apiurl").val(),
-			// debug: true,
-			apiTimeout : 200
-		}).send('ping', onConnect);
-		
+			debug: true//,
+			//apiTimeout : 1000
+		}).send('jd/getVersion', onConnect);
+		$("#auth .do").attr("disabled", "disabled");
 	});
 
 	$("#auth .do").click(function() {
 		$.jd.stopSession();
 		setStatus("Authenticating...");
 		$.jd.setOptions({
-			user : $("#username").val(),
-			pass : $("#pass")
+			user : $("#user").val(),
+			pass : $("#pass").val()
 		}).startSession(onAuth);
 	});
 
-	$("#captcha .solve").click(function() {
-		onEvent();
-	});
+	$("#captcha .solve").click(CaptchaHandler.solve);
 
 	$("#remember").click(function(e) {
 		$("#autologin").parent().parent().toggle();
@@ -147,7 +167,7 @@ $(function() {
 			// We have to do this right now because
 			// execution in the callback may lead to
 			// sync errors
-			off.removeClass("active").stop(true,true).slideToggle(function() {
+			off.removeClass("active").stop(true, true).slideToggle(function() {
 				// TODO: Is stop(true) correct?
 				on.slideToggle();
 			});
@@ -158,14 +178,16 @@ $(function() {
 	$.history.init(hashChanged);
 
 	var settingIds = [ "user", "pass", "remember", "autologin", "apiurl", "sound" ];
-	
+
 	// Restore settings from localStore
 	$.each(settingIds, function(i, a) {
-		o = $("#" + a);
+		var o = $("#" + a);
 		if (o.is('[type="checkbox"]'))
+		{
 			if ($.webStorage.local().getItem(a) === true)
 				o.click();
-			else if ($.webStorage.local().getItem(a))
+		}
+		else if ($.webStorage.local().getItem(a))
 				o.val($.webStorage.local().getItem(a));
 	});
 
@@ -180,25 +202,23 @@ $(function() {
 			location.reload();
 		});
 	}
-	
-	captchaSound = new buzz.sound( "./sounds/captcha", {
-	    formats: [ "ogg", "mp3" ],
-	    preload: true,
-	    autoplay: false,
-	    loop: false
+
+	captchaSound = new buzz.sound("./sounds/captcha", {
+		formats : [ "ogg", "mp3" ],
+		preload : true,
+		autoplay : false,
+		loop : false
 	});
-	
+
 	var isMobile = navigator.userAgent.match(/iPad|iPhone|android|symian|maemo|meego|webos|phone|mobile/i);
-	if(isMobile)
-		{
-			//Increase performance by diabling jquery effects
-			$.fx.off = true;
-		}
-		
+	if (isMobile) {
+		// Increase performance by diabling jquery effects
+		$.fx.off = true;
+	}
 
 	setStatus("");
 	initComplete = true;
-	
+
 	if ($.webStorage.local().getItem("autologin"))
 		$("#connect .do").click();
 });
