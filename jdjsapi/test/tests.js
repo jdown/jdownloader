@@ -52,7 +52,7 @@ asyncTest("call not existing url, raising exception", 1, function() {
 
 asyncTest("init with no credentials (anonymous) & disconnect",3, function() {
 	$.jd.startSession(function(e) {
-		equal(e.status, $.jd.e.sessionStatus.ANONYMOUS, "Event: " + $.toJSON(e));
+		equal(e.status, $.jd.e.sessionStatus.ANONYMOUS, "e.status");
 		equal($.jd.getSessionStatus(),$.jd.e.sessionStatus.ANONYMOUS,"getSessionStatus");
 		$.jd.stopSession(function(e) {
 			equal($.jd.getSessionStatus(),$.jd.e.sessionStatus.NO_SESSION,"stopSession");
@@ -76,17 +76,16 @@ asyncTest("init with incorrect credentials", 3, function() {
 	});
 });
 
-asyncTest("init with correct credentials", 1, function() {
+asyncTest("init with correct credentials", 2, function() {
 	$.jd.setOptions({
 		user : "user",
 		pass : "pass"
 	}).startSession(function(e) {
+		equal(e.status,$.jd.e.sessionStatus.REGISTERED,"e.status");
 		equal($.jd.getSessionStatus(),$.jd.e.sessionStatus.REGISTERED,"getSessionStatus");
 		start();
 	});
 });
-
-
 
 //-------------------------------------------------------------
 module("jQuery.jd - Sending");

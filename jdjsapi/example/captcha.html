@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script src="../src/jdapi.jquery.js"></script>
+	<script>	
+/*
+	####JDownloader JDAPI Examples - Captcha
+	
+	Get a list of all active captchas and give the user the possibility to solve them.
+	This example doesn't make use of the event stream.
+	Using Firebug or Chrome Dev tools to inspect this example is highly recommended.
+*/
+	
+window.log=function(){log.history=log.history||[];log.history.push(arguments);if(this.console){console.log(Array.prototype.slice.call(arguments))}}; // http://paulirish.com/2009/log-a-lightweight-wrapper-for-consolelog/
+
+
+var captchaCache = {}; //Captchas that are displayed currently.
+
+//###Basic Setup
+$.jd.setOptions({
+	apiServer: "http://192.168.2.110:3128/",
+	user : "user",
+	pass : "pass",
+	debug: true,
+	onerror: log
+});
+
+//To get a list of currently active captchas, we need a authenticated session.
+$.jd.startSession(function(e) {
+	if(e.status == $.jd.e.sessionStatus.REGISTERED)
+		setInterval(getCaptchas,1000); //Start getting captchas
+	else
+		log(e,"Session could not be started.");
+});
+
+/* 
+###Solve a Captcha<br/>
+**API-Syntax:** `captcha/solve` ( `captchaID`,  `text` )<br/>
+**Returns** `true` if captcha has not timed out before, `false` otherwise.
+*/
+function solveCaptcha(){
+	var text = $(this).parent().children("input").val();
+	var captchaID = $(this).parent().data("captchaID");
+	
+	var parent = $(this).parent();
+	
+	// 
+	$.jd.send("captcha/solve", [captchaID, text], function(wasStillValid){
+		if(wasStillValid)
+			log("Captcha was still valid when submitting response.");
+		else
+			log("Captchas has already been submitted before.");
+		parent.slideUp(); //Hide Captcha
+		
+	});		
+}
+//
+/*
+###Get a list of all active captchas
+**API-Syntax:** `captcha/list`<br/>
+**Returns** an array of all active captchas.
+*/
+function getCaptchas(){
+	$.jd.send("captcha/list", function onCaptchaList(captchas){
+		log("Current Captchas:", captchas);
+		
+		var currentCaptchas = {}; //Used to remove outdated captchas in the second loop.
+		
+		$.each(captchas, function(i,captcha){
+			currentCaptchas[captcha.captchaID] = true;
+			if(captcha.captchaID in captchaCache)
+				return; //Captcha is already displayed
+			captchaCache[captcha.captchaID] = true; //Captcha IDs are unique, no deletion required
+			
+			//Print out Captchas.
+			//Currently, only normal captchas are supported by the server side API (no clickable captchas etc).
+			if(this.type !== "NORMAL")
+			{
+				log("Warning: Captcha type "+captcha.type+" is not supported.");
+			}	
+			var $container = $("<div>", {
+				"class":"captcha"
+			}).appendTo("body").hide().data("captchaID",captcha.captchaID);
+			$("<img>", {
+				src: $.jd.getURL("captcha/get",captcha.captchaID)
+			}).appendTo($container);
+			$("<input>", {
+				placeholder: captcha.hosterID + " (" + captcha.linkID + ")" //valid html5 for truly awesome compatibility
+			}).appendTo($container);
+			$("<button>", {
+				text: "Solve",
+				click: solveCaptcha
+			}).appendTo($container);
+			
+			$("<button>", {
+				text: "Dismiss",
+				click: function(){
+					//Dismiss Captcha
+					$.jd.send("captcha/abort", [captcha.captchaID, "BLOCKTHIS"]); //BLOCHHOSTER
+					//BLOCKALL
+					$(this).parent().slideUp();
+				}
+			}).appendTo($container);
+			
+			$container.slideDown();
+		});
+		
+		$("div.captcha").each(function(k,captcha){
+			if(!$(captcha).data("captchaId") in currentCaptchas)
+				$(captcha).slideUp(function(){$(captcha).remove();});
+		});
+		
+	}, log);
+}
+
+
+
+	</script>
+</head>
+<body>
+
+</body>
+</html>
