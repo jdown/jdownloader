@@ -5931,7 +5931,6 @@ loop:   for (;;) {
             case 'submit':
                 break;
             case 'text':
-            case 'file':
             case 'password':
             case 'file':
             case 'hidden':
