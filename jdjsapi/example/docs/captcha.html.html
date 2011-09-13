@@ -18,7 +18,7 @@
       <div class='octowrap'>
         <a class='octothorpe' href='#section-0'>#</a>
       </div>
-      <h2>JDownloader JDAPI Examples - Captcha</h2>
+      <h2>JDownloader API Examples - Captcha</h2>
 <p>Get a list of all active captchas and give the user the possibility to solve them.
 This example both uses polling and streaming to get active captchas.
 Using Firebug or Chrome Dev tools to inspect the console output of this example is highly recommended.</p>
@@ -68,7 +68,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
       <div class='octowrap'>
         <a class='octothorpe' href='#section-3'>#</a>
       </div>
-      <p>To get both a list of currently active captchas and a connection to the event stream, we need a authenticated session.</p>
+      <p>To get both a list of currently active captchas and a connection to the event stream, we need an authenticated session.</p>
     </div>
     <div class='code'>
       <div class="highlight"><pre><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">startSession</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
@@ -84,7 +84,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
       <div class='octowrap'>
         <a class='octothorpe' href='#section-4'>#</a>
       </div>
-      <p>Poll all captchas that are currently active and listen for either new or solved captchas.</p>
+      <p>Poll all captchas that are currently active and listen for either new or expired captchas.</p>
     </div>
     <div class='code'>
       <div class="highlight"><pre><span class="kd">function</span> <span class="nx">onSession</span><span class="p">()</span> <span class="p">{</span>
@@ -143,7 +143,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 }
 </pre><strong>eventType:</strong> A string containing the event type
 <pre><code>new</code>: Disable current link
-<code>solved</code>: Disable all captchas from this hoster
+<code>expired</code>: Disable all captchas from this hoster
 </pre><strong>captchaObj:</strong> A captcha object as defined above</p>
     </div>
     <div class='code'>
@@ -154,8 +154,10 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 		<span class="k">switch</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span>
 		<span class="p">{</span>
 		<span class="k">case</span> <span class="s2">&quot;new&quot;</span><span class="o">:</span>
+			<span class="nx">addCaptcha</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
 			<span class="k">break</span><span class="p">;</span>
-		<span class="k">case</span> <span class="s2">&quot;solved&quot;</span><span class="o">:</span>
+		<span class="k">case</span> <span class="s2">&quot;expired&quot;</span><span class="o">:</span>
+			<span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="o">+</span> <span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">captchaID</span><span class="p">).</span><span class="nx">slideUp</span><span class="p">();</span>
 			<span class="k">break</span><span class="p">;</span>
 		<span class="k">default</span><span class="o">:</span>
 			<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Unknown event type&quot;</span><span class="p">,</span> <span class="nx">event</span><span class="p">);</span>
@@ -164,7 +166,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 <span class="p">}</span>
 
 
-<span class="kd">function</span> <span class="nx">addCaptcha</span><span class="p">(</span><span class="nx">captchaID</span><span class="p">)</span> 
+<span class="kd">function</span> <span class="nx">addCaptcha</span><span class="p">(</span><span class="nx">captcha</span><span class="p">)</span> 
 <span class="p">{</span></pre></div>
     </div>
   </div>
@@ -177,7 +179,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 <p>Currently, only normal captchas are supported by the server side API (no clickable captchas etc).</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>	<span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">type</span> <span class="o">!==</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">)</span> <span class="p">{</span>
+      <div class="highlight"><pre>	<span class="k">if</span> <span class="p">(</span><span class="nx">captcha</span><span class="p">.</span><span class="nx">type</span> <span class="o">!==</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">)</span> <span class="p">{</span>
 		<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Warning: Captcha type &quot;</span> <span class="o">+</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">type</span> <span class="o">+</span> <span class="s2">&quot; is not supported.&quot;</span><span class="p">);</span>
 	<span class="p">}</span></pre></div>
     </div>
@@ -240,7 +242,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 			<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Captcha was still valid when submitting response.&quot;</span><span class="p">);</span>
 		<span class="k">else</span>
 			<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Captchas has already been submitted before.&quot;</span><span class="p">);</span>
-		<span class="nx">parent</span><span class="p">.</span><span class="nx">slideUp</span><span class="p">();</span> <span class="c1">//Hide Captcha</span>
+		<span class="nx">$parent</span><span class="p">.</span><span class="nx">slideUp</span><span class="p">();</span> <span class="c1">//Hide Captcha</span>
 
 	<span class="p">});</span>
 <span class="p">}</span></pre></div>
@@ -265,8 +267,8 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 	<span class="kd">var</span> <span class="nx">$parent</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">parent</span><span class="p">();</span>
 	<span class="kd">var</span> <span class="nx">captchaID</span> <span class="o">=</span> <span class="nx">$parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">);</span>	
 	
-	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;captcha/abort&quot;</span><span class="p">,</span> <span class="p">[</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">captchaID</span><span class="p">,</span> <span class="s2">&quot;BLOCKTHIS&quot;</span> <span class="p">]);</span>
-	<span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">parent</span><span class="p">().</span><span class="nx">slideUp</span><span class="p">();</span>
+	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;captcha/abort&quot;</span><span class="p">,</span> <span class="p">[</span> <span class="nx">captchaID</span><span class="p">,</span> <span class="s2">&quot;BLOCKTHIS&quot;</span> <span class="p">]);</span>
+	<span class="nx">$parent</span><span class="p">.</span><span class="nx">slideUp</span><span class="p">();</span>
 <span class="p">}</span>
 
 <span class="nt">&lt;/script&gt;</span>

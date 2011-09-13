@@ -4,6 +4,8 @@ function setStatusText() {
 function jdinit() {
 	$.jd.setOptions({
 		debug : true,
+		user: "user",
+		pass: "pass",
 		apiServer : $("#url").val(),
 		sameDomain : ($("#samedomain").attr("checked") === "checked"),
 		onmessage : function(data) {
@@ -14,7 +16,7 @@ function jdinit() {
 			console.log(data);
 			$("#log").append("Error: <br>").append(prettyPrint(data));
 		}
-	});
+	}).stopSession().startSession();
 }
 $(function() {
 	setStatusText();

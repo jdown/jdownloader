@@ -1,18 +1,24 @@
 /**
- * @preserve JDownloader API Bindings for jQuery (jQuery.jd)
+ * @preserve 
+ * ##JDownloader API Bindings for jQuery
+ * - - -
+ * **namespace** jQuery.jd<br/>
  * @version 07/2011
  * @author mhils
  * 
- * Callback functions accept the parameters data and pid (optional).
+ * The JDownloader API provides both a polling and an event streaming interface. 
+ * This wrapper is the client side reference implementation containing all features of the API.
+ * 
  * 
  */
 
 (function jdapi($) {
 	$.jd = {
 		/**
+		 * ##setOptions()
 		 * Set options
 		 * 
-		 * @param options to set
+		 * @param Object.<string, *> options to set
 		 */
 		setOptions : function setOptions(options) {
 			if (options) {
@@ -23,6 +29,7 @@
 			return this;
 		},
 		/**
+		 * ##getOptions()
 		 * Get a clone of the current options
 		 * 
 		 * @return {Object.<string, *>}
@@ -31,10 +38,11 @@
 			return $.extend(true, {}, $.jd._settings);
 		},
 		/**
+		 * ##startSession()
 		 * Start a session. Please note that this function is async and will
 		 * return immediately. Use the callback function for functions requiring
 		 * a session. For anonymous sessions, omit login parameters. If user and
-		 * pass are set as options, you can omit these parameters, too.
+		 * pass are set as options, you can omit these parameters.
 		 * 
 		 * @param {string=} user (optional)
 		 * @param {string=} pass (optional)
@@ -48,20 +56,22 @@
 				}); // disconnect first then
 				return;
 			}
-			// Shift parameters if user and pass are omitted
-			if ($.isFunction(user)) {
+			
+			//! Shift parameters if user and pass are omitted
+			if ($.isFunction(user)) { 
 				callback = user;
 				user = pass = undefined;
 			}
 			$.jd._settings.user = (user) ? user : $.jd._settings.user;
 			$.jd._settings.pass = (pass) ? pass : $.jd._settings.pass;
 
+			var callbackIsFunction = $.isFunction(callback);
+			
 			$.jd.send("session/handshake", ($.jd._settings.user) ? [ $.jd._settings.user, $.jd._settings.pass ]
 					: /* anonymous */[ "", "" ], function handshakeResponse(response) {
-				if ($.jd._settings.debug)
-					console.log([ "Handshake response:", response ]);
-				// Check if server is returning a session id. If so, our
-				// handshake (either authenticated or anonymous) succeeded.
+				$.jd._ajax.debug([ "Handshake response:", response ]);
+				//! Check if server is returning a session id. If so, our
+				//! handshake (either authenticated or anonymous) succeeded.
 				if (response && typeof (response) === "string" && response !== ""
 						&& response !== $.jd.e.sessionStatus.ERROR) {
 					var status = ($.jd._settings.user) ? $.jd.e.sessionStatus.REGISTERED
@@ -70,51 +80,44 @@
 					$.jd._settings.user = user;
 					$.jd._settings.pass = pass;
 					$.jd._ajax.sessionStatus = status;
-					if ($.isFunction(callback)) {
+					if (callbackIsFunction) {
 						callback({
 							"status" : $.jd._ajax.sessionStatus,
 							"data" : response
 						});
 					}
-				} else if ($.isFunction(callback)) {
+				} else if (callbackIsFunction) {
 					callback({
 						"status" : $.jd.e.sessionStatus.ERROR,
 						"data" : response
 					});
 				}
 			}, function handshakeError(response) {
-				if ($.isFunction(callback)) {
+				if (callbackIsFunction) {
 					callback({
 						"status" : $.jd.e.sessionStatus.ERROR,
 						"data" : response
 					});
 				}
 			});
-
+			return this;
 		},
 		/**
-		 * Stop a session.
+		 * ##stopSession()
+		 * Stops a session.
 		 * 
 		 * @param {function(Object.<string, *>,?string=)=} callback
 		 */
 		stopSession : function stopSession(callback) {
 			$.jd.stopPolling();
 			$.jd._ajax.token = undefined;
-			// No matter whether
-			// the server
-			// invalidates the
-			// session, we do!
+			//! No matter whether the server invalidates the session, we do!
 			$.jd._ajax.sessionStatus = $.jd.e.sessionStatus.NO_SESSION;
-			$.jd.send("session/disconnect", callback, callback /*
-																 * As we
-																 * invalidate
-																 * the session
-																 * locally,
-																 * there are no
-																 * errors ;-P
-																 */);
+			$.jd.send("session/disconnect", callback, callback);
+			return this;
 		},
 		/**
+		 * ##getSessionStatus()
 		 * Get the current session status. See sessionStatus enum.
 		 * 
 		 * @return {string|undefined}
@@ -123,6 +126,7 @@
 			return $.jd._ajax.sessionStatus;
 		},
 		/**
+		 * ##startPolling()
 		 * Starts polling from the server continuously
 		 * 
 		 * @return {jQuery}
@@ -138,6 +142,7 @@
 		},
 
 		/**
+		 * ##stopPolling()
 		 * Stops polling from the server continuously
 		 * 
 		 * @return {jQuery}
@@ -151,7 +156,8 @@
 		},
 
 		/**
-		 * Returns true if jquery is polling continuously
+		 * ##isPollingContinuously()
+		 * Returns `true` if jquery is polling continuously
 		 * 
 		 * @return {boolean}
 		 */
@@ -160,7 +166,8 @@
 		},
 
 		/**
-		 * Poll events from the server once
+		 * ##pollOnce()
+		 * Poll events from the server **once**
 		 * 
 		 * @return {jQuery}
 		 */
@@ -192,14 +199,22 @@
 					complete : $.jd._ajax.pollComplete,
 					error : $.jd._ajax.pollError
 				});
-				if ($.jd._settings.debug)
-					console.log([ "pollOnce", $.jd._ajax.lastEventId, $.jd._ajax.jqXHR ]);
+				$.jd._ajax.debug([ "pollOnce", $.jd._ajax.lastEventId, $.jd._ajax.jqXHR ]);
 			}
 			return this;
 		},
-		
+		/**
+		 * ##getURL()
+		 * Builds a query string for the API
+		 * 
+		 * @param {string} action to perform
+		 * @param {function(Object.<string, *>,?string=)|Array.<string>=}
+		 * params (optional) parameters for this action as a JSON array (e.g.
+		 * ["param1",1,1.2,"param4"]) <br/>
+		 * @returns {string} url
+		 */
 		getURL: function getURL(action,params){
-			// Remove leading /, it's already in the apiServer URL
+			//! Remove leading /, it's already in the apiServer URL
 			if (action[0] === "/")
 				action = action.substr(1);
 			var query = "";
@@ -214,27 +229,28 @@
 		},
 
 		/**
-		 * Perform a certain action on the server
+		 * ##send()
+		 * Perform the action on the server
 		 * 
 		 * @param {string} action to perform.
 		 * @param {function(Object.<string, *>,?string=)|Array.<string>=}
-		 * params (optional) parameters for this action as an JSON array (e.g.
-		 * ["param1",1,1.2,"param4"])
+		 * params (optional) parameters for this action as a JSON array (e.g.
+		 * ["param1",1,1.2,"param4"]) <br/>
 		 * @param {function(Object.<string, *>,?string=)=} onSuccess (optional)
 		 * function to execute. Response and PID are supplied as function
-		 * parameters
+		 * parameters <br/>
 		 * @param {function(Object.<string, *>)=} onError (optional) function
 		 * to execute if an error occurs. Response is supplied as function
-		 * parameter.
+		 * parameter. <br/>
 		 * @param {function(Object.<string, *>,?string=)=} onEvent (optional)
-		 * function to execute each time an event is polled that refers to this
+		 * function to execute each time an event is streamed that refers to this
 		 * request. If this parameter is either omitted or this functions does
-		 * *not* return false, the general poll callback is invoked, too.
+		 * *not* return false, the general poll callback is invoked, too. <br/>
 		 * @returns {jQuery}
 		 * @suppress {checkTypes}
 		 */
 		send : function send(action, params, onSuccess, onError, onEvent) {
-			// shift callback if params are undefined
+			//! shift callback if params are undefined
 			if ($.isFunction(params)) {
 				onEvent = onError;
 				onError = onSuccess;
@@ -242,8 +258,7 @@
 				params = undefined;
 			}
 
-			// Check if callbacks are real functions
-			// TODO: Check jQuery source whether this is necessary or not.
+			//! Check if callbacks are real functions
 			if (!$.isFunction(onSuccess))
 				onSuccess = undefined;
 			if (!$.isFunction(onEvent))
@@ -251,8 +266,7 @@
 			if (!$.isFunction(onError))
 				onError = undefined;
 
-			// Try to interpolate if we didn't get an array for
-			// params
+			//! Try to interpolate if we didn't get an array for params
 			if ((!$.isArray(params)) && (params !== undefined)) {
 				if ($.isPlainObject(params)) {
 					var tmp = [];
@@ -263,8 +277,7 @@
 				} else
 					params = $.makeArray(params);
 			}
-			if ($.jd._settings.debug)
-				console.log([ $.jd.getURL(action), params, onSuccess, onError, onEvent ]);
+			$.jd._ajax.debug([ $.jd.getURL(action), params, onSuccess, onError, onEvent ]);
 			$.ajax({
 				dataType : ($.jd._settings.sameDomain ? "json" : "jsonp"),
 				type : "GET",
@@ -287,36 +300,42 @@
 		},
 
 		/**
-		 * Default settings
+		 * ##Settings
+		 * Set by using setOptions. **Don't access this property directly.**
 		 */
 		_settings : {
 			/**
+			 * ###user
 			 * Username for API auth
 			 * 
 			 * @type {(string|undefined)}
 			 */
 			user : undefined,
 			/**
+			 * ###pass
 			 * pass for API auth
 			 * 
 			 * @type {(string|undefined)}
 			 */
 			pass : undefined,
 			/**
+			 * ###apiServer
 			 * API server root url
 			 * 
 			 * @type {string}
 			 */
 			apiServer : 'http://127.0.0.1:3128/',
 			/**
+			 * ###onmessage
 			 * Callback function to be called if an event is recieved. If the
-			 * event is linked to a PID, this function won't be executed if
-			 * the pids function returns false;
+			 * event comes with a PID, The PIDs custom function will be executed at first.
+			 * If it returns `false`, this function won't be executed.
 			 * 
 			 * @type {function(Object,number=)|undefined}
 			 */
 			onmessage : undefined,
 			/**
+			 * ###onerror
 			 * Callback function to be called if an internal error occured.
 			 * (Disconnect, out of sync, unknown error)
 			 * 
@@ -324,12 +343,14 @@
 			 */
 			onerror : undefined,
 			/**
-			 * Debug Mode.
+			 * ###debug
+			 * Debug Mode. Watch your Firebug / Chrome Dev tools console.
 			 * 
 			 * @type {boolean}
 			 */
 			debug : false,
 			/**
+			 * ###apiTimeout
 			 * Timeout until API calls time out. Applies for both polling (once)
 			 * and sending.
 			 * 
@@ -337,16 +358,17 @@
 			 */
 			apiTimeout : 31000,
 			/**
+			 * ###sameDomain
 			 * Use JSON instead of JSONP requests. (Force same domain origin)
 			 * 
 			 * @type {boolean}
 			 */
 			sameDomain : false
 		},
-		// enums
+		//##Enums
 		e : {
 			/**
-			 * e for login status
+			 * ###login status
 			 * 
 			 * @const {string|undefined}
 			 */
@@ -357,7 +379,7 @@
 				REGISTERED : "registered"
 			},
 			/**
-			 * e for polling message type
+			 * ###polling message type
 			 * 
 			 * @const {string}
 			 */
@@ -365,7 +387,7 @@
 				SYSTEM : "system"
 			},
 			/**
-			 * e for polling system message type
+			 * ###polling system message type
 			 * 
 			 * @const {string}
 			 */
@@ -376,38 +398,48 @@
 				OUT_OF_SYNC : "outofsync"
 			}
 		},
-		// internal functions
+		//- - -
+		//## Internal Functions 
+		//## <font color="red">Stop here if you are only using this API.</font>
+		//- - -
 		_ajax : {
 			/**
+			 * ###lastEventId
 			 * Contains the last received message id. If connection fails due to
 			 * timeouts, messages will get fetched again.
 			 */
 			lastEventId : undefined,
 			/**
+			 * ###active
 			 * Status of continuous polling.
 			 */
 			active : false,
 			/**
+			 * ###jqXHR
 			 * Stores the active jqXHR object for polling. Needed for aborting
 			 * requests
 			 */
 			jqXHR : null,
 			/**
+			 * ###callbackMap
 			 * Callback map storing callback functions for async requests. {pid :
 			 * callback}
 			 */
 			callbackMap : {},
 			/**
+			 * ###token
 			 * Current security token
 			 */
 			token : undefined,
 			/**
+			 * ###sessionStatus
 			 * Current session status
 			 * 
 			 * @type {string|undefined}
 			 */
 			sessionStatus : undefined,
 			/**
+			 * ##sendSuccess()
 			 * Trigger/Register callbacks associated with a certain request
 			 * (fixed process id)
 			 * 
@@ -421,34 +453,32 @@
 			 */
 			sendSuccess : function sendSuccess(event, onSuccess, onError, onEvent) {
 				
-				if ($.jd._settings.debug)
-					console.log("sendSuccess:", event);
+				$.jd._ajax.debug("sendSuccess:", event);
 				
-				// Check for errors
+				//! Check for errors
 				if (event.type && event.type === $.jd.e.messageType.SYSTEM && event.message
 						&& event.message === $.jd.e.sysMessage.ERROR) {
 					onError(event.data);
 					return;
 				}
 
-				// register processCallback
+				//! register processCallback
 				if (event.pid && $.isFunction(onEvent)) {
 					$.jd._ajax.callbackMap[event.pid] = onEvent;
-					if ($.jd._settings.debug)
-						console.log([ "Register PID...", event ]);
+					$.jd._ajax.debug([ "Register PID...", event ]);
 				}
-				// run normal callback
+				//! run normal callback
 				if (jQuery.isFunction(onSuccess))
 					onSuccess(event.data, event.pid);
 			},
 			/**
+			 * ##handlePoll()
 			 * Handles completed poll from the server
 			 * 
 			 * @param {Object.<string,*>} event data received from the server
 			 */
 			handlePoll : function handlePoll(event) {
-				if ($.jd._settings.debug)
-					console.log(["handlePoll: ",event,event.id,$.jd._ajax.lastEventId]);
+				$.jd._ajax.debug(["handlePoll: ",event,event.id,$.jd._ajax.lastEventId]);
 				// accept message if lastEventId is valid. System events come out of scope
 				if (($.jd._ajax.lastEventId === undefined || (event.data && ($.jd._ajax.lastEventId === (event.id - event.data.length))))
 						|| (event.type && event.type === $.jd.e.messageType.SYSTEM)) {
@@ -483,8 +513,7 @@
 						}
 					} else // We recieved a regular event.
 					{
-						if ($.jd._settings.debug)
-							console.log(event.data.length + " events in this message.");
+						$.jd._ajax.debug(event.data.length + " events in this message.");
 
 						$.each(event.data, function(i, e) {
 							$.jd._ajax.handleEvent(e);
@@ -493,11 +522,11 @@
 				}
 				else
 				{
-					if ($.jd._settings.debug)
-						console.log("Invalid Message id");
+					$.jd._ajax.debug("Invalid Message id");
 				}
 			},
 			/**
+			 * ##handleEvent()
 			 * Trigger all callbacks belonging to the given event
 			 * 
 			 * @param {Object.<string, *>} event the event
@@ -505,8 +534,8 @@
 			 */
 			handleEvent : function handleEvent(event) {
 				if (event.pid && (event.pid in $.jd._ajax.callbackMap)) {
-					// If specific callback returns false,
-					// don't trigger general callback
+					//! If specific callback returns false,
+					//! don't trigger general callback
 					if ($.jd._ajax.callbackMap[event.pid](event.data, event.pid) === false)
 						return;
 
@@ -515,6 +544,7 @@
 					$.jd._settings.onmessage(event.data, event.pid);
 			},
 			/**
+			 * ##pollComplete()
 			 * Checks if continuous polling is active and polls again if
 			 * necessary
 			 * 
@@ -522,17 +552,18 @@
 			 * @param textStatus see jQuery.ajax doc
 			 */
 			pollComplete : function pollComplete(jqXHR, textStatus) {
-				console.log(["pollComplete",$.jd._ajax.lastEventId]);
+				$.jd._ajax.debug(["pollComplete",$.jd._ajax.lastEventId]);
 				$.jd._ajax.jqXHR = null;
 				if ($.jd._ajax.active && $.jd._ajax.active === true) {
 					if ($.jd._settings.debug === true) {
-						setTimeout($.jd.pollOnce, 1000);
+						setTimeout($.jd.pollOnce, 2000);
 					} else {
 						$.jd.pollOnce();
 					}
 				}
 			},
 			/**
+			 * ##pollError()
 			 * Handle ajax poll error.
 			 * 
 			 * @param jqXHR see jQuery.ajax doc
@@ -551,6 +582,7 @@
 				});
 			},
 			/**
+			 * ##sendError()
 			 * Handle ajax errors for sending.
 			 * 
 			 * @param jqXHR see jQuery.ajax doc
@@ -566,6 +598,16 @@
 						"status" : textStatus,
 						"errorThrown" : errorThrown
 					});
+			},
+			
+			/**
+			 * ##debug()
+			 * Debug if debug flag is active.
+			 */
+			debug: function debug(){
+				  if($.jd._settings.debug === true && window.console){
+					  console.log( Array.prototype.slice.call(arguments) );
+				}
 			}
 
 		}

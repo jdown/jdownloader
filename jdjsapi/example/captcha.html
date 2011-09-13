@@ -6,7 +6,7 @@
 <script src="../src/jdapi.jquery.js"></script>
 <script>
 /*
-JDownloader JDAPI Examples - Captcha
+JDownloader API Examples - Captcha
 ------------------------------------
 Get a list of all active captchas and give the user the possibility to solve them.
 This example both uses polling and streaming to get active captchas.
@@ -27,7 +27,7 @@ $.jd.setOptions({
 	onmessage: onmessage
 });
 
-//To get both a list of currently active captchas and a connection to the event stream, we need a authenticated session.
+//To get both a list of currently active captchas and a connection to the event stream, we need an authenticated session.
 $.jd.startSession(function(e) {
 	if (e.status == $.jd.e.sessionStatus.REGISTERED)
 		onSession();
@@ -35,7 +35,7 @@ $.jd.startSession(function(e) {
 		log(e, "Session could not be started.");
 });
 
-//Poll all captchas that are currently active and listen for either new or solved captchas.
+//Poll all captchas that are currently active and listen for either new or expired captchas.
 function onSession() {
 	getCaptchas();
 	$.jd.startPolling();
@@ -82,7 +82,7 @@ Listen to the event stream
 	}
 **eventType:** A string containing the event type
 	`new`: Disable current link
-	`solved`: Disable all captchas from this hoster
+	`expired`: Disable all captchas from this hoster
 **captchaObj:** A captcha object as defined above
 */
 function onmessage(event) {
@@ -92,8 +92,10 @@ function onmessage(event) {
 		switch(event.type)
 		{
 		case "new":
+			addCaptcha(event.data);
 			break;
-		case "solved":
+		case "expired":
+			$("#"+ event.data.captchaID).slideUp();
 			break;
 		default:
 			log("Unknown event type", event);
@@ -102,12 +104,12 @@ function onmessage(event) {
 }
 
 
-function addCaptcha(captchaID) 
+function addCaptcha(captcha) 
 {
 	//Limitations
 	//----------------
 	//Currently, only normal captchas are supported by the server side API (no clickable captchas etc).
-	if (this.type !== "NORMAL") {
+	if (captcha.type !== "NORMAL") {
 		log("Warning: Captcha type " + captcha.type + " is not supported.");
 	}
 
@@ -160,7 +162,7 @@ function solveCaptcha() {
 			log("Captcha was still valid when submitting response.");
 		else
 			log("Captchas has already been submitted before.");
-		parent.slideUp(); //Hide Captcha
+		$parent.slideUp(); //Hide Captcha
 
 	});
 }
@@ -179,8 +181,8 @@ function abortCaptcha() {
 	var $parent = $(this).parent();
 	var captchaID = $parent.attr("id");	
 	
-	$.jd.send("captcha/abort", [ captcha.captchaID, "BLOCKTHIS" ]);
-	$(this).parent().slideUp();
+	$.jd.send("captcha/abort", [ captchaID, "BLOCKTHIS" ]);
+	$parent.slideUp();
 }
 
 </script>
