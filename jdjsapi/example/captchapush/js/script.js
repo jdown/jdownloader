@@ -25,6 +25,9 @@ $(function CaptchaPush() {
 	var CaptchaHandler = {
 		_queue : [],
 		addCaptcha : function addCaptcha(captcha) {
+			if (captcha.type !== "NORMAL") {
+				alert("Warning: Captcha type " + captcha.type + " is not supported.");
+			}
 			CaptchaHandler._queue.push(captcha);
 			if (CaptchaHandler._queue.length == 1) {
 				CaptchaHandler.showNext();
@@ -33,14 +36,17 @@ $(function CaptchaPush() {
 		showNext : function showNext() {
 			$("#captcha img").attr("src", $.jd.getURL("captcha/get", CaptchaHandler._queue[0].captchaID));
 			notifyUser();
+			setStatus("Captcha for "+CaptchaHandler._queue[0].hosterID)
 			$("#captcha #display").slideDown();
 			$("#captchaInput").val("").focus();
 		},
 		solve : function solve() {
 			$.jd.send("captcha/solve", [ CaptchaHandler._queue.shift().captchaID, $("#captchaInput").val() ]);
 			$("#captcha #display").slideUp();
+			setStatus("Waiting for Captchas!");
 			if (CaptchaHandler._queue.length > 0)
 				CaptchaHandler.showNext();
+			return false;
 		}
 	};
 
@@ -52,16 +58,21 @@ $(function CaptchaPush() {
 	}
 
 	function onConnect(resp) {
-		console.log(resp);
-		// FIXME Error handling
-		$("#auth .do").attr("disabled", null);
 		setStatus("Connection etablished.");
+		$("#auth .do").attr("disabled", null);
+		
 		if ($.webStorage.local().getItem("autologin") === true) {
 			$("#auth .do").click();
-		}
-
+		}	
 	}
-	;
+	function onConnectError(err) {
+		if(err.status === "timeout")
+			setStatus("Connection timed out. Server not running?");
+		else
+			setStatus("Error on connecting: "+err.errorThrown);
+		console.log(err);
+		window.history.back();
+	}
 
 	function onAuth(resp) {
 		console.log(resp);
@@ -88,13 +99,21 @@ $(function CaptchaPush() {
 				debug: true,
 				onmessage : onEvent
 			});
+			getCaptchas();
 			$.jd.startPolling();
 		} else {
 			window.history.back();
 			setStatus("Authentication failed!");
 		}
 	}
-	;
+	
+	function getCaptchas() {
+		$.jd.send("captcha/list", function onCaptchaList(captchas) {
+			$.each(captchas, function(i, captcha) {
+				CaptchaHandler.addCaptcha(captcha);
+			});
+		});
+	}
 
 	function notifyUser() {
 		if (isPhoneGap) {
@@ -120,29 +139,33 @@ $(function CaptchaPush() {
 			apiServer : $("#apiurl").val(),
 			debug: true//,
 			//apiTimeout : 1000
-		}).send('jd/getVersion', onConnect);
+		}).send('jd/getVersion', onConnect, onConnectError);
 		$("#auth .do").attr("disabled", "disabled");
+		return false;
 	});
 
 	$("#auth .do").click(function() {
-		$.jd.stopSession();
 		setStatus("Authenticating...");
 		$.jd.setOptions({
 			user : $("#user").val(),
 			pass : $("#pass").val()
 		}).startSession(onAuth);
+		return false;
 	});
 
 	$("#captcha .solve").click(CaptchaHandler.solve);
 
-	$("#remember").click(function(e) {
-		$("#autologin").parent().parent().toggle();
-		if (!$("#remember").is(":checked"))
+	$("#remember").change(function(e) {
+		var isChecked = $("#remember").is(":checked");
+		$("#autologin").parent().parent().toggle(isChecked);
+		if (!isChecked)
 			$("#autologin").removeAttr("checked");
 	});
 
 	$(".back").click(function() {
-		$.jd.stopSession(); // our only rollback
+		$.jd.stopSession();
+		$("#autologin").removeAttr("checked");
+		$.webStorage.local().removeItem("autologin");
 		window.history.back();
 		setStatus("");
 		return false;
@@ -168,8 +191,9 @@ $(function CaptchaPush() {
 			// execution in the callback may lead to
 			// sync errors
 			off.removeClass("active").stop(true, true).slideToggle(function() {
-				// TODO: Is stop(true) correct?
 				on.slideToggle();
+				off.children(".do").blur();
+				on.children(".do").focus();
 			});
 		}
 	}
@@ -181,14 +205,16 @@ $(function CaptchaPush() {
 
 	// Restore settings from localStore
 	$.each(settingIds, function(i, a) {
+		if($.webStorage.local().getItem(a) === null)
+			return;
 		var o = $("#" + a);
 		if (o.is('[type="checkbox"]'))
 		{
-			if ($.webStorage.local().getItem(a) === true)
-				o.click();
+			if($.webStorage.local().getItem(a))
+			o.attr('checked',$.webStorage.local().getItem(a)).trigger('change');
 		}
 		else if ($.webStorage.local().getItem(a))
-				o.val($.webStorage.local().getItem(a));
+			o.val($.webStorage.local().getItem(a));
 	});
 
 	/*
@@ -220,5 +246,5 @@ $(function CaptchaPush() {
 	initComplete = true;
 
 	if ($.webStorage.local().getItem("autologin"))
-		$("#connect .do").click();
+		$("#connect .do").submit();
 });

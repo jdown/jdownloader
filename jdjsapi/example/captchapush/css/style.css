@@ -214,21 +214,34 @@ td { vertical-align: top; }
 #main {
 	width: 22em;
     max-width: 100%;
-
+	margin: 0 auto;
+    text-align: center;
 }
-#main div {
+#main form {
     max-width: 85%;
+    display: block;
 }
 
-#main input, #main button {
+#main input {
 	max-width: 100%;
 }
 
-
-div>input,div>button,div>div {
-	width: 18em;
+form > input {
 	display: block;
 	margin: 0 auto 1.2em;
+	padding: inherit 0;
+	text-align: center;
+}
+
+#display > input, form > input, form {
+	overflow: hidden;
+	width: 18em !important;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	display: block;
+	margin: 0 auto 1.2em;
+	padding: inherit 0;
 	text-align: center;
 }
 
@@ -241,10 +254,7 @@ div>input,div>button,div>div {
 	margin-right: .5em;
 	margin-bottom: 3px;
 }
-#main button {
-	display: inline;
-	clear: both;
-}
+
 #auth {
 	text-align: center;
 } 
@@ -276,6 +286,11 @@ body {
 	filter: progid : DXImageTransform.Microsoft.gradient ( startColorStr =
 		'#ffffff', EndColorStr = '#aaddff' );
 	
+}
+
+a, a:hover, a:visited, a:focus, a:active {
+	color: #333;
+	text-decoration: underline;
 }
 
 /* Shared styles */
