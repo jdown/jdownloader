@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script src="../src/jdapi.jquery.js"></script>
+<script>
+/*
+JDownloader API Examples - Downloadlist
+------------------------------------
+Get a list of all packages and links in JD and display them.
+This example only polls the data once for simplicity.
+Using Firebug or Chrome Dev tools to inspect the console output of this example is highly recommended.
+*/
+
+//! http://paulirish.com/2009/log-a-lightweight-wrapper-for-consolelog/
+window.log = function() {log.history = log.history || [];log.history.push(arguments);if (this.console) {console.log(Array.prototype.slice.call(arguments))}}; 
+
+//Basic Setup
+//-----------
+$.jd.setOptions({
+	apiServer : "http://192.168.2.110:3128/",
+	user : "user",
+	pass : "pass",
+	debug : false,
+	onerror : log,
+	onmessage: log
+});
+
+//To get a list of all links, we need an authenticated session.
+$.jd.startSession(function(e) {
+	if (e.status == $.jd.e.sessionStatus.REGISTERED)
+		getLinks();
+	else
+		log(e, "Session could not be started.");
+});
+
+/*
+Get a list of all packages and links
+---------------------------------
+**API-Syntax:** `downloads/list`<br/>
+**Returns** an array of all Packages<br/>
+- - -
+Package specification
+---------------------
+	{
+		"id": 42,
+		"name": "myPackage",
+		"dldir": "/dev/null",
+		"comment": "important stuff",
+		"password": ["secret","passes"],
+		"createtime": 1234567890,
+		"links": [Link1,Link2,...,LinkN]
+	}
+**id:** An integer containing the unique package id<br/>
+**name:** A string containing the package name<br/>
+**dldir:** A string containing the download directory of this package.<br/>
+**comment:** A string containing the package comment.<br/>
+**password:** An array of strings containing the archive passwords of this package.<br/>
+**createtime:** An integer containing the creation time of this package.<br/>
+**links:** An array of links containing all links in this package.<br/>
+- - -
+Link specification
+------------------
+#TODO: Incomplete
+<!--
+	{
+		"id": 42, 
+		 
+	}
+**id:** An integer containing the unique package id<br/>
+-->
+*/
+function getLinks() {
+	$.jd.send("downloads/list", function onGetLinks(packages) {
+		
+		//! log("Complete DownloadList:", packages);
+		window.packages = packages; //debug access
+				
+		//! Stringed DOM for performance reasons: http://jsperf.com/2dom-manipulation-js-templating-vs-programatic-jquery/14
+		var table = new Array();
+		table.push("<table>");
+		
+		for (var i = 0; i < packages.length;i++) {
+			var folder = packages[i];
+			
+			table.push('<tr class="package">');
+			for (var key in folder) {
+				if(folder[key] && folder[key].length && typeof(folder[key]) === "object" && folder[key].length > 1)
+				{
+					table.push("<td>Array (" + folder[key].length + ")</td>");
+				}	
+				else
+				{
+					table.push("<td>" + htmlentities(folder[key]) +"</td>");
+				}
+			}
+			table.push("</tr>");
+			
+			
+			
+			for (var key in folder.links) {
+				var link = folder.links[key];
+				table.push('<tr class="link">');
+				for (var key in link) {
+					table.push("<td>" + htmlentities(link[key]) +"</td>");
+				}
+				table.push("</tr>");
+			}
+		}
+		
+		table.push("</table");
+		document.body.innerHTML += table.join('');;
+
+	}, log);
+}
+
+  var escapeCache = {
+   "&": "&amp;",
+   "\\": "\\\\", // \ : \\
+   '"': '&quot;',
+   "<": "&lt;",
+   ">": "&gt;",
+   "'": "&#039;"
+  };
+  var escapeRegex = /[\&"'<>\\]/g;
+  function escapeFunc(s) {
+  	return escapeCache[s] || s;
+  };
+  function htmlentities(text){
+  	return (text+"").replace(text,escapeFunc);
+  }
+</script>
+<style type="text/css">
+	.package {
+		background-color: #dadada;
+	}
+	.link td:first-of-type {
+		padding-left: 3em;
+	}
+</style>
+</head>
+<body>
+	<h1>Downloadtable</h1>
+</body>
+</html>
