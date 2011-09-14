@@ -162,10 +162,21 @@ public class HTMLParser {
         /* get protocol of the url */
         String pro = HTMLParser.getProtocol(url);
         if (baseUrl != null && url != null && (url.startsWith("./") || pro == null)) {
-            if (pro == null && !url.startsWith("/") && !url.startsWith("./")) {
-                url = "/" + url;
+            /* combine baseURL and href url */
+            if (pro == null) {
+                if (url.startsWith("/") || url.startsWith("./")) {
+                    /* absolut from root url */
+                    final String base = new Regex(baseUrl, "(.*?\\..*?/)").getMatch(0);
+                    if (base != null) {
+                        url = Browser.correctURL(base + "/" + url);
+                    } else {
+                        url = Browser.correctURL(baseUrl + "/" + url);
+                    }
+                } else {
+                    /* relativ url */
+                    url = Browser.correctURL(baseUrl + "/" + url);
+                }
             }
-            url = Browser.correctURL(baseUrl + url);
             pro = HTMLParser.getProtocol(url);
         }
 
