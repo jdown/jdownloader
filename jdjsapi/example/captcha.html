@@ -24,7 +24,7 @@ $.jd.setOptions({
 	pass : "pass",
 	debug : true,
 	onerror : log,
-	onmessage: onmessage
+	onmessage: log
 });
 
 //To get both a list of currently active captchas and a connection to the event stream, we need an authenticated session.
@@ -38,6 +38,7 @@ $.jd.startSession(function(e) {
 //Poll all captchas that are currently active and listen for either new or expired captchas.
 function onSession() {
 	getCaptchas();
+	$.jd.subscribe("captcha",onCaptcha);
 	$.jd.startPolling();
 }
 
@@ -48,14 +49,14 @@ Get a list of all active captchas
 **Returns** an array of  all active captchas' CaptchaObjects.<br/>
 **CaptchaObject specification:** 
 	{
-		"captchaID": 42,
-		"linkID": null,
-		"hosterID": "hoster.com",
+		"id": 42,
+		"link": null,
+		"hoster": "hoster.com",
 		"type": "NORMAL"
 	}
-**captchaID:** An integer containing the unique captcha id.<br/>
-**linkID:** An integer containing the corresponding link id (unimplemented)<br/>
-**hosterID:** A string containing the corresponding hoster.<br/>
+**id:** An integer containing the unique captcha id.<br/>
+**link:** An integer containing the corresponding link id (unimplemented)<br/>
+**hoster:** A string containing the corresponding hoster.<br/>
 **type:** A string containing the captcha type
 	`NORMAL`: Normal Captcha
 */
@@ -72,34 +73,30 @@ function getCaptchas() {
 }
 
 /*
-Listen to the event stream
+Listen to the captcha event stream
 --------------------------
 **Captcha Module Event specification:**<br/>
 	{
-		"module": "captcha",
-		"type":   eventType,
+		"message":   eventMessage,
 		"data":   captchaObj
 	}
-**eventType:** A string containing the event type
+**message:** A string containing the event type
 	`new`: Disable current link
 	`expired`: Disable all captchas from this hoster
-**captchaObj:** A captcha object as defined above
+**data:** A captcha object as defined above
 */
-function onmessage(event) {
-	log(event);
-	if (event.module === "captcha")
+function onCaptcha(event) {
+	log("onCaptcha",event);
+	switch(event.message)
 	{
-		switch(event.type)
-		{
-		case "new":
-			addCaptcha(event.data);
-			break;
-		case "expired":
-			$("#"+ event.data.captchaID).slideUp();
-			break;
-		default:
-			log("Unknown event type", event);
-		}
+	case "new":
+		addCaptcha(event.data);
+		break;
+	case "expired":
+		$("#"+ event.data.id).slideUp(function(){$(this).remove();});
+		break;
+	default:
+		log("Unknown event type", event);
 	}
 }
 
@@ -119,9 +116,9 @@ function addCaptcha(captcha)
 	**API-Syntax:** `captcha/get` ( `captchaID` )<br/>
 	**Returns** Captcha Image
 	*/
-	var captchaImage = $.jd.getURL("captcha/get", captcha.captchaID);
+	var captchaImage = $.jd.getURL("captcha/get", captcha.id);
 	var $container = $("<div>", {
-		"id" : captcha.captchaID,
+		"id" : captcha.id,
 		"class" : "captcha"
 	}).appendTo("body").hide();
 
@@ -130,7 +127,7 @@ function addCaptcha(captcha)
 		src : captchaImage
 	}).appendTo($container);
 	$("<input>", {
-		placeholder : captcha.hosterID + " (" + captcha.linkID + ")" //valid html5 for truly awesome compatibility
+		placeholder : captcha.hoster + " (" + captcha.link + ")" //valid html5 for truly awesome compatibility
 	}).appendTo($container);
 	$("<button>", {
 		text : "Solve",
@@ -154,10 +151,10 @@ Solve a Captcha
 function solveCaptcha() {
 	
 	var $parent = $(this).parent();
-	var captchaID = $parent.attr("id");	
+	var id = $parent.attr("id");	
 	var text = $parent.children("input").val();
 
-	$.jd.send("captcha/solve", [ captchaID, text ], function(wasStillValid) {
+	$.jd.send("captcha/solve", [ id, text ], function(wasStillValid) {
 		if (wasStillValid)
 			log("Captcha was still valid when submitting response.");
 		else
@@ -179,9 +176,9 @@ Abort a Captcha
 function abortCaptcha() {
 	
 	var $parent = $(this).parent();
-	var captchaID = $parent.attr("id");	
+	var id = $parent.attr("id");	
 	
-	$.jd.send("captcha/abort", [ captchaID, "BLOCKTHIS" ]);
+	$.jd.send("captcha/abort", [ id, "BLOCKTHIS" ]);
 	$parent.slideUp();
 }
 

@@ -59,7 +59,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 	<span class="nx">pass</span> <span class="o">:</span> <span class="s2">&quot;pass&quot;</span><span class="p">,</span>
 	<span class="nx">debug</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
 	<span class="nx">onerror</span> <span class="o">:</span> <span class="nx">log</span><span class="p">,</span>
-	<span class="nx">onmessage</span><span class="o">:</span> <span class="nx">onmessage</span>
+	<span class="nx">onmessage</span><span class="o">:</span> <span class="nx">log</span>
 <span class="p">});</span></pre></div>
     </div>
   </div>
@@ -89,6 +89,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
     <div class='code'>
       <div class="highlight"><pre><span class="kd">function</span> <span class="nx">onSession</span><span class="p">()</span> <span class="p">{</span>
 	<span class="nx">getCaptchas</span><span class="p">();</span>
+	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">subscribe</span><span class="p">(</span><span class="s2">&quot;captcha&quot;</span><span class="p">,</span><span class="nx">onCaptcha</span><span class="p">);</span>
 	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">startPolling</span><span class="p">();</span>
 <span class="p">}</span></pre></div>
     </div>
@@ -103,14 +104,14 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 <strong>Returns</strong> an array of  all active captchas' CaptchaObjects.<br/>
 <strong>CaptchaObject specification:</strong>
 <pre>{
-    "captchaID": 42,
-    "linkID": null,
-    "hosterID": "hoster.com",
+    "id": 42,
+    "link": null,
+    "hoster": "hoster.com",
     "type": "NORMAL"
 }
-</pre><strong>captchaID:</strong> An integer containing the unique captcha id.<br/>
-<strong>linkID:</strong> An integer containing the corresponding link id (unimplemented)<br/>
-<strong>hosterID:</strong> A string containing the corresponding hoster.<br/>
+</pre><strong>id:</strong> An integer containing the unique captcha id.<br/>
+<strong>link:</strong> An integer containing the corresponding link id (unimplemented)<br/>
+<strong>hoster:</strong> A string containing the corresponding hoster.<br/>
 <strong>type:</strong> A string containing the captcha type
 <pre><code>NORMAL</code>: Normal Captcha
 </pre></p>
@@ -134,34 +135,30 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
       <div class='octowrap'>
         <a class='octothorpe' href='#section-6'>#</a>
       </div>
-      <h2>Listen to the event stream</h2>
+      <h2>Listen to the captcha event stream</h2>
 <p><strong>Captcha Module Event specification:</strong><br/>
 <pre>{
-    "module": "captcha",
-    "type":   eventType,
+    "message":   eventMessage,
     "data":   captchaObj
 }
-</pre><strong>eventType:</strong> A string containing the event type
+</pre><strong>message:</strong> A string containing the event type
 <pre><code>new</code>: Disable current link
 <code>expired</code>: Disable all captchas from this hoster
-</pre><strong>captchaObj:</strong> A captcha object as defined above</p>
+</pre><strong>data:</strong> A captcha object as defined above</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre><span class="kd">function</span> <span class="nx">onmessage</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
-	<span class="nx">log</span><span class="p">(</span><span class="nx">event</span><span class="p">);</span>
-	<span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">module</span> <span class="o">===</span> <span class="s2">&quot;captcha&quot;</span><span class="p">)</span>
+      <div class="highlight"><pre><span class="kd">function</span> <span class="nx">onCaptcha</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;onCaptcha&quot;</span><span class="p">,</span><span class="nx">event</span><span class="p">);</span>
+	<span class="k">switch</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">message</span><span class="p">)</span>
 	<span class="p">{</span>
-		<span class="k">switch</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span>
-		<span class="p">{</span>
-		<span class="k">case</span> <span class="s2">&quot;new&quot;</span><span class="o">:</span>
-			<span class="nx">addCaptcha</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
-			<span class="k">break</span><span class="p">;</span>
-		<span class="k">case</span> <span class="s2">&quot;expired&quot;</span><span class="o">:</span>
-			<span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="o">+</span> <span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">captchaID</span><span class="p">).</span><span class="nx">slideUp</span><span class="p">();</span>
-			<span class="k">break</span><span class="p">;</span>
-		<span class="k">default</span><span class="o">:</span>
-			<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Unknown event type&quot;</span><span class="p">,</span> <span class="nx">event</span><span class="p">);</span>
-		<span class="p">}</span>
+	<span class="k">case</span> <span class="s2">&quot;new&quot;</span><span class="o">:</span>
+		<span class="nx">addCaptcha</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
+		<span class="k">break</span><span class="p">;</span>
+	<span class="k">case</span> <span class="s2">&quot;expired&quot;</span><span class="o">:</span>
+		<span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="o">+</span> <span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">).</span><span class="nx">slideUp</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span><span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">remove</span><span class="p">();});</span>
+		<span class="k">break</span><span class="p">;</span>
+	<span class="k">default</span><span class="o">:</span>
+		<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Unknown event type&quot;</span><span class="p">,</span> <span class="nx">event</span><span class="p">);</span>
 	<span class="p">}</span>
 <span class="p">}</span>
 
@@ -194,9 +191,9 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 <strong>Returns</strong> Captcha Image</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">captchaImage</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">getURL</span><span class="p">(</span><span class="s2">&quot;captcha/get&quot;</span><span class="p">,</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">captchaID</span><span class="p">);</span>
+      <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">captchaImage</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">getURL</span><span class="p">(</span><span class="s2">&quot;captcha/get&quot;</span><span class="p">,</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
 	<span class="kd">var</span> <span class="nx">$container</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;&lt;div&gt;&quot;</span><span class="p">,</span> <span class="p">{</span>
-		<span class="s2">&quot;id&quot;</span> <span class="o">:</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">captchaID</span><span class="p">,</span>
+		<span class="s2">&quot;id&quot;</span> <span class="o">:</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
 		<span class="s2">&quot;class&quot;</span> <span class="o">:</span> <span class="s2">&quot;captcha&quot;</span>
 	<span class="p">}).</span><span class="nx">appendTo</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
 
@@ -205,7 +202,7 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 		<span class="nx">src</span> <span class="o">:</span> <span class="nx">captchaImage</span>
 	<span class="p">}).</span><span class="nx">appendTo</span><span class="p">(</span><span class="nx">$container</span><span class="p">);</span>
 	<span class="nx">$</span><span class="p">(</span><span class="s2">&quot;&lt;input&gt;&quot;</span><span class="p">,</span> <span class="p">{</span>
-		<span class="nx">placeholder</span> <span class="o">:</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">hosterID</span> <span class="o">+</span> <span class="s2">&quot; (&quot;</span> <span class="o">+</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">linkID</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span> <span class="c1">//valid html5 for truly awesome compatibility</span>
+		<span class="nx">placeholder</span> <span class="o">:</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">hoster</span> <span class="o">+</span> <span class="s2">&quot; (&quot;</span> <span class="o">+</span> <span class="nx">captcha</span><span class="p">.</span><span class="nx">link</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span> <span class="c1">//valid html5 for truly awesome compatibility</span>
 	<span class="p">}).</span><span class="nx">appendTo</span><span class="p">(</span><span class="nx">$container</span><span class="p">);</span>
 	<span class="nx">$</span><span class="p">(</span><span class="s2">&quot;&lt;button&gt;&quot;</span><span class="p">,</span> <span class="p">{</span>
 		<span class="nx">text</span> <span class="o">:</span> <span class="s2">&quot;Solve&quot;</span><span class="p">,</span>
@@ -234,10 +231,10 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
       <div class="highlight"><pre><span class="kd">function</span> <span class="nx">solveCaptcha</span><span class="p">()</span> <span class="p">{</span>
 	
 	<span class="kd">var</span> <span class="nx">$parent</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">parent</span><span class="p">();</span>
-	<span class="kd">var</span> <span class="nx">captchaID</span> <span class="o">=</span> <span class="nx">$parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">);</span>	
+	<span class="kd">var</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">$parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">);</span>	
 	<span class="kd">var</span> <span class="nx">text</span> <span class="o">=</span> <span class="nx">$parent</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">).</span><span class="nx">val</span><span class="p">();</span>
 
-	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;captcha/solve&quot;</span><span class="p">,</span> <span class="p">[</span> <span class="nx">captchaID</span><span class="p">,</span> <span class="nx">text</span> <span class="p">],</span> <span class="kd">function</span><span class="p">(</span><span class="nx">wasStillValid</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;captcha/solve&quot;</span><span class="p">,</span> <span class="p">[</span> <span class="nx">id</span><span class="p">,</span> <span class="nx">text</span> <span class="p">],</span> <span class="kd">function</span><span class="p">(</span><span class="nx">wasStillValid</span><span class="p">)</span> <span class="p">{</span>
 		<span class="k">if</span> <span class="p">(</span><span class="nx">wasStillValid</span><span class="p">)</span>
 			<span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Captcha was still valid when submitting response.&quot;</span><span class="p">);</span>
 		<span class="k">else</span>
@@ -265,9 +262,9 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
       <div class="highlight"><pre><span class="kd">function</span> <span class="nx">abortCaptcha</span><span class="p">()</span> <span class="p">{</span>
 	
 	<span class="kd">var</span> <span class="nx">$parent</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">parent</span><span class="p">();</span>
-	<span class="kd">var</span> <span class="nx">captchaID</span> <span class="o">=</span> <span class="nx">$parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">);</span>	
+	<span class="kd">var</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">$parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">);</span>	
 	
-	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;captcha/abort&quot;</span><span class="p">,</span> <span class="p">[</span> <span class="nx">captchaID</span><span class="p">,</span> <span class="s2">&quot;BLOCKTHIS&quot;</span> <span class="p">]);</span>
+	<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;captcha/abort&quot;</span><span class="p">,</span> <span class="p">[</span> <span class="nx">id</span><span class="p">,</span> <span class="s2">&quot;BLOCKTHIS&quot;</span> <span class="p">]);</span>
 	<span class="nx">$parent</span><span class="p">.</span><span class="nx">slideUp</span><span class="p">();</span>
 <span class="p">}</span>
 

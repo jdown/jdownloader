@@ -34,14 +34,14 @@ $(function CaptchaPush() {
 			}
 		},
 		showNext : function showNext() {
-			$("#captcha img").attr("src", $.jd.getURL("captcha/get", CaptchaHandler._queue[0].captchaID));
+			$("#captcha img").attr("src", $.jd.getURL("captcha/get", CaptchaHandler._queue[0].id));
 			notifyUser();
-			setStatus("Captcha for "+CaptchaHandler._queue[0].hosterID)
+			setStatus("Captcha for "+CaptchaHandler._queue[0].hoster)
 			$("#captcha #display").slideDown();
 			$("#captchaInput").val("").focus();
 		},
 		solve : function solve() {
-			$.jd.send("captcha/solve", [ CaptchaHandler._queue.shift().captchaID, $("#captchaInput").val() ]);
+			$.jd.send("captcha/solve", [ CaptchaHandler._queue.shift().id, $("#captchaInput").val() ]);
 			$("#captcha #display").slideUp();
 			setStatus("Waiting for Captchas!");
 			if (CaptchaHandler._queue.length > 0)
@@ -96,10 +96,11 @@ $(function CaptchaPush() {
 			}
 			
 			$.jd.setOptions({
-				debug: true,
-				onmessage : onEvent
+				//debug: true,
+				//onmessage : log
 			});
 			getCaptchas();
+			$.jd.subscribe("captcha");
 			$.jd.startPolling();
 		} else {
 			window.history.back();
@@ -125,9 +126,9 @@ $(function CaptchaPush() {
 		}
 	}
 
-	function onEvent(event) {
-		console.log(event);
-		if (event.module === "captcha" && event.type === "new") {
+	function onCaptcha(event) {
+		//console.log(event);
+		if (event.message === "new") {
 			CaptchaHandler.addCaptcha(event.data);
 		}
 	}

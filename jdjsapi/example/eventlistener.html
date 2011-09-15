@@ -13,6 +13,9 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
 
 */
 
+//! jQuery JSON Plugin stripped
+//! This plugin is licensed as free software under the terms of the MIT License: http://www.opensource.org/licenses/mit-license.php
+(function($){$.toJSON=function(o){if(typeof(JSON)=='object'&&JSON.stringify)return JSON.stringify(o);var type=typeof(o);if(o===null)return"null";if(type=="undefined")return undefined;if(type=="number"||type=="boolean")return o+"";if(type=="string")return $.quoteString(o);if(type=='object'){if(typeof o.toJSON=="function")return $.toJSON(o.toJSON());if(o.constructor===Array){var ret=[];for(var i=0;i<o.length;i++)ret.push($.toJSON(o[i])||"null");return"["+ret.join(",")+"]"}var pairs=[];for(var k in o){var name;var type=typeof k;if(type=="number")name='"'+k+'"';else if(type=="string")name=$.quoteString(k);else continue;if(typeof o[k]=="function")continue;var val=$.toJSON(o[k]);pairs.push(name+":"+val)}return"{"+pairs.join(", ")+"}"}}})(jQuery);
 //! http://paulirish.com/2009/log-a-lightweight-wrapper-for-consolelog/
 window.log = function() {log.history = log.history || [];log.history.push(arguments);if (this.console) {console.log(Array.prototype.slice.call(arguments))}}; 
 
@@ -24,7 +27,7 @@ $.jd.setOptions({
 	pass : "pass",
 	debug : true,
 	onerror : log,
-	onmessage: onmessage
+	onmessage: log
 });
 
 //To get a connection to the event stream, we need an authenticated session.
@@ -37,23 +40,30 @@ $.jd.startSession(function(e) {
 
 //We received a session, start polling.
 function onSession() {
+	$.jd.subscribe("*",onmessage); //Subscribe to all events using "*"
 	$.jd.startPolling();
 }
 
 /*
 Listen to the event stream
 --------------------------
+
+The API Event stream informs you about recent events in JDownloader.
+Listening to the event stream, you can stay up to date without repolling.
+As JD throws a lot of events, you have to subscribe to certain namespaces in order to get their events.
+To do so, you can use the `subscribe()` and `unsubscribe()` functions. See jdapi.jquery.js docs for further details.
+We're subscribing to all events using "*" as namespace, replacing the onmessage setting with our callback function.
+
 **General Event specification:**<br/>
 	{
-		"module": "module",
-		"type":   "eventType",
+		"message":   "event identifier",
 		"data":   eventData
 	}
 **onmessage specification:**<br/>
-	function `onmessage` ( `event`, `pid`)
+	function `onmessage` ( `event`, `namespace`, `pid`)
 
 **event:** An event object matching the general specification.<br/>
-
+**namespace:** An integer containing the corresponding namespace<br/>
 **pid:** An integer containing the corresponding PID<br/>
 * Some send() API calls cause [multiple] asynchronous responses.
 * Each asynchronous response comes over the regular event stream and is bundled with its PID
@@ -62,22 +72,14 @@ Listen to the event stream
 * If you supply a custom callback function within the API call (*see jQuery.jd.send*) **and**
 * this function returns `false` on a certain event, this event won't get passed to the onmessage callback.
 */
-function onmessage(event,pid) {
-	log(event, pid);
-	$("pre").append($.toJSON(event)+"\n");
+function onmessage(event,namespace,pid) {
+	log(event, namespace, pid);
+	$("pre").append($.toJSON(event)+" in "+namespace+(pid ? (" ("+pid+")") : "")+"\n");
 }
-
-
-//! jQuery JSON Plugin stripped
-//! This document is licensed as free software under the terms of the
-//! MIT License: http://www.opensource.org/licenses/mit-license.php
-(function($){$.toJSON=function(o){if(typeof(JSON)=='object'&&JSON.stringify)return JSON.stringify(o);var type=typeof(o);if(o===null)return"null";if(type=="undefined")return undefined;if(type=="number"||type=="boolean")return o+"";if(type=="string")return $.quoteString(o);if(type=='object'){if(typeof o.toJSON=="function")return $.toJSON(o.toJSON());if(o.constructor===Array){var ret=[];for(var i=0;i<o.length;i++)ret.push($.toJSON(o[i])||"null");return"["+ret.join(",")+"]"}var pairs=[];for(var k in o){var name;var type=typeof k;if(type=="number")name='"'+k+'"';else if(type=="string")name=$.quoteString(k);else continue;if(typeof o[k]=="function")continue;var val=$.toJSON(o[k]);pairs.push(name+":"+val)}return"{"+pairs.join(", ")+"}"}}})(jQuery);
-
 </script>
 </head>
 <body>
 	<h4>Event Stream live dump</h4>
-	<pre>
-	</pre>
+	<pre></pre>
 </body>
 </html>

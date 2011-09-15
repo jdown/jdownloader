@@ -40,7 +40,7 @@ This wrapper is the client side reference implementation containing all features
       </div>
       <h2>setOptions()</h2>
 <p>Set options</p>
-<p><strong>param</strong> Object.<string, *> options to set<br/></p>
+<p><strong>param</strong> {Object.<string, *>} options to set<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">setOptions</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">setOptions</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
@@ -85,10 +85,17 @@ pass are set as options, you can omit these parameters.</p>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">startSession</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">startSession</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pass</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
 			<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">sessionStatus</span> <span class="o">!==</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">e</span><span class="p">.</span><span class="nx">sessionStatus</span><span class="p">.</span><span class="nx">NO_SESSION</span><span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">sessionStatus</span> <span class="o">===</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">e</span><span class="p">.</span><span class="nx">sessionStatus</span><span class="p">.</span><span class="nx">REGISTERED</span><span class="p">){</span>
+					<span class="nx">callback</span><span class="p">({</span>
+						<span class="s2">&quot;status&quot;</span> <span class="o">:</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">sessionStatus</span><span class="p">,</span>
+						<span class="s2">&quot;data&quot;</span> <span class="o">:</span> <span class="s2">&quot;already logged in&quot;</span>
+					<span class="p">});</span>
+					<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+				<span class="p">}</span>
 				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">stopSession</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
 					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">startSession</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pass</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
 				<span class="p">});</span> <span class="c1">// disconnect first then</span>
-				<span class="k">return</span><span class="p">;</span>
+				<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
 			<span class="p">}</span>
 			
 			<span class="c1">//! Shift parameters if user and pass are omitted</span>
@@ -153,6 +160,7 @@ pass are set as options, you can omit these parameters.</p>
 				<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">stopPolling</span><span class="p">();</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">token</span> <span class="o">=</span> <span class="kc">undefined</span><span class="p">;</span>
+			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span> <span class="o">=</span> <span class="p">{};</span>
 			<span class="c1">//! No matter whether the server invalidates the session, we do!</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">sessionStatus</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">e</span><span class="p">.</span><span class="nx">sessionStatus</span><span class="p">.</span><span class="nx">NO_SESSION</span><span class="p">;</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s2">&quot;session/disconnect&quot;</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
@@ -186,7 +194,6 @@ pass are set as options, you can omit these parameters.</p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">startPolling</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">startPolling</span><span class="p">()</span> <span class="p">{</span>
-
 			<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">isPollingContinuously</span><span class="p">())</span>
 				<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">active</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
@@ -200,6 +207,112 @@ pass are set as options, you can omit these parameters.</p>
     <div class='docs'>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <h2>subscribe()</h2>
+<p>Subscribe to events of a certain namespace. If you want to subscribe to all namespaces, use * as namespace parameter.
+In this case, the callback parameter will replace the onmessage setting.</p>
+<p><strong>param</strong> {string} namespace to subscribe to<br/>
+<strong>param</strong> {function(Object.<string, *>,?string=)=} callback function to be executed every time an event happens<br/>
+<strong>param</strong> {function(Object.<string, *>)=} onSubscribed callback function to be executed as soon as you are subscribed.<br/>
+<strong>return</strong> {jQuery}<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="nx">subscribe</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">subscribe</span><span class="p">(</span><span class="nx">namespace</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">onSubscribed</span><span class="p">)</span> <span class="p">{</span>
+			
+			<span class="nx">namespace</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">cleanNamespace</span><span class="p">(</span><span class="nx">namespace</span><span class="p">);</span>
+			
+			<span class="k">if</span><span class="p">(</span><span class="nx">namespace</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">)</span>
+			<span class="p">{</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div><div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Check if callback is already registered for this namespace. Skip, if so.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>				<span class="kd">var</span> <span class="nx">subscr</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">];</span>
+				<span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="nx">subscr</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+				<span class="p">{</span>
+					<span class="k">if</span><span class="p">(</span><span class="nx">subscr</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">===</span> <span class="nx">callback</span><span class="p">)</span>
+					<span class="p">{</span>
+						<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">onSubscribed</span><span class="p">))</span>
+							<span class="nx">onSubscribed</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="o">:</span><span class="s2">&quot;already subscribed with that callback&quot;</span><span class="p">});</span>
+						<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+
+					<span class="p">}</span>
+				<span class="p">}</span>
+				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">].</span><span class="nx">push</span><span class="p">(</span><span class="nx">callback</span><span class="p">);</span>
+				<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">onSubscribed</span><span class="p">))</span>
+					<span class="nx">onSubscribed</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="o">:</span><span class="s2">&quot;callback added&quot;</span><span class="p">});</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nx">callback</span><span class="p">];</span>
+				
+				<span class="k">if</span><span class="p">(</span><span class="nx">namespace</span> <span class="o">===</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
+				<span class="p">{</span>
+					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">onmessage</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div><div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>TODO: Subscribe all</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>				<span class="p">}</span>
+					
+				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">namespace</span> <span class="o">+</span> <span class="s2">&quot;/subscribe&quot;</span><span class="p">,</span><span class="nx">onSubscribed</span><span class="p">,</span><span class="nx">onSubscribed</span><span class="p">);</span>
+				
+			<span class="p">}</span>
+			<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+		<span class="p">},</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div><div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <h2>unsubscribe()</h2>
+<p>Unsubscribe from events of a certain namespace.
+If you want to unsubscribe from all namespaces, use * as namespace parameter.</p>
+<p><strong>param</strong> {string} namespace to unsubscribe from<br/>
+<strong>param</strong> {function(Object.<string, *>)=}  onUnsubscribed callback which function to be executed after subscription has been canceled.<br/>
+<strong>return</strong> {jQuery}<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="nx">unsubscribe</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">unsubscribe</span><span class="p">(</span><span class="nx">namespace</span><span class="p">,</span> <span class="nx">onUnsubscribed</span><span class="p">){</span>
+			<span class="nx">namespace</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">cleanNamespace</span><span class="p">(</span><span class="nx">namespace</span><span class="p">);</span>
+			<span class="kd">var</span> <span class="nx">namespaces</span> <span class="o">=</span> <span class="p">{};</span>
+			<span class="k">if</span><span class="p">(</span><span class="nx">namespace</span> <span class="o">===</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
+				<span class="nx">namespaces</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">;</span>
+			<span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="nx">namespace</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">)</span>
+				<span class="nx">namespaces</span><span class="p">[</span><span class="nx">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">];</span>
+			<span class="k">else</span>
+			<span class="p">{</span>
+				<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">onUnsubscribed</span><span class="p">))</span>
+					<span class="nx">onUnsubscribed</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="o">:</span><span class="s2">&quot;already unsubscribed&quot;</span><span class="p">});</span>
+				<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+			<span class="p">}</span>
+			
+			<span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">namespaces</span><span class="p">,</span><span class="kd">function</span><span class="p">(</span><span class="nx">namespace</span><span class="p">,</span><span class="nx">callbacks</span><span class="p">){</span>
+				
+				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">namespace</span> <span class="o">+</span> <span class="s2">&quot;/unsubscribe&quot;</span><span class="p">);</span>
+				<span class="k">delete</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">];</span>				
+				
+			<span class="p">});</span>
+			<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+		<span class="p">},</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div><div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
       </div>
       <h2>stopPolling()</h2>
 <p>Stops polling from the server continuously</p>
@@ -215,10 +328,10 @@ pass are set as options, you can omit these parameters.</p>
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-8'>
+  <div class='clearall'></div><div class='section' id='section-12'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-8'>#</a>
+        <a class='octothorpe' href='#section-12'>#</a>
       </div>
       <h2>isPollingContinuously()</h2>
 <p>Returns <code>true</code> if jquery is polling continuously</p>
@@ -230,10 +343,10 @@ pass are set as options, you can omit these parameters.</p>
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-9'>
+  <div class='clearall'></div><div class='section' id='section-13'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-9'>#</a>
+        <a class='octothorpe' href='#section-13'>#</a>
       </div>
       <h2>pollOnce()</h2>
 <p>Poll events from the server <strong>once</strong></p>
@@ -274,10 +387,10 @@ pass are set as options, you can omit these parameters.</p>
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-10'>
+  <div class='clearall'></div><div class='section' id='section-14'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-10'>#</a>
+        <a class='octothorpe' href='#section-14'>#</a>
       </div>
       <h2>getURL()</h2>
 <p>Builds a query string for the API</p>
@@ -285,13 +398,13 @@ pass are set as options, you can omit these parameters.</p>
 <strong>param</strong> {function(Object.<string, *>,?string=)|Array.<string>=}<br/>
 params (optional) parameters for this action as a JSON array (e.g.
 ["param1",1,1.2,"param4"]) <br/>
-<strong>returns</strong> {string} url<br/></p>
+<strong>return</strong> {string} url<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">getURL</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">getURL</span><span class="p">(</span><span class="nx">action</span><span class="p">,</span><span class="nx">params</span><span class="p">){</span>
-			<span class="c1">//! Remove leading /, it&#39;s already in the apiServer URL</span>
-			<span class="k">if</span> <span class="p">(</span><span class="nx">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">===</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
-				<span class="nx">action</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+			
+			<span class="nx">action</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">cleanNamespace</span><span class="p">(</span><span class="nx">action</span><span class="p">);</span>
+			
 			<span class="kd">var</span> <span class="nx">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
 			<span class="k">if</span><span class="p">(</span><span class="nx">params</span><span class="p">)</span>
 			<span class="p">{</span>
@@ -304,10 +417,10 @@ params (optional) parameters for this action as a JSON array (e.g.
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-11'>
+  <div class='clearall'></div><div class='section' id='section-15'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-11'>#</a>
+        <a class='octothorpe' href='#section-15'>#</a>
       </div>
       <h2>send()</h2>
 <p>Perform the action on the server</p>
@@ -325,7 +438,7 @@ parameter. <br/>
 function to execute each time an event is streamed that refers to this
 request. If this parameter is either omitted or this functions does
 <em>not</em> return false, the general poll callback is invoked, too. <br/>
-<strong>returns</strong> {jQuery}<br/></p>
+<strong>return</strong> {jQuery}<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">send</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">send</span><span class="p">(</span><span class="nx">action</span><span class="p">,</span> <span class="nx">params</span><span class="p">,</span> <span class="nx">onSuccess</span><span class="p">,</span> <span class="nx">onError</span><span class="p">,</span> <span class="nx">onEvent</span><span class="p">)</span> <span class="p">{</span>
@@ -379,10 +492,10 @@ request. If this parameter is either omitted or this functions does
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-12'>
+  <div class='clearall'></div><div class='section' id='section-16'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-12'>#</a>
+        <a class='octothorpe' href='#section-16'>#</a>
       </div>
       <h2>Settings</h2>
 <p>Set by using setOptions. <strong>Don't access this property directly.</strong></p>
@@ -391,10 +504,10 @@ request. If this parameter is either omitted or this functions does
       <div class="highlight"><pre>		<span class="nx">_settings</span> <span class="o">:</span> <span class="p">{</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-13'>
+  <div class='clearall'></div><div class='section' id='section-17'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-13'>#</a>
+        <a class='octothorpe' href='#section-17'>#</a>
       </div>
       <h3>user</h3>
 <p>Username for API auth</p>
@@ -404,10 +517,10 @@ request. If this parameter is either omitted or this functions does
       <div class="highlight"><pre>			<span class="nx">user</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-14'>
+  <div class='clearall'></div><div class='section' id='section-18'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-14'>#</a>
+        <a class='octothorpe' href='#section-18'>#</a>
       </div>
       <h3>pass</h3>
 <p>pass for API auth</p>
@@ -417,10 +530,10 @@ request. If this parameter is either omitted or this functions does
       <div class="highlight"><pre>			<span class="nx">pass</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-15'>
+  <div class='clearall'></div><div class='section' id='section-19'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-15'>#</a>
+        <a class='octothorpe' href='#section-19'>#</a>
       </div>
       <h3>apiServer</h3>
 <p>API server root url</p>
@@ -430,10 +543,10 @@ request. If this parameter is either omitted or this functions does
       <div class="highlight"><pre>			<span class="nx">apiServer</span> <span class="o">:</span> <span class="s1">&#39;http://127.0.0.1:3128/&#39;</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-16'>
+  <div class='clearall'></div><div class='section' id='section-20'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-16'>#</a>
+        <a class='octothorpe' href='#section-20'>#</a>
       </div>
       <h3>onmessage</h3>
 <p>Callback function to be called if an event is recieved. If the
@@ -445,10 +558,10 @@ If it returns <code>false</code>, this function won't be executed.</p>
       <div class="highlight"><pre>			<span class="nx">onmessage</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-17'>
+  <div class='clearall'></div><div class='section' id='section-21'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-17'>#</a>
+        <a class='octothorpe' href='#section-21'>#</a>
       </div>
       <h3>onerror</h3>
 <p>Callback function to be called if an internal error occured.
@@ -459,10 +572,10 @@ If it returns <code>false</code>, this function won't be executed.</p>
       <div class="highlight"><pre>			<span class="nx">onerror</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-18'>
+  <div class='clearall'></div><div class='section' id='section-22'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-18'>#</a>
+        <a class='octothorpe' href='#section-22'>#</a>
       </div>
       <h3>debug</h3>
 <p>Debug Mode. Watch your Firebug / Chrome Dev tools console.</p>
@@ -472,10 +585,10 @@ If it returns <code>false</code>, this function won't be executed.</p>
       <div class="highlight"><pre>			<span class="nx">debug</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-19'>
+  <div class='clearall'></div><div class='section' id='section-23'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-19'>#</a>
+        <a class='octothorpe' href='#section-23'>#</a>
       </div>
       <h3>apiTimeout</h3>
 <p>Timeout until API calls time out. Applies for both polling (once)
@@ -486,10 +599,10 @@ and sending.</p>
       <div class="highlight"><pre>			<span class="nx">apiTimeout</span> <span class="o">:</span> <span class="mi">31000</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-20'>
+  <div class='clearall'></div><div class='section' id='section-24'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-20'>#</a>
+        <a class='octothorpe' href='#section-24'>#</a>
       </div>
       <h3>sameDomain</h3>
 <p>Use JSON instead of JSONP requests. (Force same domain origin)</p>
@@ -500,10 +613,10 @@ and sending.</p>
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-21'>
+  <div class='clearall'></div><div class='section' id='section-25'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-21'>#</a>
+        <a class='octothorpe' href='#section-25'>#</a>
       </div>
       <h2>Enums</h2>
     </div>
@@ -511,10 +624,10 @@ and sending.</p>
       <div class="highlight"><pre>		<span class="nx">e</span> <span class="o">:</span> <span class="p">{</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-22'>
+  <div class='clearall'></div><div class='section' id='section-26'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-22'>#</a>
+        <a class='octothorpe' href='#section-26'>#</a>
       </div>
       <h3>login status</h3>
 <p><strong>const</strong> {string|undefined}<br/></p>
@@ -528,10 +641,10 @@ and sending.</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-23'>
+  <div class='clearall'></div><div class='section' id='section-27'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-23'>#</a>
+        <a class='octothorpe' href='#section-27'>#</a>
       </div>
       <h3>polling message type</h3>
 <p><strong>const</strong> {string}<br/></p>
@@ -542,10 +655,10 @@ and sending.</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-24'>
+  <div class='clearall'></div><div class='section' id='section-28'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-24'>#</a>
+        <a class='octothorpe' href='#section-28'>#</a>
       </div>
       <h3>polling system message type</h3>
 <p><strong>const</strong> {string}<br/></p>
@@ -560,10 +673,10 @@ and sending.</p>
 		<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-25'>
+  <div class='clearall'></div><div class='section' id='section-29'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-25'>#</a>
+        <a class='octothorpe' href='#section-29'>#</a>
       </div>
       <hr />
 <h2>Internal Functions</h2>
@@ -574,10 +687,10 @@ and sending.</p>
       <div class="highlight"><pre>		<span class="nx">_ajax</span> <span class="o">:</span> <span class="p">{</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-26'>
+  <div class='clearall'></div><div class='section' id='section-30'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-26'>#</a>
+        <a class='octothorpe' href='#section-30'>#</a>
       </div>
       <h3>lastEventId</h3>
 <p>Contains the last received message id. If connection fails due to
@@ -587,10 +700,10 @@ timeouts, messages will get fetched again.</p>
       <div class="highlight"><pre>			<span class="nx">lastEventId</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-27'>
+  <div class='clearall'></div><div class='section' id='section-31'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-27'>#</a>
+        <a class='octothorpe' href='#section-31'>#</a>
       </div>
       <h3>active</h3>
 <p>Status of continuous polling.</p>
@@ -599,10 +712,10 @@ timeouts, messages will get fetched again.</p>
       <div class="highlight"><pre>			<span class="nx">active</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-28'>
+  <div class='clearall'></div><div class='section' id='section-32'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-28'>#</a>
+        <a class='octothorpe' href='#section-32'>#</a>
       </div>
       <h3>jqXHR</h3>
 <p>Stores the active jqXHR object for polling. Needed for aborting
@@ -612,10 +725,10 @@ requests</p>
       <div class="highlight"><pre>			<span class="nx">jqXHR</span> <span class="o">:</span> <span class="kc">null</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-29'>
+  <div class='clearall'></div><div class='section' id='section-33'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-29'>#</a>
+        <a class='octothorpe' href='#section-33'>#</a>
       </div>
       <h3>callbackMap</h3>
 <p>Callback map storing callback functions for async requests. {pid :
@@ -625,22 +738,35 @@ callback}</p>
       <div class="highlight"><pre>			<span class="nx">callbackMap</span> <span class="o">:</span> <span class="p">{},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-30'>
+  <div class='clearall'></div><div class='section' id='section-34'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-30'>#</a>
+        <a class='octothorpe' href='#section-34'>#</a>
+      </div>
+      <h3>subscriptions</h3>
+<p>Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback]</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>			<span class="nx">subscriptions</span><span class="o">:</span> <span class="p">{},</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div><div class='section' id='section-35'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-35'>#</a>
       </div>
       <h3>token</h3>
-<p>Current security token</p>
+<p>Current security token</p>
+<p><strong>type</strong> {string|undefined}<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>			<span class="nx">token</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-31'>
+  <div class='clearall'></div><div class='section' id='section-36'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-31'>#</a>
+        <a class='octothorpe' href='#section-36'>#</a>
       </div>
       <h3>sessionStatus</h3>
 <p>Current session status</p>
@@ -650,10 +776,10 @@ callback}</p>
       <div class="highlight"><pre>			<span class="nx">sessionStatus</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">,</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-32'>
+  <div class='clearall'></div><div class='section' id='section-37'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-32'>#</a>
+        <a class='octothorpe' href='#section-37'>#</a>
       </div>
       <h2>sendSuccess()</h2>
 <p>Trigger/Register callbacks associated with a certain request
@@ -674,7 +800,8 @@ called if further events associated with this pid are streamed.</p>
 				<span class="c1">//! Check for errors</span>
 				<span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">type</span> <span class="o">&amp;&amp;</span> <span class="nx">event</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">e</span><span class="p">.</span><span class="nx">messageType</span><span class="p">.</span><span class="nx">SYSTEM</span> <span class="o">&amp;&amp;</span> <span class="nx">event</span><span class="p">.</span><span class="nx">message</span>
 						<span class="o">&amp;&amp;</span> <span class="nx">event</span><span class="p">.</span><span class="nx">message</span> <span class="o">===</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">e</span><span class="p">.</span><span class="nx">sysMessage</span><span class="p">.</span><span class="nx">ERROR</span><span class="p">)</span> <span class="p">{</span>
-					<span class="nx">onError</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
+					<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">onError</span><span class="p">))</span>
+						<span class="nx">onError</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
 					<span class="k">return</span><span class="p">;</span>
 				<span class="p">}</span>
 
@@ -689,10 +816,10 @@ called if further events associated with this pid are streamed.</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-33'>
+  <div class='clearall'></div><div class='section' id='section-38'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-33'>#</a>
+        <a class='octothorpe' href='#section-38'>#</a>
       </div>
       <h2>handlePoll()</h2>
 <p>Handles completed poll from the server</p>
@@ -703,10 +830,10 @@ called if further events associated with this pid are streamed.</p>
 				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">debug</span><span class="p">(</span><span class="s2">&quot;handlePoll: &quot;</span><span class="p">,</span><span class="nx">event</span><span class="p">,</span><span class="nx">event</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">lastEventId</span><span class="p">);</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-34'>
+  <div class='clearall'></div><div class='section' id='section-39'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-34'>#</a>
+        <a class='octothorpe' href='#section-39'>#</a>
       </div>
       <p>accept message if lastEventId is valid. System events come out of scope</p>
     </div>
@@ -717,10 +844,10 @@ called if further events associated with this pid are streamed.</p>
 						<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">lastEventId</span> <span class="o">=</span> <span class="nx">event</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-35'>
+  <div class='clearall'></div><div class='section' id='section-40'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-35'>#</a>
+        <a class='octothorpe' href='#section-40'>#</a>
       </div>
       <p>System events will be handeled internally and might be
 passed to the onerror function</p>
@@ -765,10 +892,10 @@ passed to the onerror function</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-36'>
+  <div class='clearall'></div><div class='section' id='section-41'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-36'>#</a>
+        <a class='octothorpe' href='#section-41'>#</a>
       </div>
       <h2>handleEvent()</h2>
 <p>Trigger all callbacks belonging to the given event</p>
@@ -779,19 +906,27 @@ passed to the onerror function</p>
 				<span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">callbackMap</span><span class="p">))</span> <span class="p">{</span>
 					<span class="c1">//! If specific callback returns false,</span>
 					<span class="c1">//! don&#39;t trigger general callback</span>
-					<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">callbackMap</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">](</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">)</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">callbackMap</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">](</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">)</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span>
 						<span class="k">return</span><span class="p">;</span>
 
 				<span class="p">}</span>
+				
+				<span class="k">if</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span> <span class="o">&amp;&amp;</span> <span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">)</span>
+				<span class="p">{</span>
+					<span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span><span class="p">],</span> <span class="kd">function</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span><span class="nx">callback</span><span class="p">){</span>
+						<span class="nx">callback</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span><span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span><span class="p">,</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">);</span>
+					<span class="p">});</span>
+				<span class="p">}</span>
+				
 				<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">onmessage</span><span class="p">))</span>
-					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">onmessage</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">);</span>
+					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">onmessage</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">);</span>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-37'>
+  <div class='clearall'></div><div class='section' id='section-42'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-37'>#</a>
+        <a class='octothorpe' href='#section-42'>#</a>
       </div>
       <h2>pollComplete()</h2>
 <p>Checks if continuous polling is active and polls again if
@@ -813,10 +948,10 @@ necessary</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-38'>
+  <div class='clearall'></div><div class='section' id='section-43'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-38'>#</a>
+        <a class='octothorpe' href='#section-43'>#</a>
       </div>
       <h2>pollError()</h2>
 <p>Handle ajax poll error.</p>
@@ -838,10 +973,10 @@ necessary</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-39'>
+  <div class='clearall'></div><div class='section' id='section-44'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-39'>#</a>
+        <a class='octothorpe' href='#section-44'>#</a>
       </div>
       <h2>sendError()</h2>
 <p>Handle ajax errors for sending.</p>
@@ -862,19 +997,40 @@ additional callback to be executed</p>
 			<span class="p">},</span></pre></div>
     </div>
   </div>
-  <div class='clearall'></div><div class='section' id='section-40'>
+  <div class='clearall'></div><div class='section' id='section-45'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-40'>#</a>
+        <a class='octothorpe' href='#section-45'>#</a>
       </div>
       <h2>debug()</h2>
-<p>Debug if debug flag is active.</p>
+<p><strong>param</strong> {...*} output<br/>
+Debug if debug flag is active.</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>			<span class="nx">debug</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">debug</span><span class="p">(){</span>
+      <div class="highlight"><pre>			<span class="nx">debug</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">debug</span><span class="p">(</span><span class="nx">output</span><span class="p">){</span>
 				  <span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">debug</span> <span class="o">===</span> <span class="kc">true</span> <span class="o">&amp;&amp;</span> <span class="nb">window</span><span class="p">.</span><span class="nx">console</span><span class="p">){</span>
 					  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span> <span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">slice</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">arguments</span><span class="p">)</span> <span class="p">);</span>
 				<span class="p">}</span>
+			<span class="p">},</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div><div class='section' id='section-46'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-46'>#</a>
+      </div>
+      <h2>cleanNamespace()</h2>
+<p>Removes leading &amp; trailing slash from a string</p>
+<p><strong>param</strong> {string} namespace<br/>
+<strong>return</strong> {string} Cleaned namespace<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>			<span class="nx">cleanNamespace</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">cleanNamespace</span><span class="p">(</span><span class="nx">namespace</span><span class="p">){</span>
+				<span class="k">if</span> <span class="p">(</span><span class="nx">namespace</span><span class="p">[</span><span class="nx">namespace</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">===</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+					<span class="nx">namespace</span> <span class="o">=</span> <span class="nx">namespace</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+				<span class="k">if</span> <span class="p">(</span><span class="nx">namespace</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">===</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+					<span class="nx">namespace</span> <span class="o">=</span> <span class="nx">namespace</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+				<span class="k">return</span> <span class="nx">namespace</span><span class="p">;</span>
 			<span class="p">}</span>
 
 		<span class="p">}</span>

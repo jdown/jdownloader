@@ -18,7 +18,7 @@
 		 * ##setOptions()
 		 * Set options
 		 * 
-		 * @param Object.<string, *> options to set
+		 * @param {Object.<string, *>} options to set
 		 */
 		setOptions : function setOptions(options) {
 			if (options) {
@@ -51,10 +51,17 @@
 		 */
 		startSession : function startSession(user, pass, callback) {
 			if ($.jd._ajax.sessionStatus !== $.jd.e.sessionStatus.NO_SESSION) {
+				if($.jd._ajax.sessionStatus === $.jd.e.sessionStatus.REGISTERED){
+					callback({
+						"status" : $.jd._ajax.sessionStatus,
+						"data" : "already logged in"
+					});
+					return this;
+				}
 				$.jd.stopSession(function() {
 					$.jd.startSession(user, pass, callback);
 				}); // disconnect first then
-				return;
+				return this;
 			}
 			
 			//! Shift parameters if user and pass are omitted
@@ -113,6 +120,7 @@
 				return this;
 			$.jd.stopPolling();
 			$.jd._ajax.token = undefined;
+			$.jd._ajax.subscriptions = {};
 			//! No matter whether the server invalidates the session, we do!
 			$.jd._ajax.sessionStatus = $.jd.e.sessionStatus.NO_SESSION;
 			$.jd.send("session/disconnect", callback, callback);
@@ -134,12 +142,88 @@
 		 * @return {jQuery}
 		 */
 		startPolling : function startPolling() {
-
 			if ($.jd.isPollingContinuously())
 				return this;
 			$.jd._ajax.active = true;
 			$.jd._ajax.lastEventId = undefined;
 			$.jd.pollOnce();
+			return this;
+		},
+		
+		/**
+		 * ##subscribe()
+		 * Subscribe to events of a certain namespace. If you want to subscribe to all namespaces, use \* as namespace parameter. 
+		 * In this case, the callback parameter will replace the onmessage setting.
+		 * 
+		 * @param {string} namespace to subscribe to
+		 * @param {function(Object.<string, *>,?string=)=} callback function to be executed every time an event happens
+		 * @param {function(Object.<string, *>)=} onSubscribed callback function to be executed as soon as you are subscribed.
+		 * @return {jQuery}
+		 */
+		subscribe : function subscribe(namespace, callback, onSubscribed) {
+			
+			namespace = $.jd._ajax.cleanNamespace(namespace);
+			
+			if(namespace in $.jd._ajax.subscriptions)
+			{
+				//Check if callback is already registered for this namespace. Skip, if so.
+				var subscr = $.jd._ajax.subscriptions[namespace];
+				for(var i=0;i<subscr.length;i++)
+				{
+					if(subscr[i] === callback)
+					{
+						if($.isFunction(onSubscribed))
+							onSubscribed({"status":"already subscribed with that callback"});
+						return this;
+
+					}
+				}
+				$.jd._ajax.subscriptions[namespace].push(callback);
+				if($.isFunction(onSubscribed))
+					onSubscribed({"status":"callback added"});
+			} else {
+				$.jd._ajax.subscriptions[namespace] = [callback];
+				
+				if(namespace === "*")
+				{
+					$.jd._settings.onmessage = callback;
+					//TODO: Subscribe all
+				}
+					
+				$.jd.send(namespace + "/subscribe",onSubscribed,onSubscribed);
+				
+			}
+			return this;
+		},
+		/**
+		 * ##unsubscribe()
+		 * Unsubscribe from events of a certain namespace. 
+		 * If you want to unsubscribe from all namespaces, use \* as namespace parameter.
+		 * 
+		 * @param {string} namespace to unsubscribe from
+		 * @param {function(Object.<string, *>)=}  onUnsubscribed callback which function to be executed after subscription has been canceled.
+		 * @return {jQuery}
+		 */
+		unsubscribe: function unsubscribe(namespace, onUnsubscribed){
+			namespace = $.jd._ajax.cleanNamespace(namespace);
+			var namespaces = {};
+			if(namespace === "*")
+				namespaces = $.jd._ajax.subscriptions;
+			else if(namespace in $.jd._ajax.subscriptions)
+				namespaces[namespace] = $.jd._ajax.subscriptions[namespace];
+			else
+			{
+				if($.isFunction(onUnsubscribed))
+					onUnsubscribed({"status":"already unsubscribed"});
+				return this;
+			}
+			
+			$.each(namespaces,function(namespace,callbacks){
+				
+				$.jd.send(namespace + "/unsubscribe");
+				delete $.jd._ajax.subscriptions[namespace];				
+				
+			});
 			return this;
 		},
 
@@ -213,12 +297,12 @@
 		 * @param {function(Object.<string, *>,?string=)|Array.<string>=}
 		 * params (optional) parameters for this action as a JSON array (e.g.
 		 * ["param1",1,1.2,"param4"]) <br/>
-		 * @returns {string} url
+		 * @return {string} url
 		 */
 		getURL: function getURL(action,params){
-			//! Remove leading /, it's already in the apiServer URL
-			if (action[0] === "/")
-				action = action.substr(1);
+			
+			action = $.jd._ajax.cleanNamespace(action);
+			
 			var query = "";
 			if(params)
 			{
@@ -248,7 +332,7 @@
 		 * function to execute each time an event is streamed that refers to this
 		 * request. If this parameter is either omitted or this functions does
 		 * *not* return false, the general poll callback is invoked, too. <br/>
-		 * @returns {jQuery}
+		 * @return {jQuery}
 		 * @suppress {checkTypes}
 		 */
 		send : function send(action, params, onSuccess, onError, onEvent) {
@@ -429,8 +513,15 @@
 			 */
 			callbackMap : {},
 			/**
+			 * ###subscriptions
+			 * Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback]
+			 */
+			subscriptions: {},
+			/**
 			 * ###token
 			 * Current security token
+			 * 
+			 * @type {string|undefined}
 			 */
 			token : undefined,
 			/**
@@ -460,7 +551,8 @@
 				//! Check for errors
 				if (event.type && event.type === $.jd.e.messageType.SYSTEM && event.message
 						&& event.message === $.jd.e.sysMessage.ERROR) {
-					onError(event.data);
+					if($.isFunction(onError))
+						onError(event.data);
 					return;
 				}
 
@@ -538,12 +630,20 @@
 				if (event.pid && (event.pid in $.jd._ajax.callbackMap)) {
 					//! If specific callback returns false,
 					//! don't trigger general callback
-					if ($.jd._ajax.callbackMap[event.pid](event.data, event.pid) === false)
+					if ($.jd._ajax.callbackMap[event.pid](event.data, event.namespace, event.pid) === false)
 						return;
 
 				}
+				
+				if(event.namespace && event.namespace in $.jd._ajax.subscriptions)
+				{
+					$.each($.jd._ajax.subscriptions[event.namespace], function(i,callback){
+						callback(event.data,event.namespace,event.pid);
+					});
+				}
+				
 				if ($.isFunction($.jd._settings.onmessage))
-					$.jd._settings.onmessage(event.data, event.pid);
+					$.jd._settings.onmessage(event.data, event.namespace, event.pid);
 			},
 			/**
 			 * ##pollComplete()
@@ -604,12 +704,28 @@
 			
 			/**
 			 * ##debug()
+			 * @param {...*} output
 			 * Debug if debug flag is active.
 			 */
-			debug: function debug(){
+			debug: function debug(output){
 				  if($.jd._settings.debug === true && window.console){
 					  console.log( Array.prototype.slice.call(arguments) );
 				}
+			},
+			
+			/**
+			 * ##cleanNamespace()
+			 * Removes leading & trailing slash from a string
+			 * 
+			 * @param {string} namespace
+			 * @return {string} Cleaned namespace
+			 */
+			cleanNamespace: function cleanNamespace(namespace){
+				if (namespace[namespace.length-1] === "/")
+					namespace = namespace.slice(0,-1);
+				if (namespace[0] === "/")
+					namespace = namespace.substr(1);
+				return namespace;
 			}
 
 		}
