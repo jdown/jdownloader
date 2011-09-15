@@ -166,6 +166,8 @@
 			
 			if(namespace in $.jd._ajax.subscriptions)
 			{
+				if(!$.isFunction(callback))
+					return this;
 				//Check if callback is already registered for this namespace. Skip, if so.
 				var subscr = $.jd._ajax.subscriptions[namespace];
 				for(var i=0;i<subscr.length;i++)
@@ -182,11 +184,15 @@
 				if($.isFunction(onSubscribed))
 					onSubscribed({"status":"callback added"});
 			} else {
-				$.jd._ajax.subscriptions[namespace] = [callback];
+				if($.isFunction(callback))
+				{
+					$.jd._ajax.subscriptions[namespace] = [callback];
+				}
 				
 				if(namespace === "*")
 				{
-					$.jd._settings.onmessage = callback;
+					if($.isFunction(callback))
+						$.jd._settings.onmessage = callback;
 					//TODO: Subscribe all
 				}
 					

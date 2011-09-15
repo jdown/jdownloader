@@ -100,7 +100,7 @@ $(function CaptchaPush() {
 				//onmessage : log
 			});
 			getCaptchas();
-			$.jd.subscribe("captcha");
+			$.jd.subscribe("captcha", onCaptcha);
 			$.jd.startPolling();
 		} else {
 			window.history.back();
