@@ -69,7 +69,7 @@
 			
 			$.jd.send("session/handshake", ($.jd._settings.user) ? [ $.jd._settings.user, $.jd._settings.pass ]
 					: /* anonymous */[ "", "" ], function handshakeResponse(response) {
-				$.jd._ajax.debug([ "Handshake response:", response ]);
+				$.jd._ajax.debug( "Handshake response:", response );
 				//! Check if server is returning a session id. If so, our
 				//! handshake (either authenticated or anonymous) succeeded.
 				if (response && typeof (response) === "string" && response !== ""
@@ -109,6 +109,8 @@
 		 * @param {function(Object.<string, *>,?string=)=} callback
 		 */
 		stopSession : function stopSession(callback) {
+			if($.jd._ajax.sessionStatus === $.jd.e.sessionStatus.NO_SESSION)
+				return this;
 			$.jd.stopPolling();
 			$.jd._ajax.token = undefined;
 			//! No matter whether the server invalidates the session, we do!
@@ -199,7 +201,7 @@
 					complete : $.jd._ajax.pollComplete,
 					error : $.jd._ajax.pollError
 				});
-				$.jd._ajax.debug([ "pollOnce", $.jd._ajax.lastEventId, $.jd._ajax.jqXHR ]);
+				$.jd._ajax.debug( "pollOnce", $.jd._ajax.lastEventId, $.jd._ajax.jqXHR );
 			}
 			return this;
 		},
@@ -277,7 +279,7 @@
 				} else
 					params = $.makeArray(params);
 			}
-			$.jd._ajax.debug([ $.jd.getURL(action), params, onSuccess, onError, onEvent ]);
+			$.jd._ajax.debug( $.jd.getURL(action), params, onSuccess, onError, onEvent );
 			$.ajax({
 				dataType : ($.jd._settings.sameDomain ? "json" : "jsonp"),
 				type : "GET",
@@ -465,7 +467,7 @@
 				//! register processCallback
 				if (event.pid && $.isFunction(onEvent)) {
 					$.jd._ajax.callbackMap[event.pid] = onEvent;
-					$.jd._ajax.debug([ "Register PID...", event ]);
+					$.jd._ajax.debug("Register PID...", event);
 				}
 				//! run normal callback
 				if (jQuery.isFunction(onSuccess))
@@ -478,7 +480,7 @@
 			 * @param {Object.<string,*>} event data received from the server
 			 */
 			handlePoll : function handlePoll(event) {
-				$.jd._ajax.debug(["handlePoll: ",event,event.id,$.jd._ajax.lastEventId]);
+				$.jd._ajax.debug("handlePoll: ",event,event.id,$.jd._ajax.lastEventId);
 				// accept message if lastEventId is valid. System events come out of scope
 				if (($.jd._ajax.lastEventId === undefined || (event.data && ($.jd._ajax.lastEventId === (event.id - event.data.length))))
 						|| (event.type && event.type === $.jd.e.messageType.SYSTEM)) {
@@ -552,7 +554,7 @@
 			 * @param textStatus see jQuery.ajax doc
 			 */
 			pollComplete : function pollComplete(jqXHR, textStatus) {
-				$.jd._ajax.debug(["pollComplete",$.jd._ajax.lastEventId]);
+				$.jd._ajax.debug("pollComplete",$.jd._ajax.lastEventId);
 				$.jd._ajax.jqXHR = null;
 				if ($.jd._ajax.active && $.jd._ajax.active === true) {
 					if ($.jd._settings.debug === true) {

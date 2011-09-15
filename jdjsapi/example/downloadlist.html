@@ -52,24 +52,52 @@ Package specification
 		"createtime": 1234567890,
 		"links": [Link1,Link2,...,LinkN]
 	}
-**id:** An integer containing the unique package id<br/>
-**name:** A string containing the package name<br/>
+**id:** An integer containing the unique package id.<br/>
+**name:** A string containing the package name.<br/>
 **dldir:** A string containing the download directory of this package.<br/>
 **comment:** A string containing the package comment.<br/>
 **password:** An array of strings containing the archive passwords of this package.<br/>
-**createtime:** An integer containing the creation time of this package.<br/>
+**createtime:** A timestamp in milliseconds containing the creation time of this package.<br/>
 **links:** An array of links containing all links in this package.<br/>
 - - -
 Link specification
 ------------------
-#TODO: Incomplete
-<!--
 	{
 		"id": 42, 
-		 
+		"name": "file.zip",
+		"comment": "holiday pictures",
+		"hoster": "hoster.com",
+		"onlinestatus": "ONLINE",
+		"size": 1024,
+		"done": 512,
+		"enabled": true,
+		"status": "unimplemented",
+		"speed": 256
+		"createtime": 1356093462000,
+		"finishtime": -1,
+		"priority": 1,
+		"chunks": 1,
+		"browserurl": "http://example.com/file.zip"
 	}
-**id:** An integer containing the unique package id<br/>
--->
+**id:** An integer containing the unique link id.<br/>
+**name:** A string containing the file name.<br/>
+**comment:** A string containing the comment.<br/>
+**hoster:** A string containing the hoster.<br/>
+**onlinestatus:** A string containing the current online status.<br/>
+	`ONLINE`: Link is online
+	`OFFLINE`: Link is offline
+	`UNCHECKED`: Onlinestatus has not been checked yet.
+	`UNCHECKABLE`: Cannot check onlinestatus.
+**size:** An integer containing the size of the file in bytes. If file size is unknown, -1 is returned.<br/>
+**done:** An integer containing the downloaded size of the file in bytes.<br/>
+**enabled:** A boolean indicating whether the link is enabled.<br/>
+**status:** A string containing the current status. unimplemented.<br/>
+**speed:** An integer containing the current downloadspeed in bytes per second.<br/>
+**createtime:** A timestamp in milliseconds containing the creation time of this link<br/>
+**finishtime:** A timestamp in milliseconds containing the finish time of this file<br/>
+**priority:**  An integer containing the priority of this link. More important links have a higher priority.<br/>
+**chunks:** An integer containing the amount of actice chunks for this file<br/>
+**browserurl:** A string containing the URL of the link. Similar to JDs "Open in Browser" feature<br/>
 */
 function getLinks() {
 	$.jd.send("downloads/list", function onGetLinks(packages) {

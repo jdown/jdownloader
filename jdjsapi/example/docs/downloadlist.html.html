@@ -98,23 +98,51 @@ Using Firebug or Chrome Dev tools to inspect the console output of this example 
     "createtime": 1234567890,
     "links": [Link1,Link2,...,LinkN]
 }
-</pre><strong>id:</strong> An integer containing the unique package id<br/>
-<strong>name:</strong> A string containing the package name<br/>
+</pre><strong>id:</strong> An integer containing the unique package id.<br/>
+<strong>name:</strong> A string containing the package name.<br/>
 <strong>dldir:</strong> A string containing the download directory of this package.<br/>
 <strong>comment:</strong> A string containing the package comment.<br/>
 <strong>password:</strong> An array of strings containing the archive passwords of this package.<br/>
-<strong>createtime:</strong> An integer containing the creation time of this package.<br/>
+<strong>createtime:</strong> A timestamp in milliseconds containing the creation time of this package.<br/>
 <strong>links:</strong> An array of links containing all links in this package.<br/></p>
 <hr />
 <h2>Link specification</h2>
-<h1>TODO: Incomplete</h1>
-<!--
-<pre>{
+<p><pre>{
     "id": 42,
-</pre>
-<pre>}
-</pre>**id:** An integer containing the unique package id<br/>
--->
+    "name": "file.zip",
+    "comment": "holiday pictures",
+    "hoster": "hoster.com",
+    "onlinestatus": "ONLINE",
+    "size": 1024,
+    "done": 512,
+    "enabled": true,
+    "status": "unimplemented",
+    "speed": 256
+    "createtime": 1356093462000,
+    "finishtime": -1,
+    "priority": 1,
+    "chunks": 1,
+    "browserurl": "http://example.com/file.zip"
+}
+</pre><strong>id:</strong> An integer containing the unique link id.<br/>
+<strong>name:</strong> A string containing the file name.<br/>
+<strong>comment:</strong> A string containing the comment.<br/>
+<strong>hoster:</strong> A string containing the hoster.<br/>
+<strong>onlinestatus:</strong> A string containing the current online status.<br/>
+<pre><code>ONLINE</code>: Link is online
+<code>OFFLINE</code>: Link is offline
+<code>UNCHECKED</code>: Onlinestatus has not been checked yet.
+<code>UNCHECKABLE</code>: Cannot check onlinestatus.
+</pre><strong>size:</strong> An integer containing the size of the file in bytes. If file size is unknown, -1 is returned.<br/>
+<strong>done:</strong> An integer containing the downloaded size of the file in bytes.<br/>
+<strong>enabled:</strong> A boolean indicating whether the link is enabled.<br/>
+<strong>status:</strong> A string containing the current status. unimplemented.<br/>
+<strong>speed:</strong> An integer containing the current downloadspeed in bytes per second.<br/>
+<strong>createtime:</strong> A timestamp in milliseconds containing the creation time of this link<br/>
+<strong>finishtime:</strong> A timestamp in milliseconds containing the finish time of this file<br/>
+<strong>priority:</strong>  An integer containing the priority of this link. More important links have a higher priority.<br/>
+<strong>chunks:</strong> An integer containing the amount of actice chunks for this file<br/>
+<strong>browserurl:</strong> A string containing the URL of the link. Similar to JDs "Open in Browser" feature<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre><span class="kd">function</span> <span class="nx">getLinks</span><span class="p">()</span> <span class="p">{</span>
