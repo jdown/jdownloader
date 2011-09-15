@@ -321,8 +321,14 @@ public abstract class Request {
         } catch (final Exception e) {
             String path = this.getHttpConnection().getURL().getFile();
             if (!path.endsWith("/")) {
-                /* path does not end with / we have to find latest valid path */
-                final String validPath = new Regex(path, "(/.*?)(\\?|$)").getMatch(0);
+                /*
+                 * path does not end with / we have to find latest valid path
+                 * 
+                 * \/test.rar should result in empty path
+                 * 
+                 * \/test/test.rar should result in \/test/
+                 */
+                final String validPath = new Regex(path, "(/.*?/.*?)(\\?|$)").getMatch(0);
                 if (validPath != null && validPath.length() > 0) {
                     path = validPath;
                 } else {
