@@ -3,7 +3,7 @@ package org.jdownloader.update;
 import java.awt.GraphicsEnvironment;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.StorageHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.update.updateclient.UpdaterOptions;
 
 public class Options implements UpdaterOptions {

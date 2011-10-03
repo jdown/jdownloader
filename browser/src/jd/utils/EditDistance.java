@@ -86,7 +86,7 @@ public final class EditDistance {
         // our last action in the above loop was to switch d and p, so p now
         // actually has the most recent cost counts
         return p[n];
-
+ 
     }
 
     /**
