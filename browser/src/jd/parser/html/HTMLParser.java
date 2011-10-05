@@ -26,8 +26,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
+import org.appwork.utils.encoding.Hex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 
@@ -57,82 +59,27 @@ public class HTMLParser {
         }
     }
 
-    /**
-     * Sucht alle Links heraus
-     * 
-     * @param data
-     *            ist der Quelltext einer Html-Datei
-     * @param url
-     *            der Link von dem der Quelltext stammt (um die base automatisch
-     *            zu setzen)
-     * @return Linkliste aus data extrahiert
-     */
-    private static HashSet<String> _getHttpLinksIntern(String data, String url) {
-        // System.out.println("Call: "+data.length());
+    private static HashSet<String> _getHttpLinksFinder(String data, String url, HashSet<String> results) {
         final String baseUrl = url;
-        final HashSet<String> set = new HashSet<String>();
-        /* filtering tags, recursion command me ;) */
-        while (true) {
-            final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
-            if (nexttag == null || nexttag.length() == 0) {
-                /* no further tag found, lets continue */
-                break;
-            } else {
-                /* lets check if tag contains links */
-                HashSet<String> result = HTMLParser._getHttpLinksIntern(nexttag, baseUrl);
-                if (result != null && result.size() > 0) {
-                    set.addAll(result);
-                }
-                result = null;
-                final int pos = data.indexOf('>');
-                if (pos >= 0 && data.length() >= pos + 1) {
-                    final int posb = data.indexOf('<');
-                    if (posb > 0) {
-                        /*
-                         * there might be some data left before the tag, do not
-                         * remove that data
-                         */
-                        String dataLeft = data.substring(0, posb);
-                        StringBuilder sb = new StringBuilder();
-                        if (dataLeft.contains(">")) {
-                            sb.append("<");
-                            sb.append(dataLeft);
-                        } else {
-                            sb.append("<");
-                            sb.append(dataLeft);
-                            sb.append(">");
-                        }
-                        sb.append(" ");
-                        sb.append(data.substring(pos + 1));
-                        data = sb.toString();
-                        sb = null;
-                        dataLeft = null;
-                    } else {
-                        /* remove tag at begin of data */
-                        data = data.substring(pos + 1);
-                    }
-                    // System.out.println("SubCall: "+data.length());
-                } else {
-                    /* remove tag at begin of data */
-                    data = data.substring(pos + 1);
-                }
-            }
+        if (results == null) {
+            results = new HashSet<String>();
         }
-
+        data = data.trim();
+        if (data.length() == 0) { return results; }
         if (!data.matches(".*<.*>.*")) {
             final int c = new Regex(data, HTMLParser.pat1).count();
             if (c == 0) {
                 if (!data.contains("href")) {
                     /* no href inside */
-                    return set;
+                    return results;
                 }
             } else if (c == 1 && data.length() < 100 && data.matches("^\"?(" + HTMLParser.protocolPattern + "://|www\\.).*")) {
                 final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceAll("[<>\"]*", "");
                 HTTPConnection con = null;
                 try {
                     if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
-                        set.add(link.replaceAll("\\s", "%20"));
-                        return set;
+                        results.add(link.replaceAll("\\s", "%20"));
+                        return results;
                     }
                 } catch (final Exception e) {
                     // TODO Auto-generated catch block
@@ -181,7 +128,7 @@ public class HTMLParser {
         }
 
         if (url != null && url.trim().length() > 0) {
-            set.add(url);
+            results.add(url);
         } else {
             url = "";
         }
@@ -207,7 +154,7 @@ public class HTMLParser {
 
                 try {
                     new URL(link);
-                    set.add(link);
+                    results.add(link);
                 } catch (final MalformedURLException e) {
 
                 }
@@ -221,11 +168,90 @@ public class HTMLParser {
                 link = link.replaceAll("^h.{2,3}://", "http://");
                 link = link.replaceFirst("^www\\.", "http://www\\.");
                 link = link.trim();
-                set.add(link);
+                results.add(link);
             }
         }
+        return results;
+    }
 
-        return set;
+    private static HashSet<String> _getHttpLinksWalker(String data, final String url, HashSet<String> results) {
+        // System.out.println("Call: "+data.length());
+        if (results == null) {
+            results = new HashSet<String>();
+        }
+        data = data.trim();
+        if (data.length() == 0) { return results; }
+        /* filtering tags, recursion command me ;) */
+        while (true) {
+            final String nexttag = new Regex(data, "<(.*?)>").setMemoryOptimized(false).getMatch(0);
+            if (nexttag == null || nexttag.length() == 0) {
+                /* no further tag found, lets continue */
+                break;
+            } else {
+                /* lets check if tag contains links */
+                HTMLParser._getHttpLinksWalker(nexttag, url, results);
+                final int pos = data.indexOf('>');
+                if (pos >= 0 && data.length() >= pos + 1) {
+                    final int posb = data.indexOf('<');
+                    if (posb > 0) {
+                        /*
+                         * there might be some data left before the tag, do not
+                         * remove that data
+                         */
+                        String dataLeft = data.substring(0, posb);
+                        StringBuilder sb = new StringBuilder();
+                        if (dataLeft.contains(">")) {
+                            sb.append("<");
+                            sb.append(dataLeft);
+                        } else {
+                            sb.append("<");
+                            sb.append(dataLeft);
+                            sb.append(">");
+                        }
+                        sb.append(" ");
+                        sb.append(data.substring(pos + 1));
+                        data = sb.toString();
+                        sb = null;
+                        dataLeft = null;
+                    } else {
+                        /* remove tag at begin of data */
+                        data = data.substring(pos + 1);
+                    }
+                    // System.out.println("SubCall: "+data.length());
+                } else {
+                    /* remove tag at begin of data */
+                    data = data.substring(pos + 1);
+                }
+            }
+        }
+        /* find normal */
+        HTMLParser._getHttpLinksFinder(data, url, results);
+        /* cut of ?xy= parts if needed */
+        final String newdata = new Regex(data, ".+\\?.*?=(.+)").setMemoryOptimized(false).getMatch(0);
+        if (newdata != null) {
+            data = newdata;
+        }
+        /* find reversed */
+        String reversedata = new StringBuilder(data).reverse().toString();
+        HTMLParser._getHttpLinksFinder(reversedata, url, results);
+        reversedata = null;
+        /* find base64'ed */
+        final String base64data = Encoding.Base64Decode(data);
+        HTMLParser._getHttpLinksFinder(base64data, url, results);
+        /* find hex'ed */
+        String hex = new Regex(data, "(([0-9a-fA-F]{2}| )+)").getMatch(0);
+        if (hex != null && hex.length() > 24) {
+            try {
+                /* remove spaces from hex-coded string */
+                hex = hex.replaceAll(" ", "");
+                final String hexString = Hex.hex2String(hex);
+                hex = null;
+                HTMLParser._getHttpLinksFinder(hexString, url, results);
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
+        }
+        return results;
     }
 
     /**
@@ -389,6 +415,7 @@ public class HTMLParser {
      */
     public static String[] getHttpLinksIntern(String data, final String url) {
         data = data.trim();
+        if (data.length() == 0) { return new String[] {}; }
         /*
          * replace urlencoded br tags, so we can find all links seperated by
          * those
@@ -411,12 +438,13 @@ public class HTMLParser {
         // data = data.replaceAll("(?i)</span.*?>", "");
         /* CHECKME: why remove url/link tags? */
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
-        final HashSet<String> result = HTMLParser._getHttpLinksIntern(data, url);
+        final HashSet<String> results = new HashSet<String>();
+        HTMLParser._getHttpLinksWalker(data, url, results);
         data = null;
-        if (result == null || result.isEmpty()) {
+        if (results.isEmpty()) {
             return new String[] {};
         } else {
-            return result.toArray(new String[result.size()]);
+            return results.toArray(new String[results.size()]);
         }
     }
 
