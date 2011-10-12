@@ -104,7 +104,7 @@ public class Encoding {
         final byte[] mask = filter.getBytes();
         final byte[] ret = new byte[org.length];
         int count = 0;
-        int i;
+        int i;  
         for (i = 0; i < org.length; i++) {
             final byte letter = org[i];
             for (final byte element : mask) {
