@@ -226,6 +226,7 @@ public class Browser {
         FileOutputStream fos = null;
         BufferedOutputStream output = null;
         BufferedInputStream input = null;
+        boolean okay=false;
         try {
             output = new BufferedOutputStream(fos = new FileOutputStream(file, false));
             input = new BufferedInputStream(con.getInputStream());
@@ -234,6 +235,7 @@ public class Browser {
             while ((len = input.read(b)) != -1) {
                 output.write(b, 0, len);
             }
+            okay=true;
         } finally {
             try {
                 output.close();
@@ -246,6 +248,9 @@ public class Browser {
             try {
                 fos.close();
             } catch (final Throwable e) {
+            }
+            if (okay==false){
+                file.delete();
             }
         }
     }
