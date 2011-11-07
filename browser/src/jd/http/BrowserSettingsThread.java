@@ -2,19 +2,28 @@ package jd.http;
 
 import java.util.logging.Logger;
 
-
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class BrowserSettingsThread extends Thread implements BrowserSettings {
 
     private HTTPProxy proxy;
-    private boolean   debug;
-    private boolean   verbose;
-    private Logger    logger;
+    private boolean debug;
+    private boolean verbose;
+    protected Logger logger;
 
-    public BrowserSettingsThread(Runnable r) {
+    public BrowserSettingsThread(final Runnable r) {
         super(r);
-        copySettings();
+        this.copySettings();
+    }
+
+    public BrowserSettingsThread(final Runnable r, final String name) {
+        super(r, name);
+        this.copySettings();
+    }
+
+    public BrowserSettingsThread(final String name) {
+        super(name);
+        this.copySettings();
     }
 
     private void copySettings() {
@@ -31,45 +40,35 @@ public class BrowserSettingsThread extends Thread implements BrowserSettings {
         }
     }
 
-    public BrowserSettingsThread(Runnable r, String name) {
-        super(r, name);
-        copySettings();
-    }
-
-    public BrowserSettingsThread(String name) {
-        super(name);
-        copySettings();
-    }
-
     public HTTPProxy getCurrentProxy() {
-        return proxy;
+        return this.proxy;
     }
 
     public Logger getLogger() {
-        return logger;
+        return this.logger;
     }
 
     public boolean isDebug() {
-        return debug;
+        return this.debug;
     }
 
     public boolean isVerbose() {
-        return verbose;
+        return this.verbose;
     }
 
-    public void setCurrentProxy(HTTPProxy proxy) {
+    public void setCurrentProxy(final HTTPProxy proxy) {
         this.proxy = proxy;
     }
 
-    public void setDebug(boolean b) {
+    public void setDebug(final boolean b) {
         this.debug = b;
     }
 
-    public void setLogger(Logger logger) {
+    public void setLogger(final Logger logger) {
         this.logger = logger;
     }
 
-    public void setVerbose(boolean b) {
+    public void setVerbose(final boolean b) {
         this.verbose = b;
     }
 
