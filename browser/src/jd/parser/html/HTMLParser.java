@@ -433,6 +433,8 @@ public class HTMLParser {
         /* replace <br> tags with space so we we can seperate the links */
         /* we replace the complete br tag with a newline */
         data = data.replaceAll("<br.*?>", "\r\n");
+        /* remove word breaks */
+        data = data.replaceAll("<wbr>", "");
         /*
          * remove all span because they can break url parsing (eg when
          * google-code-prettify is used)
