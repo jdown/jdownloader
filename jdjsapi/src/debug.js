@@ -1,28 +1,36 @@
-function setStatusText() {
-	$("#startstop").text("Polling " + (($.jd.isPollingContinuously()) ? "active" : "no"));
-}
-function jdinit() {
+function dosettings() {
+	
+	function log(type, event){
+		console.log(event);
+		$("#log").append(type).append(prettyPrint(event));
+	}
+	
 	$.jd.setOptions({
 		debug : true,
 		user: "user",
 		pass: "pass",
 		apiServer : $("#url").val(),
 		sameDomain : ($("#samedomain").attr("checked") === "checked"),
-		onmessage : function(data) {
-			console.log(data);
-			$("#log").append("Event: <br>").append(prettyPrint(data));
-		},
-		onerror : function(data) {
-			console.log(data);
-			$("#log").append("Error: <br>").append(prettyPrint(data));
-		}
-	}).stopSession().startSession();
+		onmessage : function(data) {log("Event: <br>",data);},
+		onerror : function(data) {log("Error: <br>",data);}
+	});
+}
+function refresh() {
+	if($.jd.getSessionStatus() === $.jd.e.sessionStatus.NO_SESSION)
+	{
+		$("#pollingtoggle").attr("disabled",true);
+		$("#sessiontoggle").text("Start Session");
+	}
+	else
+	{
+		$("#pollingtoggle").attr("disabled",false);
+		$("#sessiontoggle").text("Stop Session");
+	}
+	$("#pollingtoggle").text("Polling " + (($.jd.isPollingContinuously()) ? "active" : "no"));
 }
 $(function() {
-	setStatusText();
-	setInterval(setStatusText, 500);
-	// jdinit();
-
+	refresh();
+	setInterval(refresh, 500);
 
 	$("#sendButton").click(
 			function() {
@@ -49,16 +57,24 @@ $(function() {
 			});
 
 	$("#samedomain").click(function() {
-		jdinit();		
+		dosettings();
 	});
-	$("#startstop").click(function() {
-		jdinit();
+	$("#pollingtoggle").click(function() {
 		if (!$.jd.isPollingContinuously()) {
 			$.jd.startPolling();
 		} else {
 			$.jd.stopPolling();
 		}
-		setStatusText();
+		refresh();
+	});
+	
+	$("#sessiontoggle").click(function() {
+		dosettings();
+		if($.jd.getSessionStatus() === $.jd.e.sessionStatus.NO_SESSION)
+			$.jd.startSession();
+		else
+			$.jd.stopSession();
+		refresh();
 	});
 	console.log("Init complete.");
 });

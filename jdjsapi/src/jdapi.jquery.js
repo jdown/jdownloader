@@ -19,6 +19,7 @@
 		 * Set options
 		 * 
 		 * @param {Object.<string, *>} options to set
+		 * @return {jQuery}
 		 */
 		setOptions : function setOptions(options) {
 			if (options) {
@@ -48,6 +49,7 @@
 		 * @param {string=} pass (optional)
 		 * @param {function(Object.<string, *>,?string=)=} callback
 		 * @suppress {checkTypes}
+		 * @return {jQuery}
 		 */
 		startSession : function startSession(user, pass, callback) {
 			if ($.jd._ajax.sessionStatus !== $.jd.e.sessionStatus.NO_SESSION) {
@@ -114,6 +116,7 @@
 		 * Stops a session.
 		 * 
 		 * @param {function(Object.<string, *>,?string=)=} callback
+		 * @return {jQuery}
 		 */
 		stopSession : function stopSession(callback) {
 			if($.jd._ajax.sessionStatus === $.jd.e.sessionStatus.NO_SESSION)
@@ -156,7 +159,7 @@
 		 * In this case, the callback parameter will replace the onmessage setting.
 		 * 
 		 * @param {string} namespace to subscribe to
-		 * @param {function(Object.<string, *>,?string=)=} callback function to be executed every time an event happens
+		 * @param {function(Object.<string, *>, ?string=)=} callback function to be executed every time an event happens
 		 * @param {function(Object.<string, *>)=} onSubscribed callback function to be executed as soon as you are subscribed.
 		 * @return {jQuery}
 		 */
@@ -393,7 +396,7 @@
 
 		/**
 		 * ##Settings
-		 * Set by using setOptions. **Don't access this property directly.**
+		 * Set by using setOptions. **Don't access these properties directly.**
 		 */
 		_settings : {
 			/**
@@ -513,14 +516,17 @@
 			 */
 			jqXHR : null,
 			/**
-			 * ###callbackMap
+			 * ###pidCallbacks
 			 * Callback map storing callback functions for async requests. {pid :
 			 * callback}
 			 */
-			callbackMap : {},
+			pidCallbacks : {},
 			/**
 			 * ###subscriptions
-			 * Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback]
+			 * Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback] }
+			 * Will get executed if an events matching the given namespace appears. In contrast to pidCallbacks the onmessage 
+			 * function will get executed regardless of the return value
+			 * @type {Array.<string>}
 			 */
 			subscriptions: {},
 			/**
@@ -564,7 +570,7 @@
 
 				//! register processCallback
 				if (event.pid && $.isFunction(onEvent)) {
-					$.jd._ajax.callbackMap[event.pid] = onEvent;
+					$.jd._ajax.pidCallbacks[event.pid] = onEvent;
 					$.jd._ajax.debug("Register PID...", event);
 				}
 				//! run normal callback
@@ -633,10 +639,10 @@
 			 * @suppress {checkTypes}
 			 */
 			handleEvent : function handleEvent(event) {
-				if (event.pid && (event.pid in $.jd._ajax.callbackMap)) {
+				if (event.pid && (event.pid in $.jd._ajax.pidCallbacks)) {
 					//! If specific callback returns false,
 					//! don't trigger general callback
-					if ($.jd._ajax.callbackMap[event.pid](event.data, event.namespace, event.pid) === false)
+					if ($.jd._ajax.pidCallbacks[event.pid](event.data, event.namespace, event.pid) === false)
 						return;
 
 				}

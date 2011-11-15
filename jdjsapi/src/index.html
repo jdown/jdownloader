@@ -16,14 +16,16 @@
     <div id="main" role="main">
     
 	<input id="url" style="width: 300px;text-align: center" type="text" value="http://127.0.0.1:3128/" />
+	<input id="sessiontoggle" type="button" value="Start Session">
+	<hr>
 	<input style="width: inherit;" id="samedomain" type="checkbox">Use JSON instead of JSONP
-	<input id="startstop" type="button" value="Start Polling">
+	<input id="pollingtoggle" type="button" value="Start Polling">
+	<hr>
 
-	<div style="margin: 30px 0">
 	<input id="send" type="text" value="ping" />
 	<textarea id="params" style="width:200px;height:100px;" placeholder="parameters"></textarea>
 	<button id="sendButton">Send</button>
-	</div>
+	<hr>
 	<div style="margin-top: 100px;">
 	<div id="pidlog" style="float:left; width: 49%;height:800px;border: solid black 1px">PID Responses:<br></div>
 	<div id="log"    style="float:right;width: 49%;height:800px;border: solid black 1px">Events:<br></div>

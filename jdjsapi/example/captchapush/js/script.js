@@ -33,6 +33,26 @@ $(function CaptchaPush() {
 				CaptchaHandler.showNext();
 			}
 		},
+		removeCaptcha: function removeCaptcha(captcha) {
+			for(var i = 0; i < CaptchaHandler._queue.length; i++)
+			{
+				if(CaptchaHandler._queue[i].id === captcha.id)
+				{
+					if(i===0) //Captcha is displayed currently.
+					{
+						$("#captcha #display").slideUp();
+						CaptchaHandler._queue.shift();
+						if(CaptchaHandler._queue.length > 0)
+							CaptchaHandler.showNext();
+					}
+					else //Remove silently
+					{
+						CaptchaHandler._queue.splice(i,1);
+					}
+					break;
+				}
+			}
+		},
 		showNext : function showNext() {
 			$("#captcha img").attr("src", $.jd.getURL("captcha/get", CaptchaHandler._queue[0].id));
 			notifyUser();
@@ -128,8 +148,14 @@ $(function CaptchaPush() {
 
 	function onCaptcha(event) {
 		//console.log(event);
-		if (event.message === "new") {
+		switch(event.message)
+		{
+		case "new":
 			CaptchaHandler.addCaptcha(event.data);
+			break;
+		case "expired":
+			CaptchaHandler.removeCaptcha(event.data);
+			break;
 		}
 	}
 
