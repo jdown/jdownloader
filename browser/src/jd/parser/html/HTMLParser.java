@@ -229,9 +229,14 @@ public class HTMLParser {
             }
         }
         /* find normal */
+        if (!data.contains("://") || data.length() < 10) {
+            /* data must contain at least the protocol seperator */
+            /* a://b.c/d == minimum 10 length */
+            return results;
+        }
         HTMLParser._getHttpLinksFinder(data, url, results);
         /* cut of ?xy= parts if needed */
-        final String newdata = new Regex(data, ".+\\?.*?=(.+)").setMemoryOptimized(false).getMatch(0);
+        final String newdata = new Regex(data, "://[^\r\n]*?/[^\r\n]+\\?.[^\r\n]*?=(.*?)($|\r|\n)").setMemoryOptimized(false).getMatch(0);
         if (newdata != null) {
             data = newdata;
         }
