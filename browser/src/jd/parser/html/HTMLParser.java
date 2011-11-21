@@ -245,7 +245,8 @@ public class HTMLParser {
         HTMLParser._getHttpLinksFinder(reversedata, url, results);
         reversedata = null;
         /* find base64'ed */
-        final String base64data = Encoding.Base64Decode(data);
+        final String base64Data = Encoding.htmlDecode(data);
+        final String base64data = Encoding.Base64Decode(base64Data);
         HTMLParser._getHttpLinksFinder(base64data, url, results);
         /* find hex'ed */
         String hex = new Regex(data, "(([0-9a-fA-F]{2}| )+)").getMatch(0);
