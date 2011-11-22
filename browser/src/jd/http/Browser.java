@@ -112,6 +112,144 @@ public class Browser {
 
     private static int TIMEOUT_READ = 30000;
 
+    public static HTTPProxy _getGlobalProxy() {
+        return Browser.GLOBAL_PROXY;
+    }
+
+    public static int getGlobalReadTimeout() {
+        return Browser.TIMEOUT_READ;
+    }
+
+    public static String getHost(final String url) {
+        if (url == null) { return null; }
+        /* direct ip */
+        String ret = new Regex(url, "(.*?://)?(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
+        if (ret != null) { return ret; }
+        /* normal url */
+        ret = new Regex(url, ".*?([^.:/]+\\.[^.:/]+)(/|$|:)").getMatch(0);
+        if (ret != null) { return ret.toLowerCase(); }
+        return url;
+    }
+
+    /**
+     * Returns the host for url. input: http://srv2.bluehost.to/dsdsf ->out
+     * bluehost.to
+     * 
+     * @param url
+     * @return
+     * @throws MalformedURLException
+     */
+
+    public static String getHost(final URL url) {
+        return Browser.getHost(url.getHost());
+    }
+
+    public static void init() {
+        CookieHandler.setDefault(null);
+        XTrustProvider.install();
+        // Now you are telling the JRE to ignore the hostname
+        final HostnameVerifier hv = new HostnameVerifier() {
+            public boolean verify(final String arg0, final SSLSession arg1) {
+                return true;
+            }
+        };
+        HttpsURLConnection.setDefaultHostnameVerifier(hv);
+
+    }
+
+    /**
+     * Sets the global connect timeout
+     * 
+     * @param valueMS
+     */
+    public static void setGlobalConnectTimeout(final int valueMS) {
+        Browser.TIMEOUT_CONNECT = valueMS;
+    }
+
+    public static void setGlobalLogger(final Logger logger) {
+        Browser.LOGGER = logger;
+    }
+
+    public static void setGlobalProxy(final HTTPProxy p) {
+        Browser.GLOBAL_PROXY = p;
+    }
+
+    /**
+     * Sets the global readtimeout in ms
+     * 
+     * @param valueMS
+     */
+    public static void setGlobalReadTimeout(final int valueMS) {
+        Browser.TIMEOUT_READ = valueMS;
+    }
+
+    public static void setGlobalVerbose(final boolean b) {
+        Browser.VERBOSE = b;
+    }
+
+    public static synchronized void setRequestIntervalLimitGlobal(final String host, final int i) {
+        final String domain = Browser.getHost(host);
+        if (domain == null) { return; }
+        if (Browser.REQUEST_INTERVAL_LIMIT_MAP == null) {
+            Browser.REQUEST_INTERVAL_LIMIT_MAP = new HashMap<String, Integer>();
+            Browser.REQUESTTIME_MAP = new HashMap<String, Long>();
+        }
+        Browser.REQUEST_INTERVAL_LIMIT_MAP.put(domain, i);
+    }
+
+    private static synchronized void waitForPageAccess(final Browser browser, final Request request) throws InterruptedException {
+        try {
+            final String host = Browser.getHost(request.getUrl().getHost());
+            Integer localLimit = null;
+            Integer globalLimit = null;
+            Long localLastRequest = null;
+            Long globalLastRequest = null;
+
+            if (browser.requestIntervalLimitMap != null) {
+                localLimit = browser.requestIntervalLimitMap.get(host);
+                localLastRequest = browser.requestTimeMap.get(host);
+            }
+            if (Browser.REQUEST_INTERVAL_LIMIT_MAP != null) {
+                globalLimit = Browser.REQUEST_INTERVAL_LIMIT_MAP.get(host);
+                globalLastRequest = Browser.REQUESTTIME_MAP.get(host);
+            }
+
+            if (localLimit == null && globalLimit == null) { return; }
+            if (localLastRequest == null && globalLastRequest == null) { return; }
+            if (localLimit != null && localLastRequest == null) { return; }
+            if (globalLimit != null && globalLastRequest == null) { return; }
+
+            if (globalLimit == null) {
+                globalLimit = 0;
+            }
+            if (localLimit == null) {
+                localLimit = 0;
+            }
+            if (localLastRequest == null) {
+                localLastRequest = System.currentTimeMillis();
+            }
+            if (globalLastRequest == null) {
+                globalLastRequest = System.currentTimeMillis();
+            }
+            final long dif = Math.max(localLimit - (System.currentTimeMillis() - localLastRequest), globalLimit - (System.currentTimeMillis() - globalLastRequest));
+
+            if (dif > 0) {
+                // System.out.println("Sleep " + dif + " before connect to " +
+                // request.getUrl().getHost());
+                Thread.sleep(dif);
+                // waitForPageAccess(request);
+            }
+        } finally {
+            final String host = Browser.getHost(request.getUrl().getHost());
+            if (browser.requestTimeMap != null) {
+                browser.requestTimeMap.put(host, System.currentTimeMillis());
+            }
+            if (Browser.REQUESTTIME_MAP != null) {
+                Browser.REQUESTTIME_MAP.put(host, System.currentTimeMillis());
+            }
+        }
+    }
+
     private int[] allowedResponseCodes = new int[0];
 
     private static boolean VERBOSE = false;
@@ -277,140 +415,6 @@ public class Browser {
         return null;
     }
 
-    public static int getGlobalReadTimeout() {
-        return Browser.TIMEOUT_READ;
-    }
-
-    public static String getHost(final String url) {
-        if (url == null) { return null; }
-        /* direct ip */
-        String ret = new Regex(url, "(.*?://)?(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
-        if (ret != null) { return ret; }
-        /* normal url */
-        ret = new Regex(url, ".*?([^.:/]+\\.[^.:/]+)(/|$|:)").getMatch(0);
-        if (ret != null) { return ret.toLowerCase(); }
-        return url;
-    }
-
-    /**
-     * Returns the host for url. input: http://srv2.bluehost.to/dsdsf ->out
-     * bluehost.to
-     * 
-     * @param url
-     * @return
-     * @throws MalformedURLException
-     */
-
-    public static String getHost(final URL url) {
-        return Browser.getHost(url.getHost());
-    }
-
-    public static void init() {
-        CookieHandler.setDefault(null);
-        XTrustProvider.install();
-        // Now you are telling the JRE to ignore the hostname
-        final HostnameVerifier hv = new HostnameVerifier() {
-            public boolean verify(final String arg0, final SSLSession arg1) {
-                return true;
-            }
-        };
-        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-
-    }
-
-    /**
-     * Sets the global connect timeout
-     * 
-     * @param valueMS
-     */
-    public static void setGlobalConnectTimeout(final int valueMS) {
-        Browser.TIMEOUT_CONNECT = valueMS;
-    }
-
-    public static void setGlobalLogger(final Logger logger) {
-        Browser.LOGGER = logger;
-    }
-
-    public static void setGlobalProxy(final HTTPProxy p) {
-        Browser.GLOBAL_PROXY = p;
-    }
-
-    /**
-     * Sets the global readtimeout in ms
-     * 
-     * @param valueMS
-     */
-    public static void setGlobalReadTimeout(final int valueMS) {
-        Browser.TIMEOUT_READ = valueMS;
-    }
-
-    public static void setGlobalVerbose(final boolean b) {
-        Browser.VERBOSE = b;
-    }
-
-    public static synchronized void setRequestIntervalLimitGlobal(final String host, final int i) {
-        final String domain = Browser.getHost(host);
-        if (domain == null) { return; }
-        if (Browser.REQUEST_INTERVAL_LIMIT_MAP == null) {
-            Browser.REQUEST_INTERVAL_LIMIT_MAP = new HashMap<String, Integer>();
-            Browser.REQUESTTIME_MAP = new HashMap<String, Long>();
-        }
-        Browser.REQUEST_INTERVAL_LIMIT_MAP.put(domain, i);
-    }
-
-    private static synchronized void waitForPageAccess(final Browser browser, final Request request) throws InterruptedException {
-        try {
-            final String host = Browser.getHost(request.getUrl().getHost());
-            Integer localLimit = null;
-            Integer globalLimit = null;
-            Long localLastRequest = null;
-            Long globalLastRequest = null;
-
-            if (browser.requestIntervalLimitMap != null) {
-                localLimit = browser.requestIntervalLimitMap.get(host);
-                localLastRequest = browser.requestTimeMap.get(host);
-            }
-            if (Browser.REQUEST_INTERVAL_LIMIT_MAP != null) {
-                globalLimit = Browser.REQUEST_INTERVAL_LIMIT_MAP.get(host);
-                globalLastRequest = Browser.REQUESTTIME_MAP.get(host);
-            }
-
-            if (localLimit == null && globalLimit == null) { return; }
-            if (localLastRequest == null && globalLastRequest == null) { return; }
-            if (localLimit != null && localLastRequest == null) { return; }
-            if (globalLimit != null && globalLastRequest == null) { return; }
-
-            if (globalLimit == null) {
-                globalLimit = 0;
-            }
-            if (localLimit == null) {
-                localLimit = 0;
-            }
-            if (localLastRequest == null) {
-                localLastRequest = System.currentTimeMillis();
-            }
-            if (globalLastRequest == null) {
-                globalLastRequest = System.currentTimeMillis();
-            }
-            final long dif = Math.max(localLimit - (System.currentTimeMillis() - localLastRequest), globalLimit - (System.currentTimeMillis() - globalLastRequest));
-
-            if (dif > 0) {
-                // System.out.println("Sleep " + dif + " before connect to " +
-                // request.getUrl().getHost());
-                Thread.sleep(dif);
-                // waitForPageAccess(request);
-            }
-        } finally {
-            final String host = Browser.getHost(request.getUrl().getHost());
-            if (browser.requestTimeMap != null) {
-                browser.requestTimeMap.put(host, System.currentTimeMillis());
-            }
-            if (Browser.REQUESTTIME_MAP != null) {
-                Browser.REQUESTTIME_MAP.put(host, System.currentTimeMillis());
-            }
-        }
-    }
-
     private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
     /*
      * -1 means use default Timeouts
@@ -512,6 +516,7 @@ public class Browser {
         br.debug = this.debug;
         br.verbose = this.verbose;
         br.logger = this.logger;
+        br.proxy = this.proxy;
         br.allowedResponseCodes = this.allowedResponseCodes;
         return br;
     }
@@ -1373,7 +1378,7 @@ public class Browser {
 
     private HTTPProxy selectProxy() {
         if (this.proxy != null) {
-            if (this.proxy == HTTPProxy.NONE) { return null; }
+            if (this.proxy == HTTPProxy.NONE) { return HTTPProxy.NONE; }
             return this.proxy;
         }
         return Browser.GLOBAL_PROXY;
