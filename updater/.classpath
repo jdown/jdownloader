@@ -6,6 +6,5 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>
-	<classpathentry kind="src" path="themes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

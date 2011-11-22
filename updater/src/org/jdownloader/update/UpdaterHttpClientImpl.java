@@ -17,6 +17,8 @@ import org.appwork.update.updateclient.translation.T;
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.BasicHTTP.BasicHTTPException;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 
 public class UpdaterHttpClientImpl implements UpdateHttpClient {
     private final BasicHTTP               client;
@@ -27,8 +29,12 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient {
         this.client = new BasicHTTP();
         this.options = JsonConfig.create(UpdateHttpClientOptions.class);
         this.client.setConnectTimeout(this.options.getConnectTimeout());
-        this.client.setReadTimeout(this.options.getConnectTimeout());
-
+        this.client.setReadTimeout(this.options.getReadTimeout());
+        final HTTPProxyStorable proxyStroable = this.options.getProxy();
+        if (proxyStroable != null) {
+            final HTTPProxy proxy = HTTPProxy.getHTTPProxy(proxyStroable);
+            this.client.setProxy(proxy);
+        }
     }
 
     @Override
@@ -38,12 +44,10 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient {
             System.out.println(url);
             this.client.download(new URL(url), progress, file);
             this.handleClientErrors();
-
         } catch (final BasicHTTPException e) {
             throw new HTTPIOException(this.client.getConnection().getResponseCode(), e.getMessage());
         } catch (final IOException e) {
             throw new HTTPIOException(e);
-
         }
 
     }
