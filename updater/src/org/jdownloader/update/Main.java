@@ -13,6 +13,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 
+import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
@@ -54,6 +55,7 @@ public class Main {
         // do this call to keep the correct root in Application Cache
         Application.setApplication(".jd_home");
         Application.getRoot(Main.class);
+        AWUTheme.I().setNameSpace("org/jdownloader/updater/");
 
     }
     private static final SwitchParam    RESTART            = new SwitchParam("restart", "| Restartpath after update");
@@ -160,7 +162,7 @@ public class Main {
                             }
 
                         };
-                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), ImageProvider.getImageIcon("download", 32, 32, true)) {
+                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), AWUTheme.getInstance().getIcon("download",  32)) {
                             /**
                          * 
                          */
@@ -183,7 +185,7 @@ public class Main {
 
             }.getReturnValue();
         }
-        if (hash != null && !hash.equalsIgnoreCase(Hash.getMD5(file))) {
+        if (hash != null && !hash.equalsIgnoreCase(Hash.getSHA256(file))) {
             //
             throw new Exception("Hash Mismatch");
         }
@@ -257,7 +259,7 @@ public class Main {
 
             // Main.UPDATER.getEventSender().addListener(new
             // ConsoleHandler(Main.UPDATER));
-
+//            OPTIONS.setGuiless(true);
             if (!Main.OPTIONS.isGuiless()) {
                 Main.GUI = new EDTHelper<StandaloneUpdaterGui>() {
 
@@ -270,11 +272,11 @@ public class Main {
                                 String rest = Main.OPTIONS.getRestartCommand();
                                 if (rest == null || rest.trim().length() == 0) {
                                     if (CrossSystem.isWindows()) {
-                                        rest = "JDownloader.exe";
+                                        rest = "JDownloader.exe -rfu";
                                     } else if (CrossSystem.isLinux()) {
-                                        rest = "java -jar JDownloader.jar";
+                                        rest = "java -jar JDownloader.jar -rfu";
                                     } else {
-                                        rest = "open ../../../JDownloader.app";
+                                        rest = "open ../../../JDownloader.app -rfu";
                                     }
 
                                     Main.OPTIONS.setRestartCommand(rest);
@@ -354,7 +356,10 @@ public class Main {
             }
 
         }
-
+        if (Main.OPTIONS.isGuiless()) {
+            out(T._.literally_exit());
+            ShutdownController.getInstance().requestShutdown();
+        }
     }
 
     public static void out(final String string) {
@@ -455,7 +460,8 @@ public class Main {
             final String url = e2.getUrl();
             final String hash = e2.getHash();
             final File file = Application.getResource("tmp/" + hash + ".zip");
-            if (!file.exists() || Hash.getMD5(file).equals(hash)) {
+         
+            if (!file.exists() || Hash.getSHA256(file).equals(hash)) {
                 if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
                 Main.downloadInDialog(file, url, hash);
             }

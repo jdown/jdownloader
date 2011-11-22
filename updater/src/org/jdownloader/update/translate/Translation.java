@@ -171,5 +171,7 @@ public interface Translation extends TranslateInterface {
 
     @Default(lngs = { "en", "de" }, values = { "%s1 update(s) are ready for installation.", "%s1 Update(s) können jetzt installiert werden." })
     String updates_ready_for_install(int size);
+    @Default(lngs = { "en", "de" }, values = { "Finished Updatecheck - Exit", "Updateprüfung abgeschlossen - Exit" })
+    String literally_exit();
 
 }

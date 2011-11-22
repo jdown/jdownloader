@@ -72,7 +72,12 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient {
     }
 
     private void handleClientErrors() throws ClientUpdateRequiredException, UpdateServerException, HTTPIOException {
-        if (this.client.getResponseHeader(ServerResponses.CLIENT_UPDATE_HEADER) != null) { throw new ClientUpdateRequiredException(this.client.getResponseHeader(ServerResponses.CLIENT_UPDATE_HEADER), this.client.getResponseHeader(ServerResponses.CLIENT_UPDATE_HASH)); }
+        if (this.client.getResponseHeader(ServerResponses.CLIENT_UPDATE_HEADER) != null) { 
+            
+            
+            throw new ClientUpdateRequiredException(this.client.getResponseHeader(ServerResponses.CLIENT_UPDATE_HEADER), this.client.getResponseHeader(ServerResponses.CLIENT_UPDATE_HASH)); 
+            
+        }
         if (this.client.getResponseHeader(ServerResponses.ERROR_HEADER) != null) { throw new UpdateServerException(ServerError.valueOf(this.client.getResponseHeader(ServerResponses.ERROR_HEADER))); }
         if (this.client.getConnection().getResponseCode() == ResponseCode.REDIRECT_FOUND.getCode()) {
             throw new HTTPIOException(ResponseCode.REDIRECT_FOUND.getCode(), T._.redirect_error(this.client.getResponseHeader("Location")));
