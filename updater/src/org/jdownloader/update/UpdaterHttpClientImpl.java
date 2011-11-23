@@ -3,6 +3,7 @@ package org.jdownloader.update;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
@@ -35,7 +36,7 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
         this.options = JsonConfig.create(UpdateHttpClientOptions.class);
         this.client.setConnectTimeout(this.options.getConnectTimeout());
         this.client.setReadTimeout(this.options.getReadTimeout());
-        this.updateProxy();
+        this.updateProxy(false);
         this.options.getStorageHandler().getEventSender().addListener(this, true);
     }
 
@@ -43,7 +44,6 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
     public void download(final File file, final String url, final DownloadProgress progress) throws HTTPIOException, ClientUpdateRequiredException, InterruptedException, UpdateServerException {
         if (this.isInterrupted()) { throw new InterruptedException(); }
         try {
-            System.out.println(url);
             this.client.download(new URL(url), progress, file);
             this.handleClientErrors();
         } catch (final BasicHTTPException e) {
@@ -57,7 +57,6 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
     @Override
     public byte[] get(final String url) throws HTTPIOException, ClientUpdateRequiredException, InterruptedException, UpdateServerException {
         if (this.isInterrupted()) { throw new InterruptedException(); }
-        System.out.println(url);
         try {
             final byte[] ret = this.client.download(new URL(url), null, 0);
 
@@ -94,7 +93,10 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
     @Override
     public void interrupt() {
         this.interrupted = true;
-        this.client.getConnection().disconnect();
+        try {
+            this.client.getConnection().disconnect();
+        } catch (final Throwable e) {
+        }
 
     }
 
@@ -104,19 +106,16 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
 
     @Override
     public void onConfigValidatorError(final KeyHandler<Object> keyHandler, final Object invalidValue, final ValidationException validateException) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void onConfigValueModified(final KeyHandler<Object> keyHandler, final Object newValue) {
-        this.updateProxy();
+        this.updateProxy(true);
     }
 
     @Override
     public byte[] post(final String url, final String data) throws HTTPIOException, ClientUpdateRequiredException, InterruptedException, UpdateServerException {
         if (this.isInterrupted()) { throw new InterruptedException(); }
-        System.out.println(url);
         try {
             final byte[] ret = this.client.postPage(new URL(url), data).getBytes();
             this.handleClientErrors();
@@ -135,11 +134,14 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
 
     }
 
-    private void updateProxy() {
-        final HTTPProxyStorable proxyStroable = this.options.getProxy();
-        if (proxyStroable != null) {
-            final HTTPProxy proxy = HTTPProxy.getHTTPProxy(proxyStroable);
+    private void updateProxy(final boolean preferConfigProxy) {
+        final HTTPProxyStorable proxyStorable = this.options.getProxy();
+        final List<HTTPProxy> proxies = HTTPProxy.getFromSystemProperties();
+        if (proxyStorable != null && (preferConfigProxy || proxies.size() == 0)) {
+            final HTTPProxy proxy = HTTPProxy.getHTTPProxy(proxyStorable);
             this.client.setProxy(proxy);
+        } else if (proxies.size() > 0) {
+            this.client.setProxy(proxies.get(0));
         }
     }
 
