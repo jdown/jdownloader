@@ -11,7 +11,6 @@ import java.util.logging.Level;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.os.CrossSystem;
 
 public class RestartEvent extends ShutdownEvent {
 
@@ -26,7 +25,6 @@ public class RestartEvent extends ShutdownEvent {
     private String         javaInterpreter;
     private final File     dest;
     private final String[] orgArgs;
-    
 
     public RestartEvent(final File dest, final String[] orgArgs) {
         this.dest = dest;
@@ -44,13 +42,25 @@ public class RestartEvent extends ShutdownEvent {
         }
     }
 
+    protected String getRestartingJar() {
+
+        try {
+            return RestartEvent.getJarName();
+        } catch (final Throwable e) {
+            Log.exception(Level.WARNING, e);
+
+        }
+        return "Updater.jar";
+
+    }
+
     public ArrayList<String> getRestartParameters() throws MalformedURLException, URISyntaxException {
 
         final ArrayList<String> nativeParameters = new ArrayList<String>();
- 
+
         nativeParameters.add(this.javaInterpreter);
         nativeParameters.add("-jar");
-        nativeParameters.add(getRestartingJar());
+        nativeParameters.add(this.getRestartingJar());
         nativeParameters.add("-tbs");
         for (final String a : this.orgArgs) {
             nativeParameters.add(a);
@@ -61,14 +71,13 @@ public class RestartEvent extends ShutdownEvent {
     @Override
     public void run() {
         String jarName;
-//        if (!Application.isJared(this.getClass())) { return; }
+        // if (!Application.isJared(this.getClass())) { return; }
         try {
-            jarName = getRestartingJar();
+            jarName = this.getRestartingJar();
 
             final File root = Application.getResource(jarName);
             if (!root.exists()) {
-                System.err.println(root + " is missing");
-                return;
+                System.err.println("WARNING: " + root + " is missing");
             }
             final ArrayList<String> call = new ArrayList<String>();
             call.add(this.javaInterpreter);
@@ -76,7 +85,7 @@ public class RestartEvent extends ShutdownEvent {
             call.add("tbs.jar");
             call.add(this.dest.getAbsolutePath());
             call.addAll(this.getRestartParameters());
-            System.out.println("Call Restart: "+call);
+            System.out.println("Call Restart: " + call);
             final String[] tiny = call.toArray(new String[] {});
 
             final ProcessBuilder pb = new ProcessBuilder(tiny);
@@ -100,18 +109,6 @@ public class RestartEvent extends ShutdownEvent {
             Log.exception(Level.WARNING, e1);
 
         }
-    }
-
-    protected String getRestartingJar() {
-      
-            try {
-                return getJarName();
-            } catch (Throwable e) {
-                 Log.exception(Level.WARNING,e);
-                
-            }
-            return "Updater.jar";
-      
     }
 
 }

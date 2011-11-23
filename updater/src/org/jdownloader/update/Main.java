@@ -29,7 +29,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
@@ -101,7 +100,7 @@ public class Main {
         if (file.exists()) { throw new Exception("File exists"); }
         file.getParentFile().mkdirs();
         Exception ret = null;
-file.delete();
+        file.delete();
         if (Main.OPTIONS.isGuiless()) {
             final DownloadProgress progress = new DownloadProgress() {
                 @Override
@@ -164,7 +163,7 @@ file.delete();
                             }
 
                         };
-                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), AWUTheme.getInstance().getIcon("download",  32)) {
+                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), AWUTheme.getInstance().getIcon("download", 32)) {
                             /**
                          * 
                          */
@@ -192,6 +191,26 @@ file.delete();
             throw new Exception("Hash Mismatch");
         }
         if (ret != null) { throw ret; }
+    }
+
+    public static File downloadSelfUpdate(final ClientUpdateRequiredException e2) throws Exception, ZipIOException, ZipException, IOException {
+        final String url = e2.getUrl();
+        final String hash = e2.getHash();
+        final File file = Application.getResource("tmp/" + hash + ".zip");
+
+        if (!file.exists() || !Hash.getSHA256(file).equals(hash)) {
+            if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
+            Main.downloadInDialog(file, url, hash);
+        }
+        final ZipIOReader zip = new ZipIOReader(file);
+        final File dest = Application.getResource("tmp/update/self");
+        Files.deleteRecursiv(dest);
+
+        dest.mkdirs();
+        zip.extractTo(dest);
+        file.delete();
+        file.deleteOnExit();
+        return dest;
     }
 
     private static void init() {
@@ -253,7 +272,7 @@ file.delete();
 
         Main.UPDATER = new Updater(new UpdaterHttpClientImpl(), Main.OPTIONS);
         if (!Application.isJared(Main.class)) {
-//            Main.UPDATER.setVersion(-1);
+            // Main.UPDATER.setVersion(-1);
         }
 
         Application.getResource("tbs.jar").delete();
@@ -261,7 +280,7 @@ file.delete();
 
             // Main.UPDATER.getEventSender().addListener(new
             // ConsoleHandler(Main.UPDATER));
-//            OPTIONS.setGuiless(true);
+            // OPTIONS.setGuiless(true);
             if (!Main.OPTIONS.isGuiless()) {
                 Main.GUI = new EDTHelper<StandaloneUpdaterGui>() {
 
@@ -359,7 +378,7 @@ file.delete();
 
         }
         if (Main.OPTIONS.isGuiless()) {
-            out(T._.literally_exit());
+            Main.out(T._.literally_exit());
             ShutdownController.getInstance().requestShutdown();
         }
     }
@@ -459,7 +478,7 @@ file.delete();
                     return;
                 }
             }
-            final File dest = downloadSelfUpdate(e2);
+            final File dest = Main.downloadSelfUpdate(e2);
             final File bootStrapper = Application.getResource("tbs.jar");
             bootStrapper.delete();
             IO.writeToFile(bootStrapper, IO.readURL(Application.getRessourceURL("tbs.jar")));
@@ -481,25 +500,5 @@ file.delete();
             }
             ShutdownController.getInstance().requestShutdown();
         }
-    }
-
-    public static File downloadSelfUpdate(final ClientUpdateRequiredException e2) throws Exception, ZipIOException, ZipException, IOException {
-        final String url = e2.getUrl();
-        final String hash = e2.getHash();
-        final File file = Application.getResource("tmp/" + hash + ".zip");
-       
-        if (!file.exists() || Hash.getSHA256(file).equals(hash)) {
-            if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
-            Main.downloadInDialog(file, url, hash);
-        }
-        final ZipIOReader zip = new ZipIOReader(file);
-        final File dest = Application.getResource("tmp/update/self");
-        Files.deleteRecursiv(dest);
-  
-        dest.mkdirs();       
-        zip.extractTo(dest);
-        file.delete();
-        file.deleteOnExit();
-        return dest;
     }
 }
