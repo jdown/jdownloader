@@ -76,13 +76,6 @@ public class Browser {
             this.e = e;
         }
 
-        public BrowserException closeConnection() {
-            if (this.connection != null && this.connection.isConnected()) {
-                this.connection.disconnect();
-            }
-            return this;
-        }
-
         /**
          * Returns the connection adapter that caused the browserexception
          * 
@@ -868,7 +861,9 @@ public class Browser {
         } catch (final BrowserException e) {
             throw e;
         } catch (final IOException e) {
-            throw new BrowserException(e.getMessage(), this.request.getHttpConnection(), e).closeConnection();
+            throw new BrowserException(e.getMessage(), this.request.getHttpConnection(), e);
+        } finally {
+            this.request.disconnect();
         }
         if (this.isVerbose()) {
             if (this.getLogger() != null) {
@@ -1216,7 +1211,9 @@ public class Browser {
         } catch (final BrowserException e) {
             throw e;
         } catch (final IOException e) {
-            throw new BrowserException(e.getMessage(), con, e).closeConnection();
+            throw new BrowserException(e.getMessage(), con, e);
+        } finally {
+            con.disconnect();
         }
         if (this.isVerbose()) {
             if (this.getLogger() != null) {
