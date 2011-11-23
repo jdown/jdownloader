@@ -4,6 +4,7 @@ import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import org.appwork.resources.AWUTheme;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.gui.StandaloneUpdaterGui;
 import org.appwork.utils.images.IconIO;
@@ -20,10 +21,12 @@ public class JDStandaloneUpdaterGui extends StandaloneUpdaterGui {
     protected void setFrameIcons() {
         final ArrayList<Image> list = new ArrayList<Image>();
 
-        list.add(IconIO.getImage(this.getClass().getResource("resource/updaterIcon128.png")));
-        list.add(IconIO.getImage(this.getClass().getResource("resource/updaterIcon64.png")));
-        list.add(IconIO.getImage(this.getClass().getResource("resource/updaterIcon32.png")));
-        list.add(IconIO.getImage(this.getClass().getResource("resource/updaterIcon16.png")));
+
+        list.add(        AWUTheme.I().getImage("updatericon", 64));
+        list.add(        AWUTheme.I().getImage("updatericon", 48));
+        list.add(        AWUTheme.I().getImage("updatericon", 32));
+        list.add(        AWUTheme.I().getImage("updatericon", 16));
+
         this.getFrame().setIconImages(list);
 
     }

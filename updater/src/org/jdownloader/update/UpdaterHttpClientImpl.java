@@ -26,6 +26,8 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient {
     private final UpdateHttpClientOptions options;
 
     public UpdaterHttpClientImpl() {
+        // only use ipv4, because debian changed default stack to ipv6
+        System.setProperty("java.net.preferIPv4Stack", "true");
         this.client = new BasicHTTP();
         this.options = JsonConfig.create(UpdateHttpClientOptions.class);
         this.client.setConnectTimeout(this.options.getConnectTimeout());

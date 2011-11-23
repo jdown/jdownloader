@@ -26,11 +26,13 @@ public class RestartEvent extends ShutdownEvent {
     private String         javaInterpreter;
     private final File     dest;
     private final String[] orgArgs;
+    
 
     public RestartEvent(final File dest, final String[] orgArgs) {
         this.dest = dest;
         this.orgArgs = orgArgs;
-        this.setHookPriority(Integer.MAX_VALUE);
+
+        this.setHookPriority(Integer.MIN_VALUE);
         this.javaInterpreter = "java";
         try {
             final String javaInterpreter = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
@@ -45,27 +47,10 @@ public class RestartEvent extends ShutdownEvent {
     public ArrayList<String> getRestartParameters() throws MalformedURLException, URISyntaxException {
 
         final ArrayList<String> nativeParameters = new ArrayList<String>();
-        if (CrossSystem.isWindows()) {
-            final String exe = RestartEvent.getJarName().replace(".jar", ".exe");
-            /*
-             * windows starts exe launcher
-             */
-            if (Application.getResource(exe).exists()) {
-                Log.L.warning("Windows " + Application.getResource(exe) + " exists");
-                nativeParameters.add(exe);
-                nativeParameters.add("-tbs");
-                for (final String a : this.orgArgs) {
-                    nativeParameters.add(a);
-                }
-                return nativeParameters;
-            } else {
-                Log.L.warning("Windows " + Application.getResource(exe) + " is missing");
-
-            }
-        }
+ 
         nativeParameters.add(this.javaInterpreter);
         nativeParameters.add("-jar");
-        nativeParameters.add(RestartEvent.getJarName());
+        nativeParameters.add(getRestartingJar());
         nativeParameters.add("-tbs");
         for (final String a : this.orgArgs) {
             nativeParameters.add(a);
@@ -76,9 +61,9 @@ public class RestartEvent extends ShutdownEvent {
     @Override
     public void run() {
         String jarName;
-        if (!Application.isJared(this.getClass())) { return; }
+//        if (!Application.isJared(this.getClass())) { return; }
         try {
-            jarName = RestartEvent.getJarName();
+            jarName = getRestartingJar();
 
             final File root = Application.getResource(jarName);
             if (!root.exists()) {
@@ -91,7 +76,7 @@ public class RestartEvent extends ShutdownEvent {
             call.add("tbs.jar");
             call.add(this.dest.getAbsolutePath());
             call.addAll(this.getRestartParameters());
-            System.out.println(call);
+            System.out.println("Call Restart: "+call);
             final String[] tiny = call.toArray(new String[] {});
 
             final ProcessBuilder pb = new ProcessBuilder(tiny);
@@ -115,6 +100,18 @@ public class RestartEvent extends ShutdownEvent {
             Log.exception(Level.WARNING, e1);
 
         }
+    }
+
+    protected String getRestartingJar() {
+      
+            try {
+                return getJarName();
+            } catch (Throwable e) {
+                 Log.exception(Level.WARNING,e);
+                
+            }
+            return "Updater.jar";
+      
     }
 
 }
