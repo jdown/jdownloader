@@ -182,4 +182,8 @@ public class ConsoleHandler implements UpdaterListener {
 
         }
     }
+
+    @Override
+    public void onDirectInstalls(ArrayList<File> parameter) {
+    }
 }
