@@ -200,7 +200,7 @@ public class Main {
 
         if (!file.exists() || !Hash.getSHA256(file).equals(hash)) {
             if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
-            Main.downloadInDialog(file, url, hash);
+            Main.downloadInDialog(file, url+"?"+System.currentTimeMillis(), hash);
         }
         final ZipIOReader zip = new ZipIOReader(file);
         final File dest = Application.getResource("tmp/update/self");
