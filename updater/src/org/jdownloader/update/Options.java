@@ -22,6 +22,7 @@ public class Options implements UpdaterOptions {
     private boolean              noUpdates = false;
     private String[]             optionalList;
     private String[]             uninstallList;
+    private int autoCloseTimeout;
 
     public Options() {
         // some options shall not be written back to configfile.
@@ -179,6 +180,14 @@ public class Options implements UpdaterOptions {
     @Override
     public void setWorkingDirectory(final String dir) {
         this.workingDirectory = dir;
+    }
+
+    public void setAutoCloseTimeout(int parseInt) {
+        this.autoCloseTimeout=parseInt;
+    }
+
+    public int getAutoCloseTimeout() {
+        return autoCloseTimeout;
     }
 
 }

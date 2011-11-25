@@ -59,7 +59,8 @@ public class Main {
         AWUTheme.I().setNameSpace("org/jdownloader/updater/");
 
     }
-    private static final SwitchParam    RESTART            = new SwitchParam("restart", "| Restartpath after update");
+    private static final SwitchParam    AUTOCLOSE          = new SwitchParam("autoclose", "TIMEOUT | Restartpath after update");
+    private static final SwitchParam    RESTART            = new SwitchParam("restart", "RESTART COMMAND | Restartpath after update");
     private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
     private static final SwitchParam    INSTALL_PACKAGE    = new SwitchParam("install", "PACKAGE_ID | Install optional package");
     private static final SwitchParam    UNINSTALL_PACKAGE  = new SwitchParam("uninstall", "PACKAGE_ID | Uninstall optional package");
@@ -200,7 +201,7 @@ public class Main {
 
         if (!file.exists() || !Hash.getSHA256(file).equals(hash)) {
             if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
-            Main.downloadInDialog(file, url+"?"+System.currentTimeMillis(), hash);
+            Main.downloadInDialog(file, url + "?" + System.currentTimeMillis(), hash);
         }
         final ZipIOReader zip = new ZipIOReader(file);
         final File dest = Application.getResource("tmp/update/self");
@@ -295,7 +296,7 @@ public class Main {
                                     if (CrossSystem.isWindows()) {
                                         rest = "JDownloader.exe -rfu";
                                     } else if (CrossSystem.isLinux()) {
-                                        rest = "java -jar JDownloader.jar -rfu";
+                                        rest = CrossSystem.getJavaBinary() + " -jar JDownloader.jar -rfu";
                                     } else {
                                         rest = "open ../../../JDownloader.app -rfu";
                                     }
@@ -326,8 +327,35 @@ public class Main {
                     } else {
                         Main.out(T._.guiless_noupdates());
                     }
-                    if (Main.OPTIONS.getRestartCommand() != null && Main.OPTIONS.getRestartCommand().trim().length() > 0) {
+                    boolean doRestart = Main.OPTIONS.getRestartCommand() != null && Main.OPTIONS.getRestartCommand().trim().length() > 0;
+
+                    if (!Main.OPTIONS.isGuiless() && OPTIONS.getAutoCloseTimeout() >= 0) {
+                        long endtime = System.currentTimeMillis() + OPTIONS.getAutoCloseTimeout() * 1000;
+                        while (System.currentTimeMillis() < endtime && OPTIONS.getAutoCloseTimeout() >= 0) {
+                        
+                            GUI.setAutoClose(endtime - System.currentTimeMillis(), doRestart, new ActionListener() {
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    OPTIONS.setAutoCloseTimeout(-1);
+                                }
+                            });
+                            Thread.sleep(1000);
+                        }
+                        if (OPTIONS.getAutoCloseTimeout() >= 0) {
+                            if (doRestart) {
+                                Main.restart();
+
+                            } else {
+                                Main.out(T._.literally_exit());
+
+                                ShutdownController.getInstance().requestShutdown();
+                            }
+                        }
+
+                    } else if (doRestart) {
                         Main.restart();
+
                     }
 
                     break;
@@ -417,6 +445,9 @@ public class Main {
                 Main.OPTIONS.setDebug(true);
             } else if (Main.GUILESS.matches(p)) {
                 Main.OPTIONS.setGuiless(true);
+            } else if (Main.AUTOCLOSE.matches(p)) {
+                OPTIONS.setAutoCloseTimeout(Integer.parseInt(args[++i]));
+                AUTOCLOSE.print();
             } else if (Main.NOUPDATE.matches(p)) {
                 Main.OPTIONS.setNoUpdate(true);
 
@@ -442,11 +473,14 @@ public class Main {
 
     private static void restart() {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            {
+                this.setHookPriority(Integer.MIN_VALUE);
+            }
 
             @Override
             public void run() {
                 final ProcessBuilder pb = new ProcessBuilder(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
-                System.out.println(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
+                System.out.println("REstart: " + ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
                 /*
                  * needed because the root is different for jre/class version
                  */

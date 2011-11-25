@@ -26,7 +26,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 
 public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEventListener<Object> {
     private final BasicHTTP               client;
-    private boolean                       interrupted = false;
+
     private final UpdateHttpClientOptions options;
 
     public UpdaterHttpClientImpl() {
@@ -90,18 +90,10 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
         }
     }
 
-    @Override
-    public void interrupt() {
-        this.interrupted = true;
-        try {
-            this.client.getConnection().disconnect();
-        } catch (final Throwable e) {
-        }
-
-    }
+ 
 
     public boolean isInterrupted() {
-        return this.interrupted;
+        return Thread.currentThread().isInterrupted();
     }
 
     @Override
