@@ -90,7 +90,13 @@ public class UpdaterHttpClientImpl implements UpdateHttpClient, GenericConfigEve
         }
     }
 
- 
+    @Override
+    public void interrupt() {
+        try {
+            this.client.getConnection().disconnect();
+        } catch (final Throwable e) {
+        }
+    }
 
     public boolean isInterrupted() {
         return Thread.currentThread().isInterrupted();
