@@ -12,7 +12,6 @@ import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
-import java.util.zip.ZipException;
 
 import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
@@ -20,29 +19,20 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.simplejson.mapper.JSonMapper;
+import org.appwork.update.updateclient.ConsoleHandler;
+import org.appwork.update.updateclient.CtrlCHandler;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.gui.StandaloneUpdaterGui;
 import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
 import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.IO;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging.LogFormatter;
-import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.net.HTTPException;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.ShellParser;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.ProgressDialog;
-import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.appwork.utils.zip.ZipIOException;
-import org.appwork.utils.zip.ZipIOReader;
 import org.jdownloader.update.gui.JDStandaloneUpdaterGui;
 import org.jdownloader.update.translate.T;
 
@@ -96,123 +86,6 @@ public class Main {
 
     private static final SwitchParam    APP                = new SwitchParam("app", "AppID | Sets the desired AppID");
     private static final SwitchParam    NOUPDATE           = new SwitchParam("noupdate", "| Bypasses updatesystem");
-
-    public static void downloadInDialog(final File file, final String url, final String hash) throws Exception {
-        if (file.exists()) { throw new Exception("File exists"); }
-        file.getParentFile().mkdirs();
-        Exception ret = null;
-        file.delete();
-        if (Main.OPTIONS.isGuiless()) {
-            final DownloadProgress progress = new DownloadProgress() {
-                @Override
-                public void increaseLoaded(final long increase) {
-                    super.increaseLoaded(increase);
-                    if (this.getTotal() <= 0) {
-
-                    } else {
-                        T._.guiless_progress((100 * this.getLoaded() / this.getTotal()), SizeFormatter.formatBytes(this.getLoaded()), SizeFormatter.formatBytes(this.getTotal()));
-                    }
-                }
-
-                @Override
-                public void setLoaded(final long loaded) {
-                    super.setLoaded(loaded);
-                }
-
-                @Override
-                public void setTotal(final long total) {
-                    super.setTotal(total);
-
-                }
-
-            };
-            Main.out(T._.guiless_selfupdate());
-            Main.UPDATER.getHttpClient().download(file, url, progress);
-        } else {
-            ret = new EDTHelper<Exception>() {
-
-                @Override
-                public Exception edtRun() {
-                    try {
-
-                        final DownloadProgress progress = new DownloadProgress();
-                        final ProgressGetter pg = new ProgressGetter() {
-
-                            private long loaded = 0;
-                            private long total  = 0;
-
-                            @Override
-                            public int getProgress() {
-                                this.total = progress.getTotal();
-                                this.loaded = progress.getLoaded();
-                                if (this.total == 0) { return 0; }
-                                return (int) (this.loaded * 100 / this.total);
-                            }
-
-                            @Override
-                            public String getString() {
-                                this.total = progress.getTotal();
-                                this.loaded = progress.getLoaded();
-                                if (this.total <= 0) { return _AWU.T.connecting(); }
-                                return _AWU.T.progress(SizeFormatter.formatBytes(this.loaded), SizeFormatter.formatBytes(this.total), this.loaded * 10000f / this.total / 100.0);
-                            }
-
-                            @Override
-                            public void run() throws Exception {
-                                Main.UPDATER.getHttpClient().download(file, url, progress);
-                                System.out.println("Download finished");
-                            }
-
-                        };
-                        final ProgressDialog dialog = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _AWU.T.download_title(), _AWU.T.download_msg(), AWUTheme.getInstance().getIcon("download", 32)) {
-                            /**
-                         * 
-                         */
-                            private static final long serialVersionUID = 5303387916537596967L;
-
-                            @Override
-                            public boolean closeAllowed() {
-
-                                Dialog.getInstance().showMessageDialog(_AWU.T.please_wait());
-
-                                return false;
-                            }
-                        };
-                        Dialog.getInstance().showDialog(dialog);
-                    } catch (final Exception e) {
-                        return e;
-                    }
-                    return null;
-                }
-
-            }.getReturnValue();
-        }
-        if (hash != null && !hash.equalsIgnoreCase(Hash.getSHA256(file))) {
-            //
-            throw new Exception("Hash Mismatch");
-        }
-        if (ret != null) { throw ret; }
-    }
-
-    public static File downloadSelfUpdate(final ClientUpdateRequiredException e2) throws Exception, ZipIOException, ZipException, IOException {
-        final String url = e2.getUrl();
-        final String hash = e2.getHash();
-        final File file = Application.getResource("tmp/" + hash + ".zip");
-
-        if (!file.exists() || !Hash.getSHA256(file).equals(hash)) {
-            if (file.exists() && !file.delete()) { throw new Exception(T._.could_not_update_updater()); }
-            Main.downloadInDialog(file, url + "?" + System.currentTimeMillis(), hash);
-        }
-        final ZipIOReader zip = new ZipIOReader(file);
-        final File dest = Application.getResource("tmp/update/self");
-        Files.deleteRecursiv(dest);
-
-        dest.mkdirs();
-        zip.extractTo(dest);
-        file.delete();
-        file.deleteOnExit();
-        return dest;
-    }
 
     private static void init() {
         // only use ipv4, because debian changed default stack to ipv6
@@ -316,8 +189,12 @@ public class Main {
 
             } else {
 
-                Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER));
-                ShutdownController.getInstance().addShutdownEvent(new CtrlCHandler(Main.UPDATER));
+                Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER){
+                    protected void out(String str) {
+                        out(str);
+                    }
+                });
+                ShutdownController.getInstance().addShutdownEvent(new CtrlCHandler(UPDATER));
             }
             while (true) {
 
@@ -332,7 +209,7 @@ public class Main {
                     if (!Main.OPTIONS.isGuiless() && OPTIONS.getAutoCloseTimeout() >= 0) {
                         long endtime = System.currentTimeMillis() + OPTIONS.getAutoCloseTimeout() * 1000;
                         while (System.currentTimeMillis() < endtime && OPTIONS.getAutoCloseTimeout() >= 0) {
-                        
+
                             GUI.setAutoClose(endtime - System.currentTimeMillis(), doRestart, new ActionListener() {
 
                                 @Override
@@ -396,8 +273,20 @@ public class Main {
 
         } catch (final ClientUpdateRequiredException e) {
             e.printStackTrace();
+            for (final String a : ARGS) {
+                if (a.equals("-tbs")) {
+                    if (Main.OPTIONS.isGuiless()) {
+                        Main.out(T._.updateloop());
+                        ShutdownController.getInstance().requestShutdown();
+                    } else {
+                        Dialog.getInstance().showMessageDialog(Dialog.LOGIC_COUNTDOWN, T._.updateloop_title(), T._.updateloop());
+                        ShutdownController.getInstance().requestShutdown();
+                    }
 
-            Main.selfUpdate(e);
+                    return;
+                }
+            }
+            UPDATER.selfUpdate(e, ARGS);
 
         } catch (final Exception e) {
             if (!Main.UPDATER.isInterrupted()) {
@@ -497,42 +386,4 @@ public class Main {
         ShutdownController.getInstance().requestShutdown();
     }
 
-    private static void selfUpdate(final ClientUpdateRequiredException e2) {
-        try {
-            for (final String a : Main.ARGS) {
-                if (a.equals("-tbs")) {
-                    if (Main.OPTIONS.isGuiless()) {
-                        Main.out(T._.updateloop());
-                        ShutdownController.getInstance().requestShutdown();
-                    } else {
-                        Dialog.getInstance().showMessageDialog(Dialog.LOGIC_COUNTDOWN, T._.updateloop_title(), T._.updateloop());
-                        ShutdownController.getInstance().requestShutdown();
-                    }
-
-                    return;
-                }
-            }
-            final File dest = Main.downloadSelfUpdate(e2);
-            final File bootStrapper = Application.getResource("tbs.jar");
-            bootStrapper.delete();
-            IO.writeToFile(bootStrapper, IO.readURL(Application.getRessourceURL("tbs.jar")));
-
-            ShutdownController.getInstance().addShutdownEvent(new RestartEvent(dest, Main.ARGS));
-            if (Main.OPTIONS.isGuiless()) {
-                Main.out(T._.restart_required_msg());
-                ShutdownController.getInstance().requestShutdown();
-            } else {
-                Dialog.getInstance().showMessageDialog(Dialog.LOGIC_COUNTDOWN, T._.restart_required_title(), T._.restart_required_msg());
-                ShutdownController.getInstance().requestShutdown();
-            }
-        } catch (final Throwable e) {
-            // Main.GUI.onException(e);
-            if (Main.OPTIONS.isGuiless()) {
-                Main.out(Exceptions.getStackTrace(e));
-            } else {
-                Dialog.getInstance().showExceptionDialog(T._.exception_title(), T._.exception_msg(), e);
-            }
-            ShutdownController.getInstance().requestShutdown();
-        }
-    }
 }
