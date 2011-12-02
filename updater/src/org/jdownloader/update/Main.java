@@ -200,7 +200,7 @@ public class Main {
 
                 try {
                     if (!Main.OPTIONS.isNoUpdates()) {
-                        Main.UPDATER.start();
+                        Main.UPDATER.runStateApp();
                     } else {
                         Main.out(T._.guiless_noupdates());
                     }
