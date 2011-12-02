@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -114,13 +115,22 @@ public class Browser {
     }
 
     public static String getHost(final String url) {
+        return Browser.getHost(url, false);
+    }
+
+    public static String getHost(final String url, final boolean includeSubDomains) {
         if (url == null) { return null; }
         /* direct ip */
         String ret = new Regex(url, "(.*?://)?(\\d+\\.\\d+\\.\\d+\\.\\d+)(/|$|:)").getMatch(1);
         if (ret != null) { return ret; }
         /* normal url */
-        ret = new Regex(url, ".*?([^.:/]+\\.[^.:/]+)(/|$|:)").getMatch(0);
-        if (ret != null) { return ret.toLowerCase(); }
+        if (includeSubDomains) {
+            ret = new Regex(url, ".*?://(.*?@)?(.*?)(/|$|:)").getMatch(1);
+        }
+        if (ret == null) {
+            ret = new Regex(url, ".*?([^.:/]+\\.[^.:/]+)(/|$|:)").getMatch(0);
+        }
+        if (ret != null) { return ret.toLowerCase(Locale.ENGLISH); }
         return url;
     }
 

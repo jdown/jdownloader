@@ -37,10 +37,12 @@ public class GetRequest extends Request {
 
     }
 
+    @Override
     public long postRequest(final URLConnectionAdapter httpConnection) throws IOException {
         return 0;
     }
 
+    @Override
     public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod(RequestMethod.GET);
     }
