@@ -2,7 +2,7 @@ function dosettings() {
 	
 	function log(type, event){
 		console.log(event);
-		$("#log").append(type).append(prettyPrint(event));
+		$("#log").prepend(type,prettyPrint(event));
 	}
 	
 	$.jd.setOptions({
