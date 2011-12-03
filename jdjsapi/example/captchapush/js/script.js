@@ -166,7 +166,7 @@ $(function CaptchaPush() {
 			apiServer : $("#apiurl").val(),
 			debug: true//,
 			//apiTimeout : 1000
-		}).send('jd/getVersion', onConnect, onConnectError);
+		}).send('jd/version', onConnect, onConnectError);
 		$("#auth .do").attr("disabled", "disabled");
 		return false;
 	});

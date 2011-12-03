@@ -15,21 +15,21 @@
   <div id="container">
     <div id="main" role="main">
     
-	<input id="url" style="width: 300px;text-align: center" type="text" value="http://127.0.0.1:3128/" />
-	<input id="sessiontoggle" type="button" value="Start Session">
-	<hr>
-	<input style="width: inherit;" id="samedomain" type="checkbox">Use JSON instead of JSONP
-	<input id="pollingtoggle" type="button" value="Start Polling">
-	<hr>
+    <input id="url" style="width: 300px;text-align: center" type="text" value="http://127.0.0.1:3128/" />
+    <input id="sessiontoggle" type="button" value="Start Session">
+    <hr>
+    <input style="width: inherit;" id="samedomain" type="checkbox">Use JSON instead of JSONP
+    <input id="pollingtoggle" type="button" value="Start Polling">
+    <hr>
 
-	<input id="send" type="text" value="ping" />
-	<textarea id="params" style="width:200px;height:100px;" placeholder="parameters"></textarea>
-	<button id="sendButton">Send</button>
-	<hr>
-	<div style="margin-top: 100px;">
-	<div id="pidlog" style="float:left; width: 49%;height:800px;border: solid black 1px">PID Responses:<br></div>
-	<div id="log"    style="float:right;width: 49%;height:800px;border: solid black 1px">Events:<br></div>
-	</div>
+    <input id="send" type="text" value="jd/version" />
+    <textarea id="params" style="width:200px;height:100px;" placeholder="parameters"></textarea>
+    <button id="sendButton">Send</button>
+    <hr>
+    <div style="margin-top: 100px;">
+    <div id="pidlog" style="float:left; width: 49%;height:800px;border: solid black 1px">PID Responses:<br></div>
+    <div id="log"    style="float:right;width: 49%;height:800px;border: solid black 1px">Events:<br></div>
+    </div>
     </div>
 
     <footer>
@@ -46,9 +46,9 @@
 
   <script type="text/javascript">
   if(location.hash =="#min")
-	  document.write("<script src='../dist/jdapi.jquery.min.js'>\x3C/script>");
+      document.write("<script src='../dist/jdapi.jquery.min.js'>\x3C/script>");
   else
-	  document.write("<script src='../src/jdapi.jquery.js'>\x3C/script>");
+      document.write("<script src='../src/jdapi.jquery.js'>\x3C/script>");
   </script>
   <script src="debug.js"></script>
 
