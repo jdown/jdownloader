@@ -40,7 +40,8 @@ This wrapper is the client side reference implementation containing all features
       </div>
       <h2>setOptions()</h2>
 <p>Set options</p>
-<p><strong>param</strong> {Object.<string, *>} options to set<br/></p>
+<p><strong>param</strong> {Object.<string, *>} options to set<br/>
+<strong>return</strong> {jQuery}<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">setOptions</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">setOptions</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
@@ -80,7 +81,8 @@ a session. For anonymous sessions, omit login parameters. If user and
 pass are set as options, you can omit these parameters.</p>
 <p><strong>param</strong> {string=} user (optional)<br/>
 <strong>param</strong> {string=} pass (optional)<br/>
-<strong>param</strong> {function(Object.<string, *>,?string=)=} callback<br/></p>
+<strong>param</strong> {function(Object.<string, *>,?string=)=} callback<br/></p>
+<p><strong>return</strong> {jQuery}<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">startSession</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">startSession</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pass</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
@@ -152,12 +154,16 @@ pass are set as options, you can omit these parameters.</p>
       </div>
       <h2>stopSession()</h2>
 <p>Stops a session.</p>
-<p><strong>param</strong> {function(Object.<string, *>,?string=)=} callback<br/></p>
+<p><strong>param</strong> {function(Object.<string, *>,?string=)=} callback<br/>
+<strong>return</strong> {jQuery}<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">stopSession</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">stopSession</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
 			<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">sessionStatus</span> <span class="o">===</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">e</span><span class="p">.</span><span class="nx">sessionStatus</span><span class="p">.</span><span class="nx">NO_SESSION</span><span class="p">)</span>
+			<span class="p">{</span>
+				<span class="nx">callback</span><span class="p">();</span>
 				<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+			<span class="p">}</span>		
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">stopPolling</span><span class="p">();</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">token</span> <span class="o">=</span> <span class="kc">undefined</span><span class="p">;</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span> <span class="o">=</span> <span class="p">{};</span>
@@ -212,7 +218,7 @@ pass are set as options, you can omit these parameters.</p>
 <p>Subscribe to events of a certain namespace. If you want to subscribe to all namespaces, use * as namespace parameter.
 In this case, the callback parameter will replace the onmessage setting.</p>
 <p><strong>param</strong> {string} namespace to subscribe to<br/>
-<strong>param</strong> {function(Object.<string, *>,?string=)=} callback function to be executed every time an event happens<br/>
+<strong>param</strong> {function(Object.<string, *>, ?string=)=} callback function to be executed every time an event happens<br/>
 <strong>param</strong> {function(Object.<string, *>)=} onSubscribed callback function to be executed as soon as you are subscribed.<br/>
 <strong>return</strong> {jQuery}<br/></p>
     </div>
@@ -222,7 +228,9 @@ In this case, the callback parameter will replace the onmessage setting.</p>
 			<span class="nx">namespace</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">cleanNamespace</span><span class="p">(</span><span class="nx">namespace</span><span class="p">);</span>
 			
 			<span class="k">if</span><span class="p">(</span><span class="nx">namespace</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">)</span>
-			<span class="p">{</span></pre></div>
+			<span class="p">{</span>
+				<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">callback</span><span class="p">))</span>
+					<span class="k">return</span> <span class="k">this</span><span class="p">;</span></pre></div>
     </div>
   </div>
   <div class='clearall'></div><div class='section' id='section-8'>
@@ -248,11 +256,15 @@ In this case, the callback parameter will replace the onmessage setting.</p>
 				<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">onSubscribed</span><span class="p">))</span>
 					<span class="nx">onSubscribed</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="o">:</span><span class="s2">&quot;callback added&quot;</span><span class="p">});</span>
 			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nx">callback</span><span class="p">];</span>
+				<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">callback</span><span class="p">))</span>
+				<span class="p">{</span>
+					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">subscriptions</span><span class="p">[</span><span class="nx">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nx">callback</span><span class="p">];</span>
+				<span class="p">}</span>
 				
 				<span class="k">if</span><span class="p">(</span><span class="nx">namespace</span> <span class="o">===</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
 				<span class="p">{</span>
-					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">onmessage</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span></pre></div>
+					<span class="k">if</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">callback</span><span class="p">))</span>
+						<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">onmessage</span> <span class="o">=</span> <span class="nx">callback</span><span class="p">;</span></pre></div>
     </div>
   </div>
   <div class='clearall'></div><div class='section' id='section-9'>
@@ -367,7 +379,7 @@ If you want to unsubscribe from all namespaces, use * as namespace parameter.</p
 				<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">jqXHR</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="c1">// abort running requests</span>
 					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">jqXHR</span><span class="p">.</span><span class="nx">abort</span><span class="p">();</span>
 				<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">jqXHR</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
-					<span class="nx">dataType</span> <span class="o">:</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">sameDomain</span> <span class="o">?</span> <span class="s2">&quot;json&quot;</span> <span class="o">:</span> <span class="s2">&quot;jsonp&quot;</span><span class="p">),</span>
+					<span class="nx">dataType</span> <span class="o">:</span> <span class="p">((</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">forceJSONP</span> <span class="o">||</span> <span class="p">(</span><span class="o">!</span><span class="nx">$</span><span class="p">.</span><span class="nx">support</span><span class="p">.</span><span class="nx">cors</span><span class="p">))</span> <span class="o">?</span> <span class="s2">&quot;jsonp&quot;</span> <span class="o">:</span> <span class="s2">&quot;json&quot;</span><span class="p">),</span>
 					<span class="nx">type</span> <span class="o">:</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span>
 					<span class="nx">url</span> <span class="o">:</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">getURL</span><span class="p">(</span><span class="s1">&#39;events/listen&#39;</span><span class="p">),</span>
 					<span class="nx">data</span> <span class="o">:</span> <span class="p">{</span>
@@ -471,7 +483,7 @@ request. If this parameter is either omitted or this functions does
 			<span class="p">}</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">debug</span><span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">getURL</span><span class="p">(</span><span class="nx">action</span><span class="p">),</span> <span class="nx">params</span><span class="p">,</span> <span class="nx">onSuccess</span><span class="p">,</span> <span class="nx">onError</span><span class="p">,</span> <span class="nx">onEvent</span> <span class="p">);</span>
 			<span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
-				<span class="nx">dataType</span> <span class="o">:</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">sameDomain</span> <span class="o">?</span> <span class="s2">&quot;json&quot;</span> <span class="o">:</span> <span class="s2">&quot;jsonp&quot;</span><span class="p">),</span>
+				<span class="nx">dataType</span> <span class="o">:</span> <span class="p">((</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_settings</span><span class="p">.</span><span class="nx">forceJSONP</span> <span class="o">||</span> <span class="p">(</span><span class="o">!</span><span class="nx">$</span><span class="p">.</span><span class="nx">support</span><span class="p">.</span><span class="nx">cors</span><span class="p">))</span> <span class="o">?</span> <span class="s2">&quot;jsonp&quot;</span> <span class="o">:</span> <span class="s2">&quot;json&quot;</span><span class="p">),</span>
 				<span class="nx">type</span> <span class="o">:</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span>
 				<span class="nx">url</span> <span class="o">:</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">getURL</span><span class="p">(</span><span class="nx">action</span><span class="p">),</span>
 				<span class="nx">data</span> <span class="o">:</span> <span class="p">{</span>
@@ -498,7 +510,7 @@ request. If this parameter is either omitted or this functions does
         <a class='octothorpe' href='#section-16'>#</a>
       </div>
       <h2>Settings</h2>
-<p>Set by using setOptions. <strong>Don't access this property directly.</strong></p>
+<p>Set by using setOptions. <strong>Don't access these properties directly.</strong></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>		<span class="nx">_settings</span> <span class="o">:</span> <span class="p">{</span></pre></div>
@@ -604,12 +616,12 @@ and sending.</p>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-24'>#</a>
       </div>
-      <h3>sameDomain</h3>
-<p>Use JSON instead of JSONP requests. (Force same domain origin)</p>
+      <h3>forceJSONP</h3>
+<p>Use JSONP instead of JSON requests although browser supports CORS according to jQuery.</p>
 <p><strong>type</strong> {boolean}<br/></p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>			<span class="nx">sameDomain</span> <span class="o">:</span> <span class="kc">false</span>
+      <div class="highlight"><pre>			<span class="nx">forceJSONP</span> <span class="o">:</span> <span class="kc">false</span>
 		<span class="p">},</span></pre></div>
     </div>
   </div>
@@ -730,12 +742,12 @@ requests</p>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-33'>#</a>
       </div>
-      <h3>callbackMap</h3>
+      <h3>pidCallbacks</h3>
 <p>Callback map storing callback functions for async requests. {pid :
 callback}</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>			<span class="nx">callbackMap</span> <span class="o">:</span> <span class="p">{},</span></pre></div>
+      <div class="highlight"><pre>			<span class="nx">pidCallbacks</span> <span class="o">:</span> <span class="p">{},</span></pre></div>
     </div>
   </div>
   <div class='clearall'></div><div class='section' id='section-34'>
@@ -744,7 +756,10 @@ callback}</p>
         <a class='octothorpe' href='#section-34'>#</a>
       </div>
       <h3>subscriptions</h3>
-<p>Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback]</p>
+<p>Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback] }
+Will get executed if an event is matching the given namespace. In contrast to pidCallbacks the onmessage
+function will get executed regardless of the return value
+<strong>type</strong> {Object.<string, Array.<function(Object.<string, *>, ?string=)&gt;&gt;}<br/></p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>			<span class="nx">subscriptions</span><span class="o">:</span> <span class="p">{},</span></pre></div>
@@ -807,7 +822,7 @@ called if further events associated with this pid are streamed.</p>
 
 				<span class="c1">//! register processCallback</span>
 				<span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="o">&amp;&amp;</span> <span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">onEvent</span><span class="p">))</span> <span class="p">{</span>
-					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">callbackMap</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">]</span> <span class="o">=</span> <span class="nx">onEvent</span><span class="p">;</span>
+					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">pidCallbacks</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">]</span> <span class="o">=</span> <span class="nx">onEvent</span><span class="p">;</span>
 					<span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">debug</span><span class="p">(</span><span class="s2">&quot;Register PID...&quot;</span><span class="p">,</span> <span class="nx">event</span><span class="p">);</span>
 				<span class="p">}</span>
 				<span class="c1">//! run normal callback</span>
@@ -903,10 +918,10 @@ passed to the onerror function</p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>			<span class="nx">handleEvent</span> <span class="o">:</span> <span class="kd">function</span> <span class="nx">handleEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
-				<span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">callbackMap</span><span class="p">))</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span> <span class="k">in</span> <span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">pidCallbacks</span><span class="p">))</span> <span class="p">{</span>
 					<span class="c1">//! If specific callback returns false,</span>
 					<span class="c1">//! don&#39;t trigger general callback</span>
-					<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">callbackMap</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">](</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">)</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">jd</span><span class="p">.</span><span class="nx">_ajax</span><span class="p">.</span><span class="nx">pidCallbacks</span><span class="p">[</span><span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">](</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">namespace</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">pid</span><span class="p">)</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span>
 						<span class="k">return</span><span class="p">;</span>
 
 				<span class="p">}</span>

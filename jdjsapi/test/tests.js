@@ -1,21 +1,16 @@
 /**
  * @author mhils
- * @version 2011-07-15
+ * @version 2011-12-11
  */
 // documentation on writing tests here: http://docs.jquery.com/QUnit
 
-if(!console)
-{
-	console = {
-		log: function() {}
-	};
-}
+
 
 var timeout = 3100;
 $.jd.setOptions({
 	apiTimeout : timeout,
-	apiServer: "http://192.168.2.110:3128/",
-	//debug: true,
+	apiServer: "http://127.0.0.1:3128/",
+	debug: true,
 	onerror: onErrorFail
 }); // Reduce test time
 
@@ -35,19 +30,6 @@ test("Test options", 1, function() {
 		'foo' : 'bar'
 	});
 	equal($.jd.getOptions().foo, "bar", "Settings are working.");
-});
-
-asyncTest("call not existing url, raising exception", 1, function() {
-	$.jd.send('arrrr', 
-		function(e) {
-			ok(false,"onmessage called.");
-			start();
-		},
-		function(e){
-			ok(true,"onError called: "+$.toJSON(e));
-			start();
-		}		
-	);
 });
 
 asyncTest("init with no credentials (anonymous) & disconnect",3, function() {
@@ -98,18 +80,30 @@ asyncTest("send", function() {
 			
 		}
 	});
-	$.jd.send('ping', function(e) {
-		equal(e, "pong", "Direct Callback Event: " + $.toJSON(e));
+	$.jd.send('jd/version', function(e) {
+		ok(true, "Direct Callback Event returning version: " + $.toJSON(e));
 		start();
 	}, onErrorFail);
 
 });
 
+asyncTest("call not existing url, raising exception", 1, function() {
+	$.jd.send('arrrr', 
+		function(e) {
+			ok(false,"onmessage called.");
+			start();
+		},
+		function(e){
+			ok(true,"onError called: "+$.toJSON(e));
+			start();
+		}		
+	);
+});
 
 asyncTest("send & pid send", 7, function() {
-	$.jd.send('startCounter', function(e1,pid1) {
+	$.jd.send('test/startCounter', function(e1,pid1) {
 		ok(pid1,"PID1 returned: " + pid1);
-		$.jd.send('startCounter', function(e2,pid2) {
+		$.jd.send('test/startCounter', function(e2,pid2) {
 			ok(pid2,"PID2 returned: " + pid2);
 			$.jd.send('processes/list', function(processlist) {
 				$.each([pid1,pid2],function(i,pid)
@@ -129,7 +123,7 @@ asyncTest("send & pid send", 7, function() {
 						ok(parseInt(value) !== NaN,"getValue: "+$.toJSON(value));
 						
 						$.jd.send('processes/'+pid1+'/stopCounter', function(e){
-							ok2("stopCounter",e);
+							ok2("test/stopCounter",e);
 							$.jd.send('processes/list', function(processlist) {
 								for(p in processlist)
 									if(p.pid === pid1)

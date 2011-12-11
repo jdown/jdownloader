@@ -10,7 +10,7 @@ function dosettings() {
         user: "user",
         pass: "pass",
         apiServer : $("#url").val(),
-        sameDomain : ($("#samedomain").attr("checked") === "checked"),
+        forceJSONP : ($("#forcejsonp").attr("checked") === "checked"),
         onmessage : function(data) {log("Event: <br>",data);},
         onerror : function(data) {log("Error: <br>",data);}
     });
@@ -52,7 +52,7 @@ $(function() {
                 });
             });
 
-    $("#samedomain").click(function() {
+    $("#forcejsonp").click(function() {
         dosettings();
     });
     $("#pollingtoggle").click(function() {

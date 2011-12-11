@@ -120,7 +120,10 @@
 		 */
 		stopSession : function stopSession(callback) {
 			if($.jd._ajax.sessionStatus === $.jd.e.sessionStatus.NO_SESSION)
+			{
+				callback();
 				return this;
+			}		
 			$.jd.stopPolling();
 			$.jd._ajax.token = undefined;
 			$.jd._ajax.subscriptions = {};
@@ -280,7 +283,7 @@
 				if ($.jd._ajax.jqXHR !== null) // abort running requests
 					$.jd._ajax.jqXHR.abort();
 				$.jd._ajax.jqXHR = $.ajax({
-					dataType : ($.jd._settings.sameDomain ? "json" : "jsonp"),
+					dataType : (($.jd._settings.forceJSONP || (!$.support.cors)) ? "jsonp" : "json"),
 					type : "GET",
 					url : $.jd.getURL('events/listen'),
 					data : {
@@ -374,7 +377,7 @@
 			}
 			$.jd._ajax.debug( $.jd.getURL(action), params, onSuccess, onError, onEvent );
 			$.ajax({
-				dataType : ($.jd._settings.sameDomain ? "json" : "jsonp"),
+				dataType : (($.jd._settings.forceJSONP || (!$.support.cors)) ? "jsonp" : "json"),
 				type : "GET",
 				url : $.jd.getURL(action),
 				data : {
@@ -453,12 +456,12 @@
 			 */
 			apiTimeout : 31000,
 			/**
-			 * ###sameDomain
-			 * Use JSON instead of JSONP requests. (Force same domain origin)
+			 * ###forceJSONP
+			 * Use JSONP instead of JSON requests although browser supports CORS according to jQuery. 
 			 * 
 			 * @type {boolean}
 			 */
-			sameDomain : false
+			forceJSONP : false
 		},
 		//##Enums
 		e : {
@@ -524,9 +527,9 @@
 			/**
 			 * ###subscriptions
 			 * Callback map storing callback functions for events belonging to subscribed modules. {namespace : [callback] }
-			 * Will get executed if an events matching the given namespace appears. In contrast to pidCallbacks the onmessage 
+			 * Will get executed if an event is matching the given namespace. In contrast to pidCallbacks the onmessage 
 			 * function will get executed regardless of the return value
-			 * @type {Array.<string>}
+			 * @type {Object.<string, Array.<function(Object.<string, *>, ?string=)>>}
 			 */
 			subscriptions: {},
 			/**
