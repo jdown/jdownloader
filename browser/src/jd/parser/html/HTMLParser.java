@@ -441,6 +441,8 @@ public class HTMLParser {
         data = data.replaceAll("<br.*?>", "\r\n");
         /* remove word breaks */
         data = data.replaceAll("<wbr>", "");
+        /* remove HTML Tags */
+        data = data.replaceAll("</?(i|b|u|s)>", "");
         /*
          * remove all span because they can break url parsing (eg when
          * google-code-prettify is used)
