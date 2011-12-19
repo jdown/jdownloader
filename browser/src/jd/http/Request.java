@@ -440,7 +440,7 @@ public abstract class Request {
         } else {
             this.headers.put("Accept-Encoding", "gzip");
         }
-        this.headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        this.headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
 
         this.headers.put("Cache-Control", "no-cache");
         this.headers.put("Pragma", "no-cache");
