@@ -57,7 +57,8 @@ public class Main {
     private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
     private static final SwitchParam    INSTALL_PACKAGE    = new SwitchParam("install", "PACKAGE_ID | Install optional package");
     private static final SwitchParam    UNINSTALL_PACKAGE  = new SwitchParam("uninstall", "PACKAGE_ID | Uninstall optional package");
-
+    private static final SwitchParam    HELP               = new SwitchParam("help", "Show this help");
+    private static final SwitchParam    HELP2              = new SwitchParam("?", "Show this help");
     private static StandaloneUpdaterGui GUI                = null;
 
     private static Options              OPTIONS;
@@ -69,6 +70,7 @@ public class Main {
         if (Charset.defaultCharset() == Charset.forName("cp1252")) {
             try {
                 Main.OUT = new PrintStream(new FileOutputStream(FileDescriptor.out), true, "CP850");
+
             } catch (final UnsupportedEncodingException e) {
                 Main.OUT = System.out;
             }
@@ -138,12 +140,16 @@ public class Main {
         Application.setApplication(".appwork");
         Main.init();
         if (Application.isJared(Main.class)) {
-            Log.L.setLevel(Level.INFO);
+            // Log.L.setLevel(Level.INFO);
         } else {
             Log.L.setLevel(Level.ALL);
         }
-        Main.parseParams(args);
-
+        try {
+            Main.parseParams(args);
+        } catch (Throwable e) {
+            Log.exception(e);
+            ShutdownController.getInstance().requestShutdown();
+        }
         Main.out(T._.start());
         Main.out(JSonStorage.toString(Main.OPTIONS));
 
@@ -189,7 +195,7 @@ public class Main {
                     }
 
                 }.getReturnValue();
-
+                System.out.println(1);
             } else {
 
                 Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER) {
@@ -316,7 +322,22 @@ public class Main {
         Main.ARGS = args;
         for (int i = 0; i < args.length; i++) {
             final String p = args[i];
-            if (Main.RESTART.matches(p)) {
+            System.out.println("Parameter " + p);
+            if (HELP.matches(p) || HELP2.matches(p)) {
+                Main.APP.print();
+                Main.AUTOCLOSE.print();
+                Main.BRANCH.print();
+                Main.DEBUG.print();
+                Main.DISABLED_OS_FILTER.print();
+                Main.GUILESS.print();
+                Main.INSTALL_PACKAGE.print();
+                Main.LOGLEVEL.print();
+                Main.NOUPDATE.print();
+                Main.RESTART.print();
+                Main.UNINSTALL_PACKAGE.print();
+                Main.WORKINGDIR.print();
+                ShutdownController.getInstance().requestShutdown();
+            } else if (Main.RESTART.matches(p)) {
                 final String path = args[++i];
                 Main.OPTIONS.setRestartCommand(path);
                 Main.RESTART.print();
@@ -350,7 +371,7 @@ public class Main {
                 final String app = args[++i];
                 Main.OPTIONS.setApp(app);
             } else if (Main.LOGLEVEL.matches(p)) {
-                Log.L.setLevel(Level.parse(p.toUpperCase()));
+                Log.L.setLevel(Level.parse(args[++i].toUpperCase()));
 
             } else if (Main.BRANCH.matches(p)) {
                 String br = args[++i];
