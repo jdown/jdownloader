@@ -38,19 +38,22 @@ import org.jdownloader.update.translate.T;
 
 public class Main {
     static {
+        Application.setApplication(".jd_home");
+        Log.L.setLevel(Level.OFF);
         final JSonMapper mapper = ((SimpleMapper) JSonStorage.getMapper()).getMapper();
         // ignore Mapping errors. If client is not up2date, illegal server
         // responses shall not kill him.
         mapper.setIgnoreIllegalArgumentMappings(true);
 
         // do this call to keep the correct root in Application Cache
-        Application.setApplication(".jd_home");
+
         Application.getRoot(Main.class);
         AWUTheme.I().setNameSpace("org/jdownloader/updater/");
 
     }
     private static final SwitchParam    AUTOCLOSE          = new SwitchParam("autoclose", "TIMEOUT | Restartpath after update");
     private static final SwitchParam    RESTART            = new SwitchParam("restart", "RESTART COMMAND | Restartpath after update");
+
     private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
     private static final SwitchParam    INSTALL_PACKAGE    = new SwitchParam("install", "PACKAGE_ID | Install optional package");
     private static final SwitchParam    UNINSTALL_PACKAGE  = new SwitchParam("uninstall", "PACKAGE_ID | Uninstall optional package");
@@ -189,9 +192,9 @@ public class Main {
 
             } else {
 
-                Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER){
+                Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER) {
                     protected void out(String str) {
-                        out(str);
+                        Main.out(str);
                     }
                 });
                 ShutdownController.getInstance().addShutdownEvent(new CtrlCHandler(UPDATER));
