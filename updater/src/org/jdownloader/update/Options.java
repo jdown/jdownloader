@@ -16,14 +16,14 @@ public class Options implements UpdaterOptions {
     private String               workingDirectory;
 
     private final UpdaterOptions op;
-    private boolean              debug;
-
+ 
     private boolean              fullUpdate;
-    private boolean              noUpdates = false;
+    private boolean              noUpdates        = false;
     private String[]             optionalList;
     private String[]             uninstallList;
-    private int autoCloseTimeout;
-
+    private int                  autoCloseTimeout = -1;
+    private String savedBranch;
+   
     public Options() {
         // some options shall not be written back to configfile.
         this.op = JsonConfig.create(UpdaterOptions.class);
@@ -33,11 +33,13 @@ public class Options implements UpdaterOptions {
         }
 
         this.branch = this.op.getBranch();
+        savedBranch=branch;
+      
         this.guiless = this.op.isGuiless() || GraphicsEnvironment.isHeadless();
         this.osFilter = this.op.isOsFilterEnabled();
         this.restart = this.op.getRestartCommand();
         this.workingDirectory = this.op.getWorkingDirectory();
-        this.debug = this.op.isDebug();
+     
         this.fullUpdate = this.op.isFullUpdate();
         this.optionalList = this.op.getOptionalList();
         if (this.optionalList == null) {
@@ -55,11 +57,11 @@ public class Options implements UpdaterOptions {
     public String getBranch() {
         return this.branch;
     }
-
-    @Override
-    public String getCurrentBranch() {
-        return this.op.getCurrentBranch();
-    }
+//
+//    @Override
+//    public String getCurrentBranch() {
+//        return this.op.getCurrentBranch();
+//    }
 
     @Override
     public String[] getOptionalList() {
@@ -98,11 +100,7 @@ public class Options implements UpdaterOptions {
         return this.workingDirectory;
     }
 
-    @Override
-    public boolean isDebug() {
-        return this.debug;
-    }
-
+ 
     public boolean isFullUpdate() {
         return this.fullUpdate;
     }
@@ -129,19 +127,21 @@ public class Options implements UpdaterOptions {
 
     @Override
     public void setBranch(final String branch) {
-        this.branch = branch;
-        this.op.setBranch(branch);
+        if (this.branch == branch) return;
+
+      
+            this.branch = branch;        
+            this.op.setBranch(branch);
+        
     }
 
-    @Override
-    public void setCurrentBranch(final String name) {
-        this.op.setCurrentBranch(name);
+    public boolean isSavedBranch() {
+        return savedBranch!=null;
     }
 
-    @Override
-    public void setDebug(final boolean b) {
-        this.debug = b;
-
+ 
+    public String getSavedBranch() {
+        return savedBranch;
     }
 
     public void setFullUpdate(final boolean fullUpdate) {
@@ -183,7 +183,7 @@ public class Options implements UpdaterOptions {
     }
 
     public void setAutoCloseTimeout(int parseInt) {
-        this.autoCloseTimeout=parseInt;
+        this.autoCloseTimeout = parseInt;
     }
 
     public int getAutoCloseTimeout() {

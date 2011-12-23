@@ -13,6 +13,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 
+import org.appwork.app.launcher.parameterparser.CommandSwitch;
+import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
+import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -51,12 +54,12 @@ public class Main {
         AWUTheme.I().setNameSpace("org/jdownloader/updater/");
 
     }
-    private static final SwitchParam    AUTOCLOSE          = new SwitchParam("autoclose", "TIMEOUT | Restartpath after update");
-    private static final SwitchParam    RESTART            = new SwitchParam("restart", "RESTART COMMAND | Restartpath after update");
+    private static final SwitchParam    AUTOCLOSE          = new SwitchParam("autoclose", "Restartpath after update","TIMEOUT_IN_SECONDS");
+    private static final SwitchParam    RESTART            = new SwitchParam("restart", "Restartpath after update","RESTART_COMMAND");
 
-    private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "| Set Installdirectory");
-    private static final SwitchParam    INSTALL_PACKAGE    = new SwitchParam("install", "PACKAGE_ID | Install optional package");
-    private static final SwitchParam    UNINSTALL_PACKAGE  = new SwitchParam("uninstall", "PACKAGE_ID | Uninstall optional package");
+    private static final SwitchParam    WORKINGDIR         = new SwitchParam("dir", "Set Installdirectory");
+    private static final SwitchParam    INSTALL_PACKAGE    = new SwitchParam("install", "Install optional package","PACKAGE_ID_OR_FILENAME");
+    private static final SwitchParam    UNINSTALL_PACKAGE  = new SwitchParam("uninstall", "Uninstall optional package","PACKAGE_ID_OR_FILENAME");
     private static final SwitchParam    HELP               = new SwitchParam("help", "Show this help");
     private static final SwitchParam    HELP2              = new SwitchParam("?", "Show this help");
     private static StandaloneUpdaterGui GUI                = null;
@@ -65,7 +68,8 @@ public class Main {
 
     private static Updater              UPDATER;
     private static PrintStream          OUT                = null;
-    private static String[]             ARGS;
+
+    private static ParameterParser pp;
     static {
         if (Charset.defaultCharset() == Charset.forName("cp1252")) {
             try {
@@ -79,18 +83,17 @@ public class Main {
         }
 
     }
-    private static final SwitchParam    DEBUG              = new SwitchParam("debug", "| Run In debug mode. does not write logfiles, but writes to stdout/stderr");
+  
+    private static final SwitchParam    GUILESS            = new SwitchParam("guiless", "Run silently or in console mode");
 
-    private static final SwitchParam    GUILESS            = new SwitchParam("guiless", "| Run silently or in console mode");
+    private static final SwitchParam    DISABLED_OS_FILTER = new SwitchParam("noosfilter", "Update all files. Even files which are marked as invalid for your os");
 
-    private static final SwitchParam    DISABLED_OS_FILTER = new SwitchParam("noosfilter", "| Update all files. Even files which are marked as invalid for your os");
+    private static final SwitchParam    LOGLEVEL           = new SwitchParam("log", "Set the Loglevel: ALL,FINER,FINE,INFO,WARNING,SEVERE","LEVEL");
 
-    private static final SwitchParam    LOGLEVEL           = new SwitchParam("log", "LEVEL | Set the Loglevel: ALL,FINER,FINE,INFO,WARNING,SEVERE");
+    private static final SwitchParam    BRANCH             = new SwitchParam("branch", "Sets the desired Branch","BRANCHNAME");
 
-    private static final SwitchParam    BRANCH             = new SwitchParam("branch", "BRANCHNAME | Sets the desired Branch");
-
-    private static final SwitchParam    APP                = new SwitchParam("app", "AppID | Sets the desired AppID");
-    private static final SwitchParam    NOUPDATE           = new SwitchParam("noupdate", "| Bypasses updatesystem");
+    private static final SwitchParam    APP                = new SwitchParam("app",  "Sets the desired AppID","APPID");
+    private static final SwitchParam    NOUPDATE           = new SwitchParam("noupdate", "Bypasses updatesystem");
 
     private static void init() {
         // only use ipv4, because debian changed default stack to ipv6
@@ -144,14 +147,84 @@ public class Main {
         } else {
             Log.L.setLevel(Level.ALL);
         }
-        try {
-            Main.parseParams(args);
-        } catch (Throwable e) {
-            Log.exception(e);
-            ShutdownController.getInstance().requestShutdown();
-        }
+        
+        Main.OPTIONS = new Options();
+         pp = new ParameterParser(args);
+         pp.getEventSender().addListener(new CommandSwitchListener() {
+            
+            @Override
+            public void executeCommandSwitch(CommandSwitch event) {
+                
+     
+             
+         
+                    final String p = event.getSwitchCommand();
+                    System.out.println("Parameter " + p);
+                  if (Main.RESTART.matches(p)) {
+                     
+                        Main.OPTIONS.setRestartCommand(event.getParameters()[0]);
+                        System.out.println(Main.RESTART);
+
+                    } else if (Main.WORKINGDIR.matches(p)) {
+                     
+                        Main.OPTIONS.setWorkingDirectory(event.getParameters()[0]);
+                        System.out.println(Main.WORKINGDIR);
+                    } else if (Main.INSTALL_PACKAGE.matches(p)) {
+                    
+                        Main.OPTIONS.setOptionalList(event.getParameters()[0].split("\\,\\s*"));
+
+                    } else if (Main.UNINSTALL_PACKAGE.matches(p)) {
+                
+                        Main.OPTIONS.setUninstallList(event.getParameters()[0].split("\\,\\s*"));
+
+                 
+                    } else if (Main.GUILESS.matches(p)) {
+                        Main.OPTIONS.setGuiless(true);
+                    } else if (Main.AUTOCLOSE.matches(p)) {
+                        OPTIONS.setAutoCloseTimeout(Integer.parseInt(event.getParameters()[0]));
+                        System.out.println(AUTOCLOSE);
+                    } else if (Main.NOUPDATE.matches(p)) {
+                        Main.OPTIONS.setNoUpdate(true);
+
+                    } else if (Main.DISABLED_OS_FILTER.matches(p)) {
+                        Main.OPTIONS.setOsFilterEnabled(false);
+
+                    } else if (Main.APP.matches(p)) {
+                        final String app = event.getParameters()[0];
+                        Main.OPTIONS.setApp(app);
+                    } else if (Main.LOGLEVEL.matches(p)) {
+                        Log.L.setLevel(Level.parse(event.getParameters()[0].toUpperCase()));
+
+                    } else if (Main.BRANCH.matches(p)) {
+                      
+                        if (event.getParameters().length==0||event.getParameters()[0].equalsIgnoreCase("reset") || event.getParameters()[0].equalsIgnoreCase("stable")) {
+                            Main.OPTIONS.setBranch(null);
+                        }else{
+                        String br = event.getParameters()[0];
+                        Main.OPTIONS.setBranch(br);
+                        }
+                    }else{
+                        System.out.println(Main.HELP);
+                        System.out.println(Main.APP);
+                        System.out.println(Main.BRANCH);
+                    
+                        System.out.println(Main.DISABLED_OS_FILTER);
+                        System.out.println(Main.GUILESS);
+                        System.out.println(Main.INSTALL_PACKAGE);
+                        System.out.println(Main.LOGLEVEL);
+                        System.out.println(Main.NOUPDATE);
+                        System.out.println(Main.RESTART);
+                        System.out.println(Main.UNINSTALL_PACKAGE);
+                        System.out.println(Main.WORKINGDIR);
+                    }
+                
+            }
+        });
+         pp.parse();
+       
         Main.out(T._.start());
-        Main.out(JSonStorage.toString(Main.OPTIONS));
+
+        Log.L.info(JSonStorage.toString(Main.OPTIONS));
 
         Main.UPDATER = new Updater(new UpdaterHttpClientImpl(), Main.OPTIONS);
         if (!Application.isJared(Main.class)) {
@@ -176,9 +249,9 @@ public class Main {
                                 String rest = Main.OPTIONS.getRestartCommand();
                                 if (rest == null || rest.trim().length() == 0) {
                                     if (CrossSystem.isWindows()) {
-                                        rest = "JDownloader.exe -rfu";
+                                        rest = "JDownloader.exe -rfu -scan";
                                     } else if (CrossSystem.isLinux()) {
-                                        rest = CrossSystem.getJavaBinary() + " -jar JDownloader.jar -rfu";
+                                        rest = CrossSystem.getJavaBinary() + " -jar JDownloader.jar -rfu -scan";
                                     } else {
                                         rest = "open ../../../JDownloader.app -rfu";
                                     }
@@ -195,7 +268,7 @@ public class Main {
                     }
 
                 }.getReturnValue();
-                System.out.println(1);
+               
             } else {
 
                 Main.UPDATER.getEventSender().addListener(new ConsoleHandler(Main.UPDATER) {
@@ -282,8 +355,8 @@ public class Main {
 
         } catch (final ClientUpdateRequiredException e) {
             e.printStackTrace();
-            for (final String a : ARGS) {
-                if (a.equals("-tbs")) {
+     
+            if(pp.hasCommandSwitch("tbs")) {
                     if (Main.OPTIONS.isGuiless()) {
                         Main.out(T._.updateloop());
                         ShutdownController.getInstance().requestShutdown();
@@ -294,12 +367,12 @@ public class Main {
 
                     return;
                 }
-            }
-            UPDATER.selfUpdate(e, ARGS);
+            
+            UPDATER.selfUpdate(e, pp.getRawArguments());
 
         } catch (final Exception e) {
             if (!Main.UPDATER.isInterrupted()) {
-                Log.exception(Level.WARNING, e);
+                Log.exception(Level.INFO, e);
             }
 
         }
@@ -317,72 +390,7 @@ public class Main {
         }
     }
 
-    private static void parseParams(final String[] args) {
-        Main.OPTIONS = new Options();
-        Main.ARGS = args;
-        for (int i = 0; i < args.length; i++) {
-            final String p = args[i];
-            System.out.println("Parameter " + p);
-            if (HELP.matches(p) || HELP2.matches(p)) {
-                Main.APP.print();
-                Main.AUTOCLOSE.print();
-                Main.BRANCH.print();
-                Main.DEBUG.print();
-                Main.DISABLED_OS_FILTER.print();
-                Main.GUILESS.print();
-                Main.INSTALL_PACKAGE.print();
-                Main.LOGLEVEL.print();
-                Main.NOUPDATE.print();
-                Main.RESTART.print();
-                Main.UNINSTALL_PACKAGE.print();
-                Main.WORKINGDIR.print();
-                ShutdownController.getInstance().requestShutdown();
-            } else if (Main.RESTART.matches(p)) {
-                final String path = args[++i];
-                Main.OPTIONS.setRestartCommand(path);
-                Main.RESTART.print();
-
-            } else if (Main.WORKINGDIR.matches(p)) {
-                final String path = args[++i];
-                Main.OPTIONS.setWorkingDirectory(path);
-                Main.WORKINGDIR.print();
-            } else if (Main.INSTALL_PACKAGE.matches(p)) {
-                final String path = args[++i];
-                Main.OPTIONS.setOptionalList(path.split("\\,\\s*"));
-
-            } else if (Main.UNINSTALL_PACKAGE.matches(p)) {
-                final String path = args[++i];
-                Main.OPTIONS.setUninstallList(path.split("\\,\\s*"));
-
-            } else if (Main.DEBUG.matches(p)) {
-                Main.OPTIONS.setDebug(true);
-            } else if (Main.GUILESS.matches(p)) {
-                Main.OPTIONS.setGuiless(true);
-            } else if (Main.AUTOCLOSE.matches(p)) {
-                OPTIONS.setAutoCloseTimeout(Integer.parseInt(args[++i]));
-                AUTOCLOSE.print();
-            } else if (Main.NOUPDATE.matches(p)) {
-                Main.OPTIONS.setNoUpdate(true);
-
-            } else if (Main.DISABLED_OS_FILTER.matches(p)) {
-                Main.OPTIONS.setOsFilterEnabled(false);
-
-            } else if (Main.APP.matches(p)) {
-                final String app = args[++i];
-                Main.OPTIONS.setApp(app);
-            } else if (Main.LOGLEVEL.matches(p)) {
-                Log.L.setLevel(Level.parse(args[++i].toUpperCase()));
-
-            } else if (Main.BRANCH.matches(p)) {
-                String br = args[++i];
-                if (br.equalsIgnoreCase("reset") || br.equalsIgnoreCase("stable")) {
-                    br = null;
-                }
-                Main.OPTIONS.setBranch(br);
-
-            }
-        }
-    }
+  
 
     private static void restart() {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -393,7 +401,7 @@ public class Main {
             @Override
             public void run() {
                 final ProcessBuilder pb = new ProcessBuilder(ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
-                System.out.println("REstart: " + ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
+                System.out.println("Restart: " + ShellParser.splitCommandString(Main.OPTIONS.getRestartCommand()));
                 /*
                  * needed because the root is different for jre/class version
                  */
