@@ -31,13 +31,12 @@ import jd.parser.Regex;
 
 import org.appwork.utils.encoding.Hex;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
 
 public class HTMLParser {
 
     final static class Httppattern {
         public Pattern p;
-        public int group;
+        public int     group;
 
         public Httppattern(final Pattern p, final int group) {
             this.p = p;
@@ -46,10 +45,10 @@ public class HTMLParser {
     }
 
     final private static Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("src.*?=.*?['|\"](.*?)['|\"]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("src.*?=(.*?)[ |>]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
-    final private static String protocolPattern = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist|file)";
-    final private static Pattern[] basePattern = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
-    final private static Pattern pat1 = Pattern.compile("(" + HTMLParser.protocolPattern + "://|(?<!://)www\\.)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    private static Pattern mp = null;
+    final private static String        protocolPattern    = "(flashget|h.{2,3}|directhttp|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist|file)";
+    final private static Pattern[]     basePattern        = new Pattern[] { Pattern.compile("href=('|\")(.*?)('|\")", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+    final private static Pattern       pat1               = Pattern.compile("(" + HTMLParser.protocolPattern + "://|(?<!://)www\\.)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static Pattern             mp                 = null;
 
     static {
         try {
@@ -78,20 +77,8 @@ public class HTMLParser {
                     results.add(data.replaceAll("\\s", "%20"));
                 } else {
                     final String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceAll("[<>\"]*", "");
-                    HTTPConnection con = null;
-                    try {
-                        if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
-                            results.add(link.replaceAll("\\s", "%20"));
-                            return results;
-                        }
-                    } catch (final Exception e) {
-                        // TODO Auto-generated catch block
-                        Log.exception(e);
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
-                        }
+                    if (!link.matches(".*\\s.*")) {
+                        results.add(link.replaceAll("\\s", "%20"));
                     }
                 }
             }
