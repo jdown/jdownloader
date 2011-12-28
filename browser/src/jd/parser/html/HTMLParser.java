@@ -181,15 +181,15 @@ public class HTMLParser {
             } else {
                 /* lets check if tag contains links */
                 HTMLParser._getHttpLinksWalker(nexttag, url, results);
-                final int pos = data.indexOf('>');
-                if (pos >= 0 && data.length() >= pos + 1) {
-                    final int posb = data.indexOf('<');
-                    if (posb > 0) {
+                final int tagClose = data.indexOf('>');
+                if (tagClose >= 0 && data.length() >= tagClose + 1) {
+                    final int tagOpen = data.indexOf('<');
+                    if (tagOpen > 0 && tagOpen<tagClose) {
                         /*
                          * there might be some data left before the tag, do not
                          * remove that data
                          */
-                        String dataLeft = data.substring(0, posb);
+                        String dataLeft = data.substring(0, tagOpen);
                         StringBuilder sb = new StringBuilder();
                         if (dataLeft.contains(">")) {
                             sb.append("<");
@@ -200,18 +200,20 @@ public class HTMLParser {
                             sb.append(">");
                         }
                         sb.append(" ");
-                        sb.append(data.substring(pos + 1));
+                        sb.append(data.substring(tagClose + 1));
                         data = sb.toString();
                         sb = null;
                         dataLeft = null;
                     } else {
                         /* remove tag at begin of data */
-                        data = data.substring(pos + 1);
+                        data = data.substring(tagClose + 1);
+                        if (data.length() == 0) return results;
                     }
                     // System.out.println("SubCall: "+data.length());
                 } else {
                     /* remove tag at begin of data */
-                    data = data.substring(pos + 1);
+                    data = data.substring(tagClose + 1);
+                    if (data.length() == 0) return results;
                 }
             }
         }
@@ -268,7 +270,7 @@ public class HTMLParser {
     }
 
     /**
-     * Diese Methode sucht nach passwörtern in einem Datensatz
+     * Diese Methode sucht nach passwÃ¶rtern in einem Datensatz
      * 
      * @param data
      * @return
@@ -278,7 +280,7 @@ public class HTMLParser {
         final ArrayList<String> ret = new ArrayList<String>();
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
-        Pattern pattern = Pattern.compile("(пароль|пасс|pa?s?w|passwort|password|passw?)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile("(Ð¿Ð°Ñ€Ð¾Ð»ÑŒ|Ð¿Ð°Ñ�Ñ�|pa?s?w|passwort|password|passw?)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(data);
         while (matcher.find()) {
             final String pass = matcher.group(2);
@@ -286,7 +288,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(пароль|пасс|pa?s?w|passwort|password|passw?)[\\s][\\s]*?([[^\\:\"'\\s]][^\"'\\s]*)[\\s]?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(Ð¿Ð°Ñ€Ð¾Ð»ÑŒ|Ð¿Ð°Ñ�Ñ�|pa?s?w|passwort|password|passw?)[\\s][\\s]*?([[^\\:\"'\\s]][^\"'\\s]*)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             final String pass = matcher.group(2);
@@ -294,7 +296,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(пароль|пасс|pa?s?w|passwort|password|passw?)[\\s]?(\\:|=)[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(Ð¿Ð°Ñ€Ð¾Ð»ÑŒ|Ð¿Ð°Ñ�Ñ�|pa?s?w|passwort|password|passw?)[\\s]?(\\:|=)[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             final String pass = matcher.group(2);
@@ -302,7 +304,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(пароль|пасс|pa?s?w|passwort|password|passw?)[\\s]?(\\:|=[\\s]*?)([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(Ð¿Ð°Ñ€Ð¾Ð»ÑŒ|Ð¿Ð°Ñ�Ñ�|pa?s?w|passwort|password|passw?)[\\s]?(\\:|=[\\s]*?)([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             final String pass = matcher.group(3);
@@ -316,7 +318,7 @@ public class HTMLParser {
 
     /**
      * Diese Methode sucht die vordefinierten input type="hidden" und formatiert
-     * sie zu einem poststring z.b. würde bei:
+     * sie zu einem poststring z.b. wÃ¼rde bei:
      * 
      * <input type="hidden" name="f" value="f50b0f" /> <input type="hidden"
      * name="h" value="390b4be0182b85b0" /> <input type="hidden" name="b"
@@ -328,7 +330,7 @@ public class HTMLParser {
      *            Der zu durchsuchende Text
      * 
      * @return ein String, der als POST Parameter genutzt werden kann und alle
-     *         Parameter des Formulars enthält
+     *         Parameter des Formulars enthÃ¤lt
      */
     public static String getFormInputHidden(final String data) {
         return HTMLParser.joinMap(HTMLParser.getInputHiddenFields(data), "=", "&");
@@ -337,7 +339,7 @@ public class HTMLParser {
     /**
      * Diese Methode sucht die vordefinierten input type="hidden" zwischen
      * startpattern und lastpattern und formatiert sie zu einem poststring z.b.
-     * würde bei:
+     * wÃ¼rde bei:
      * 
      * <input type="hidden" name="f" value="f50b0f" /> <input type="hidden"
      * name="h" value="390b4be0182b85b0" /> <input type="hidden" name="b"
@@ -352,7 +354,7 @@ public class HTMLParser {
      * @param lastPattern
      *            der Pattern, bei dem die Suche endet
      * @return ein String, der als POST Parameter genutzt werden kann und alle
-     *         Parameter des Formulars enthält
+     *         Parameter des Formulars enthÃ¤lt
      */
     public static String getFormInputHidden(final String data, final String startPattern, final String lastPattern) {
         final String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getMatch(0);
@@ -365,7 +367,7 @@ public class HTMLParser {
     }
 
     /**
-     * Gibt alle links die in data gefunden wurden als Stringliste zurück
+     * Gibt alle links die in data gefunden wurden als Stringliste zurÃ¼ck
      * 
      * @param data
      * @return STringliste
@@ -450,7 +452,7 @@ public class HTMLParser {
     }
 
     /**
-     * Gibt alle Hidden fields als hasMap zurück
+     * Gibt alle Hidden fields als hasMap zurÃ¼ck
      * 
      * @param data
      * @return hasmap mit allen hidden fields variablen
@@ -497,7 +499,7 @@ public class HTMLParser {
 
     /**
      * Ermittelt alle hidden input felder in einem HTML Text und gibt die hidden
-     * variables als hashmap zurück es wird dabei nur der text zwischen start
+     * variables als hashmap zurÃ¼ck es wird dabei nur der text zwischen start
      * dun endpattern ausgewertet
      * 
      * @param data
@@ -538,14 +540,14 @@ public class HTMLParser {
     }
 
     /**
-     * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
+     * @author olimex FÃ¼gt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern
      * @param map
      *            Map
      * @param delPair
      *            Trennzeichen zwischen Key und Value
      * @param delMap
-     *            Trennzeichen zwischen Map-Einträgen
+     *            Trennzeichen zwischen Map-EintrÃ¤gen
      * @return Key-value pairs
      */
     public static String joinMap(final Map<String, String> map, final String delPair, final String delMap) {
