@@ -176,6 +176,8 @@ public abstract class Request {
 
     private BufferedImage          image;
 
+    private boolean                contentDecoded = true;
+
     public Request(final String url) throws MalformedURLException {
         this.orgURL = new URL(Browser.correctURL(url));
         this.initDefaultHeader();
@@ -368,6 +370,14 @@ public abstract class Request {
         return this.httpConnection == null ? -1 : this.httpConnection.getRequestTime();
     }
 
+    public boolean isContentDecoded() {
+        return this.httpConnection == null ? false : this.httpConnection.isContentDecoded();
+    }
+
+    public void setContentDecoded(boolean c) {
+        this.contentDecoded = c;
+    }
+
     /**
      * @return the byteArray
      */
@@ -453,6 +463,7 @@ public abstract class Request {
         this.httpConnection.setRequest(this);
         this.httpConnection.setReadTimeout(this.readTimeout);
         this.httpConnection.setConnectTimeout(this.connectTimeout);
+        this.httpConnection.setContentDecoded(contentDecoded);
 
         if (this.headers != null) {
             final int headersSize = this.headers.size();
