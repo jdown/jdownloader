@@ -40,7 +40,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public abstract class Request {
@@ -97,8 +96,9 @@ public abstract class Request {
         return ret;
     }
 
-    public static ReusableByteArrayOutputStream read(final URLConnectionAdapter con) throws IOException {
+    public static byte[] read(final URLConnectionAdapter con) throws IOException {
         final InputStream is = con.getInputStream();
+        byte[] ret = null;
         if (is == null) {
             // TODO: check if we have t close con here
             return null;
@@ -138,46 +138,43 @@ public abstract class Request {
             } catch (final Exception e) {
             }
             try {
-                tmpOut.close();
-            } catch (final Exception e) {
-            }
-            try {
                 /* disconnect connection */
                 con.disconnect();
             } catch (final Exception e) {
             }
             ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(tmpOut2);
-            tmpOut2 = null;
-            if (okay == false) {
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(tmpOut);
-                tmpOut = null;
+            if (okay) {
+                ret = tmpOut.toByteArray();
             }
+            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(tmpOut);
+            tmpOut = null;
+            tmpOut2 = null;
         }
-        return tmpOut;
+        return ret;
     }
 
     /*
      * default timeouts, because 0 is infinite and BAD, if we need 0 then we
      * have to set it manually
      */
-    private int connectTimeout = 30000;
+    private int                    connectTimeout = 30000;
 
-    private int readTimeout = 60000;
-    private Cookies cookies = null;
-    private RequestHeader headers;
+    private int                    readTimeout    = 60000;
+    private Cookies                cookies        = null;
+    private RequestHeader          headers;
 
-    private String htmlCode;
+    private String                 htmlCode;
 
     protected URLConnectionAdapter httpConnection;
-    private long readTime = -1;
+    private long                   readTime       = -1;
 
-    private boolean requested = false;
-    private HTTPProxy proxy;
-    private URL orgURL;
-    private String customCharset = null;
-    private ReusableByteArrayOutputStream byteArray;
+    private boolean                requested      = false;
+    private HTTPProxy              proxy;
+    private URL                    orgURL;
+    private String                 customCharset  = null;
+    private byte[]                 byteArray      = null;
 
-    private BufferedImage image;
+    private BufferedImage          image;
 
     public Request(final String url) throws MalformedURLException {
         this.orgURL = new URL(Browser.correctURL(url));
@@ -213,18 +210,21 @@ public abstract class Request {
      * DO NEVER call this method directly... use browser.connect
      */
     protected Request connect() throws IOException {
-        this.requested = true;
-        this.openConnection();
-        this.postRequest(this.httpConnection);
-        /*
-         * we connect to inputstream to make sure the response headers are
-         * getting parsed first
-         */
-        this.httpConnection.finalizeConnect();
         try {
-            this.collectCookiesFromConnection();
-        } catch (final NullPointerException e) {
-            throw new IOException("Malformed url?", e);
+            this.openConnection();
+            this.postRequest(this.httpConnection);
+            /*
+             * we connect to inputstream to make sure the response headers are
+             * getting parsed first
+             */
+            this.httpConnection.finalizeConnect();
+            try {
+                this.collectCookiesFromConnection();
+            } catch (final NullPointerException e) {
+                throw new IOException("Malformed url?", e);
+            }
+        } finally {
+            this.requested = true;
         }
         return this;
     }
@@ -275,23 +275,17 @@ public abstract class Request {
                     try {
                         if (useCS != null) {
                             /* try to use wanted charset */
-                            this.htmlCode = new String(this.byteArray.getInternalBuffer(), 0, this.byteArray.size(), useCS.toUpperCase());
-                            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
-                            this.byteArray = null;
+                            this.htmlCode = new String(this.byteArray, useCS.toUpperCase());
                             return this.htmlCode;
                         }
                     } catch (final Exception e) {
                     }
-                    this.htmlCode = new String(this.byteArray.getInternalBuffer(), 0, this.byteArray.size(), "ISO-8859-1");
-                    ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
-                    this.byteArray = null;
+                    this.htmlCode = new String(this.byteArray, "ISO-8859-1");
                     return this.htmlCode;
                 } catch (final Exception e) {
                     Log.getLogger().severe("could neither charset: " + useCS + " nor default charset");
                     /* fallback to default charset in error case */
-                    this.htmlCode = new String(this.byteArray.getInternalBuffer(), 0, this.byteArray.size());
-                    ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
-                    this.byteArray = null;
+                    this.htmlCode = new String(this.byteArray);
                     return this.htmlCode;
                 }
             } catch (final Exception e) {
@@ -378,8 +372,7 @@ public abstract class Request {
      * @return the byteArray
      */
     public byte[] getResponseBytes() {
-        if (this.byteArray == null) { return null; }
-        return this.byteArray.toByteArray();
+        return this.byteArray;
     }
 
     public String getResponseHeader(final String key) {
@@ -401,11 +394,9 @@ public abstract class Request {
         if (ct != null && !Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) { throw new IllegalStateException("Content-Type: " + ct); }
         // TODO..this is just quick and dirty.. may result in memory leaks
         if (this.image == null && this.byteArray != null) {
-            final InputStream fake = new ByteArrayInputStream(this.byteArray.getInternalBuffer(), 0, this.byteArray.size());
+            final InputStream fake = new ByteArrayInputStream(this.byteArray);
             try {
                 this.image = ImageIO.read(fake);
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
-                this.byteArray = null;
             } catch (final Exception e) {
                 Log.exception(e);
             }
@@ -516,8 +507,6 @@ public abstract class Request {
     }
 
     public void setHtmlCode(final String htmlCode) {
-        // set bytebuffer to null... user works with htmlcode
-        ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(this.byteArray);
         this.byteArray = null;
         this.htmlCode = htmlCode;
     }
@@ -528,29 +517,8 @@ public abstract class Request {
 
     public void setReadTimeout(final int readTimeout) {
         this.readTimeout = readTimeout;
-    }
-
-    public Request toHeadRequest() throws MalformedURLException {
-        final Request ret = new Request(this.getUrl() + "") {
-            // @Override
-            @Override
-            public long postRequest(final URLConnectionAdapter httpConnection) throws IOException {
-                return 0;
-            }
-
-            // @Override
-            @Override
-            public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
-                httpConnection.setRequestMethod(RequestMethod.HEAD);
-            }
-        };
-        ret.connectTimeout = this.connectTimeout;
-        ret.cookies = new Cookies(this.getCookies());
-        ret.headers = this.getHeaders().clone();
-        ret.setProxy(this.proxy);
-        ret.readTime = this.readTimeout;
-        ret.httpConnection = this.httpConnection;
-        return ret;
+        URLConnectionAdapter con = this.httpConnection;
+        if (con != null) con.setReadTimeout(readTimeout);
     }
 
     // @Override
